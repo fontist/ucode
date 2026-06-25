@@ -1,0 +1,31 @@
+# Fixture for UnicodeData.txt — sliced sample covering the cases that
+# matter for the parser: control chars, plain Latin, decomposition
+# (canonical + compat + fraction), numeric values, CJK First/Last range,
+# Hangul First/Last range, and an open paren (so the Coordinator can
+# merge BidiMirroring + BidiBrackets + ScriptExtensions entries).
+#
+# 0009..000A: control characters (Cc, name=<control>)
+# 0028:       left parenthesis (Ps, bidi mirror + bracket pair target)
+# 0041..0042: ASCII uppercase (simple lowercase mapping)
+# 0061:       ASCII lowercase (simple uppercase + titlecase mapping)
+# 00BD:       fraction (numeric value 1/2, compatibility decomposition)
+# 00C0..00C1: Latin with canonical decomposition
+# 00DF:       sharp S (compatibility decomposition, no case mapping)
+# 0660:       Arabic-Indic digit (numeric value 0, gc=Nd)
+# 4E00..4E02: CJK range (subset)
+# AC00..AC02: Hangul range (subset)
+0009;<control>;Cc;0;S;;;;;N;CHARACTER TABULATION;;;;
+000A;<control>;Cc;0;B;;;;;N;LINE FEED (LF);;;;
+0028;LEFT PARENTHESIS;Ps;0;ON;;;;;N;;;;;
+0041;LATIN CAPITAL LETTER A;Lu;0;L;;;;;N;;;;0061;
+0042;LATIN CAPITAL LETTER B;Lu;0;L;;;;;N;;;;0062;
+0061;LATIN SMALL LETTER A;Ll;0;L;;;;;N;;;0041;;0041
+00BD;VULGAR FRACTION ONE HALF;No;0;ON;<fraction> 0031 2044 0032;;;1/2;N;FRACTION ONE HALF;;;;
+00C0;LATIN CAPITAL LETTER A WITH GRAVE;Lu;0;L;0041 0300;;;;N;LATIN CAPITAL LETTER A GRAVE;;;00E0;
+00C1;LATIN CAPITAL LETTER A WITH ACUTE;Lu;0;L;0041 0301;;;;N;LATIN CAPITAL LETTER A ACUTE;;;00E1;
+00DF;LATIN SMALL LETTER SHARP S;Ll;0;L;<compat> 0053 0053;;;;N;;;;;
+0660;ARABIC-INDIC DIGIT ZERO;Nd;0;AN;;0;0;0;N;;;;;
+4E00;<CJK Unified Ideograph, First>;Lo;0;L;;;;;N;;;;;
+4E02;<CJK Unified Ideograph, Last>;Lo;0;L;;;;;N;;;;;
+AC00;<Hangul Syllable, First>;Lo;0;L;;;;;N;;;;;
+AC02;<Hangul Syllable, Last>;Lo;0;L;;;;;N;;;;;

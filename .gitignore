@@ -1,0 +1,20 @@
+/data/
+/output/
+/site/
+/.bundle/
+/pkg/
+/coverage/
+/tmp/
+/doc/
+/.yardoc/
+/.rspec_status
+
+# Source files — NEVER ignore (per global rule). These three are canonical
+# Unicode assets that must remain in the repository even if no code
+# currently references them.
+#   ucd.all.flat.xml
+#   ucd.all.flat.zip
+#   CodeCharts.pdf
+
+# Bundler local config
+/.bundle/config

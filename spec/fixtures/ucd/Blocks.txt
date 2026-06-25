@@ -1,0 +1,5 @@
+# Fixture for Blocks.txt — three small block ranges covering plane 0
+# (Basic Latin, Latin-1 Supplement) and the Greek block.
+0000..007F; Basic Latin
+0080..00FF; Latin-1 Supplement
+0370..03FF; Greek and Coptic

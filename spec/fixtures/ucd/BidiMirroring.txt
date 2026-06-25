@@ -1,0 +1,7 @@
+# Fixture for BidiMirroring.txt — paren/bracket mirroring pairs.
+0028; 0029
+0029; 0028
+003C; 003E
+003E; 003C
+005B; 005D
+005D; 005B

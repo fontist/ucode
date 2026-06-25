@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Class: Ucode::Parsers::UnicodeData
+  
+    &mdash; ucode API Documentation
+  
+</title>
+
+  <link rel="stylesheet" href="../../css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="../../css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "Ucode::Parsers::UnicodeData";
+  relpath = '../../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="../../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../../_index.html">Index (U)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../../Ucode.html" title="Ucode (module)">Ucode</a></span></span> &raquo; <span class='title'><span class='object_link'><a href="../Parsers.html" title="Ucode::Parsers (module)">Parsers</a></span></span>
+     &raquo; 
+    <span class="title">UnicodeData</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Class: Ucode::Parsers::UnicodeData
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+  <dl>
+    <dt>Inherits:</dt>
+    <dd>
+      <span class="inheritName"><span class='object_link'><a href="Base.html" title="Ucode::Parsers::Base (class)">Base</a></span></span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next"><span class='object_link'><a href="Base.html" title="Ucode::Parsers::Base (class)">Base</a></span></li>
+          
+            <li class="next">Ucode::Parsers::UnicodeData</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+    </dd>
+  </dl>
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/ucode/parsers/unicode_data.rb<span class="defines">,<br>
+  lib/ucode/parsers/unicode_data/hangul_name.rb</span>
+
+</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>Parses <code>UnicodeData.txt</code> — the primary per-codepoint record file.</p>
+<p>Field layout (UAX #44, 15 <code>;</code>-separated fields):</p>
+<pre class="code ruby"><code class="ruby">0.  codepoint
+1.  name (`&lt;control&gt;` or `&lt;Type, First&gt;` / `&lt;Type, Last&gt;` for ranges)
+2.  general_category
+3.  canonical_combining_class
+4.  bidi_class
+5.  decomposition_type_and_mapping (combined: optional `&lt;tag&gt;` + cps)
+6.  numeric_value_decimal (deprecated duplicate of 8 for Nd)
+7.  numeric_value_digit    (deprecated duplicate of 8 for Nl)
+8.  numeric_value          (canonical)
+9.  bidi_mirrored (Y/N)
+10. Unicode_1_Name         (deprecated, kept as `name1`)
+11. ISO_10646_comment      (deprecated, ignored)
+12. simple_uppercase_mapping
+13. simple_lowercase_mapping
+14. simple_titlecase_mapping
+</code></pre>
+<p>Hangul syllables and CJK ideographs appear as range markers
+(<code>&lt;..., First&gt;</code> / <code>&lt;..., Last&gt;</code>). The range is expanded to one
+CodePoint per codepoint with the appropriate synthesized name.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div>
+
+
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#each_record-class_method" title="each_record (class method)">.<strong>each_record</strong>(path)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Yields one CodePoint per codepoint in <code>path</code>.</p></div></span>
+  
+</li>
+
+      
+    </ul>
+    
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods inherited from <span class='object_link'><a href="Base.html" title="Ucode::Parsers::Base (class)">Base</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="Base.html#each_line-class_method" title="Ucode::Parsers::Base.each_line (method)">each_line</a></span>, <span class='object_link'><a href="Base.html#parse_codepoint_or_range-class_method" title="Ucode::Parsers::Base.parse_codepoint_or_range (method)">parse_codepoint_or_range</a></span>, <span class='object_link'><a href="Base.html#parse_field-class_method" title="Ucode::Parsers::Base.parse_field (method)">parse_field</a></span>, <span class='object_link'><a href="Base.html#parse_hex_cp-class_method" title="Ucode::Parsers::Base.parse_hex_cp (method)">parse_hex_cp</a></span></p>
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="each_record-class_method">
+  
+    .<strong>each_record</strong>(path)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Yields one CodePoint per codepoint in <code>path</code>. Range markers
+(<code>&lt;..., First&gt;</code> to <code>&lt;..., Last&gt;</code>) are expanded to one CodePoint
+per codepoint, with names synthesized per Unicode rules.</p>
+<p>Returns a lazy Enumerator when called without a block.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/ucode/parsers/unicode_data.rb', line 43</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_each_record'>each_record</span><span class='lparen'>(</span><span class='id identifier rubyid_path'>path</span><span class='rparen'>)</span>
+  <span class='kw'>return</span> <span class='id identifier rubyid_enum_for'>enum_for</span><span class='lparen'>(</span><span class='symbol'>:each_record</span><span class='comma'>,</span> <span class='id identifier rubyid_path'>path</span><span class='rparen'>)</span> <span class='kw'>unless</span> <span class='id identifier rubyid_block_given?'>block_given?</span>
+
+  <span class='id identifier rubyid_pending_range'>pending_range</span> <span class='op'>=</span> <span class='kw'>nil</span>
+
+  <span class='id identifier rubyid_each_line'>each_line</span><span class='lparen'>(</span><span class='id identifier rubyid_path'>path</span><span class='rparen'>)</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_line'>line</span><span class='op'>|</span>
+    <span class='kw'>begin</span>
+      <span class='id identifier rubyid_fields'>fields</span> <span class='op'>=</span> <span class='id identifier rubyid_line'>line</span><span class='period'>.</span><span class='id identifier rubyid_fields'>fields</span>
+
+      <span class='kw'>if</span> <span class='id identifier rubyid_pending_range'>pending_range</span>
+        <span class='kw'>unless</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span><span class='op'>&amp;.</span><span class='id identifier rubyid_end_with?'>end_with?</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='embexpr_beg'>#{</span><span class='const'>LAST_MARKER</span><span class='embexpr_end'>}</span><span class='tstring_content'>&gt;</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+          <span class='id identifier rubyid_raise'>raise</span> <span class='const'><span class='object_link'><a href="../MalformedLineError.html" title="Ucode::MalformedLineError (class)">MalformedLineError</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="../Error.html#initialize-instance_method" title="Ucode::Error#initialize (method)">new</a></span></span><span class='lparen'>(</span>
+            <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>expected &lt;</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_pending_range'>pending_range</span><span class='lbracket'>[</span><span class='symbol'>:template</span><span class='rbracket'>]</span><span class='embexpr_end'>}</span><span class='tstring_content'>, </span><span class='embexpr_beg'>#{</span><span class='const'>LAST_MARKER</span><span class='embexpr_end'>}</span><span class='tstring_content'>&gt;, </span><span class='tstring_end'>&quot;</span></span> \
+            <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>got </span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_inspect'>inspect</span><span class='embexpr_end'>}</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span>
+            <span class='label'>context:</span> <span class='lbrace'>{</span> <span class='label'>file:</span> <span class='id identifier rubyid_path'>path</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span><span class='comma'>,</span> <span class='label'>line:</span> <span class='id identifier rubyid_line'>line</span><span class='period'>.</span><span class='id identifier rubyid_number'>number</span> <span class='rbrace'>}</span>
+          <span class='rparen'>)</span>
+        <span class='kw'>end</span>
+
+        <span class='id identifier rubyid_last_cp'>last_cp</span> <span class='op'>=</span> <span class='id identifier rubyid_parse_hex_cp'>parse_hex_cp</span><span class='lparen'>(</span><span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>0</span><span class='rbracket'>]</span><span class='rparen'>)</span>
+        <span class='id identifier rubyid_expand_range'>expand_range</span><span class='lparen'>(</span><span class='id identifier rubyid_pending_range'>pending_range</span><span class='comma'>,</span> <span class='id identifier rubyid_last_cp'>last_cp</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_cp'>cp</span><span class='op'>|</span> <span class='kw'>yield</span> <span class='id identifier rubyid_cp'>cp</span> <span class='rbrace'>}</span>
+        <span class='id identifier rubyid_pending_range'>pending_range</span> <span class='op'>=</span> <span class='kw'>nil</span>
+        <span class='kw'>next</span>
+      <span class='kw'>end</span>
+
+      <span class='id identifier rubyid_cp'>cp</span> <span class='op'>=</span> <span class='id identifier rubyid_parse_hex_cp'>parse_hex_cp</span><span class='lparen'>(</span><span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>0</span><span class='rbracket'>]</span><span class='rparen'>)</span>
+      <span class='id identifier rubyid_name'>name</span> <span class='op'>=</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span>
+
+      <span class='kw'>if</span> <span class='id identifier rubyid_range_start?'>range_start?</span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='rparen'>)</span>
+        <span class='id identifier rubyid_pending_range'>pending_range</span> <span class='op'>=</span> <span class='lbrace'>{</span>
+          <span class='label'>first_cp:</span> <span class='id identifier rubyid_cp'>cp</span><span class='comma'>,</span>
+          <span class='label'>template:</span> <span class='id identifier rubyid_extract_template'>extract_template</span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='rparen'>)</span><span class='comma'>,</span>
+          <span class='label'>general_category:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>2</span><span class='rbracket'>]</span><span class='comma'>,</span>
+          <span class='label'>combining_class:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>3</span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_to_i'>to_i</span><span class='comma'>,</span>
+          <span class='label'>bidi_class:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>4</span><span class='rbracket'>]</span><span class='comma'>,</span>
+          <span class='label'>bidi_mirrored:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>9</span><span class='rbracket'>]</span>
+        <span class='rbrace'>}</span>
+        <span class='kw'>next</span>
+      <span class='kw'>end</span>
+
+      <span class='kw'>yield</span> <span class='id identifier rubyid_build_codepoint'>build_codepoint</span><span class='lparen'>(</span>
+        <span class='label'>cp:</span> <span class='id identifier rubyid_cp'>cp</span><span class='comma'>,</span>
+        <span class='label'>name:</span> <span class='id identifier rubyid_synthesize_name'>synthesize_name</span><span class='lparen'>(</span><span class='id identifier rubyid_cp'>cp</span><span class='comma'>,</span> <span class='id identifier rubyid_name'>name</span><span class='rparen'>)</span><span class='comma'>,</span>
+        <span class='label'>general_category:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>2</span><span class='rbracket'>]</span><span class='comma'>,</span>
+        <span class='label'>combining_class:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>3</span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_to_i'>to_i</span><span class='comma'>,</span>
+        <span class='label'>bidi_class:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>4</span><span class='rbracket'>]</span><span class='comma'>,</span>
+        <span class='label'>decomposition_field:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>5</span><span class='rbracket'>]</span><span class='comma'>,</span>
+        <span class='label'>numeric_decimal:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>6</span><span class='rbracket'>]</span><span class='comma'>,</span>
+        <span class='label'>numeric_digit:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>7</span><span class='rbracket'>]</span><span class='comma'>,</span>
+        <span class='label'>numeric_value:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>8</span><span class='rbracket'>]</span><span class='comma'>,</span>
+        <span class='label'>bidi_mirrored:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>9</span><span class='rbracket'>]</span><span class='comma'>,</span>
+        <span class='label'>unicode_1_name:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>10</span><span class='rbracket'>]</span><span class='comma'>,</span>
+        <span class='label'>simple_upper_id:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>12</span><span class='rbracket'>]</span><span class='comma'>,</span>
+        <span class='label'>simple_lower_id:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>13</span><span class='rbracket'>]</span><span class='comma'>,</span>
+        <span class='label'>simple_title_id:</span> <span class='id identifier rubyid_fields'>fields</span><span class='lbracket'>[</span><span class='int'>14</span><span class='rbracket'>]</span>
+      <span class='rparen'>)</span>
+    <span class='kw'>rescue</span> <span class='const'><span class='object_link'><a href="../MalformedLineError.html" title="Ucode::MalformedLineError (class)">MalformedLineError</a></span></span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_e'>e</span>
+      <span class='id identifier rubyid_e'>e</span><span class='period'>.</span><span class='id identifier rubyid_context'>context</span><span class='lbracket'>[</span><span class='symbol'>:file</span><span class='rbracket'>]</span> <span class='op'>||=</span> <span class='id identifier rubyid_path'>path</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span>
+      <span class='id identifier rubyid_e'>e</span><span class='period'>.</span><span class='id identifier rubyid_context'>context</span><span class='lbracket'>[</span><span class='symbol'>:line</span><span class='rbracket'>]</span> <span class='op'>||=</span> <span class='id identifier rubyid_line'>line</span><span class='period'>.</span><span class='id identifier rubyid_number'>number</span>
+      <span class='id identifier rubyid_raise'>raise</span>
+    <span class='kw'>end</span>
+  <span class='kw'>end</span>
+
+  <span class='kw'>nil</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Thu Jun 25 19:05:39 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.44 (ruby-3.4.8).
+</div>
+
+    </div>
+  </body>
+</html>

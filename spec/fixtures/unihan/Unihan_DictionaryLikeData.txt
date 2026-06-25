@@ -1,0 +1,7 @@
+# Fixture for Unihan_DictionaryLikeData.txt — dictionary-like structured fields.
+# kTotalStrokes, kRSUnicode, kOtherNumeric, kPrimaryNumeric, etc.
+U+3400	kTotalStrokes	5
+U+4E00	kTotalStrokes	1
+U+9F9C	kTotalStrokes	18
+U+4E00	kRSUnicode	3.1
+U+9F9C	kRSUnicode	214.18

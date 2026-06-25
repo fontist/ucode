@@ -1,0 +1,9 @@
+# Fixture for auxiliary/WordBreakProperty.txt — word boundary segmentation.
+0000..0009; Other
+000A; Newline
+000D; CR
+0020; WSegSpace
+0030..0039; Numeric
+0041..005A; ALetter
+0061..007A; ALetter
+1F600..1F64F; Extended_Pictographic

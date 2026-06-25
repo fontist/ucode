@@ -1,0 +1,7 @@
+# Fixture for Unihan_Variants.txt — historical/standard variants.
+U+3400	kTraditionalVariant	U+5893
+U+4E00	kSimplifiedVariant	U+4E00
+U+4E00	kTraditionalVariant	U+4E00
+U+9F9C	kTraditionalVariant	U+9F9F
+U+9F9C	kSemanticVariant	U+9F9F
+U+9F9F	kSimplifiedVariant	U+9F9C

@@ -1,0 +1,5 @@
+# Fixture for StandardizedVariants.txt — sample with and without contexts.
+0041 FE00; LATIN CAPITAL LETTER A with stroke; no-break
+0041 FE01; LATIN CAPITAL LETTER A with serif
+002B FE00; PLUS SIGN with stem serif; no-break
+0021 FE00; EXCLAMATION MARK with stroke; in math

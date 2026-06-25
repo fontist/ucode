@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Class: Ucode::Glyphs::MonolithPageMap
+  
+    &mdash; ucode API Documentation
+  
+</title>
+
+  <link rel="stylesheet" href="../../css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="../../css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "Ucode::Glyphs::MonolithPageMap";
+  relpath = '../../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="../../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../../_index.html">Index (M)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../../Ucode.html" title="Ucode (module)">Ucode</a></span></span> &raquo; <span class='title'><span class='object_link'><a href="../Glyphs.html" title="Ucode::Glyphs (module)">Glyphs</a></span></span>
+     &raquo; 
+    <span class="title">MonolithPageMap</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Class: Ucode::Glyphs::MonolithPageMap
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+  <dl>
+    <dt>Inherits:</dt>
+    <dd>
+      <span class="inheritName">Object</span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">Ucode::Glyphs::MonolithPageMap</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+    </dd>
+  </dl>
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/ucode/glyphs/monolith_page_map.rb
+</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>Maps a Unicode block's first codepoint to its page range inside the
+monolith <code>CodeCharts.pdf</code> by parsing the PDF's bookmark outline and
+matching each bookmark title to a Block.name from <code>Blocks.txt</code>.</p>
+<p>Each chart cluster printed by the Unicode Consortium is a single
+bookmark entry:</p>
+<pre class="code ruby"><code class="ruby">BookmarkTitle: Greek and Coptic
+BookmarkLevel: 1
+BookmarkPageNumber: 415
+</code></pre>
+<p>The cluster title usually equals a Block.name verbatim, but a few
+clusters carry a heading that prepends &quot;C0 Controls and &quot; /
+&quot;C1 Controls and &quot; to the block name. We resolve both forms.</p>
+<p>End-page of a cluster is one page before the next cluster's start
+page (last cluster's end-page is the PDF's last page).</p>
+<p>The map is cached as JSON at <code>data/codecharts_page_map.json</code> so
+we don't re-scan the 3,156-page monolith on every run.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><h2>Defined Under Namespace</h2>
+<p class="children">
+  
+    
+  
+    
+      <strong class="classes">Classes:</strong> <span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span>
+    
+  
+</p>
+
+
+
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#attach_end_pages-class_method" title="attach_end_pages (class method)">.<strong>attach_end_pages</strong>(entries, total_pages = nil)  &#x21d2; Array&lt;MapEntry&gt; </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Pure: attach end_pages by sorting entries and assigning each entry's end to one page before the next entry's start.</p></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#build-class_method" title="build (class method)">.<strong>build</strong>(monolith_path:, blocks:)  &#x21d2; Hash{Integer =&gt; MapEntry} </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Build the map by parsing the monolith's outline and matching each bookmark title to a Block.</p></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#dump_bookmarks-class_method" title="dump_bookmarks (class method)">.<strong>dump_bookmarks</strong>(monolith_path)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>---- I/O helpers (impure) --------------------------------------.</p></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#load-class_method" title="load (class method)">.<strong>load</strong>(monolith_path:, blocks:, cache_path: nil)  &#x21d2; Hash{Integer =&gt; MapEntry} </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Load from cache, or build and cache.</p></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#page_count-class_method" title="page_count (class method)">.<strong>page_count</strong>(monolith_path)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#parse_bookmarks-class_method" title="parse_bookmarks (class method)">.<strong>parse_bookmarks</strong>(dump, name_to_first_cp)  &#x21d2; Array&lt;MapEntry&gt; </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Pure: parse a <code>pdftk dump_data</code> string into a list of MapEntry rows (without end_pages).</p></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#range_for-class_method" title="range_for (class method)">.<strong>range_for</strong>(map, block_first_cp)  &#x21d2; MapEntry<sup>?</sup> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Look up a block's page range by its first cp.</p></div></span>
+  
+</li>
+
+      
+    </ul>
+    
+  
+
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="attach_end_pages-class_method">
+  
+    .<strong>attach_end_pages</strong>(entries, total_pages = nil)  &#x21d2; <tt>Array&lt;<span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span>&gt;</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Pure: attach end_pages by sorting entries and assigning each
+entry's end to one page before the next entry's start.</p>
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>entries</span>
+      
+      
+        <span class='type'>(<tt>Array&lt;<span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span>&gt;</tt>)</span>
+      
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>total_pages</span>
+      
+      
+        <span class='type'>(<tt>Integer</tt>, <tt>nil</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>nil</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'><p>page count of the source PDF;
+the last entry's end_page falls back to this when present.</p></div>
+      
+    </li>
+  
+</ul>
+
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Array&lt;<span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span>&gt;</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the same entries, mutated with end_pages.</p></div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+96
+97
+98
+99
+100
+101
+102
+103</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/ucode/glyphs/monolith_page_map.rb', line 96</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_attach_end_pages'>attach_end_pages</span><span class='lparen'>(</span><span class='id identifier rubyid_entries'>entries</span><span class='comma'>,</span> <span class='id identifier rubyid_total_pages'>total_pages</span> <span class='op'>=</span> <span class='kw'>nil</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_sorted'>sorted</span> <span class='op'>=</span> <span class='id identifier rubyid_entries'>entries</span><span class='period'>.</span><span class='id identifier rubyid_sort_by'>sort_by</span><span class='lparen'>(</span><span class='op'>&amp;</span><span class='symbol'>:start_page</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_sorted'>sorted</span><span class='period'>.</span><span class='id identifier rubyid_each_with_index'>each_with_index</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_entry'>entry</span><span class='comma'>,</span> <span class='id identifier rubyid_i'>i</span><span class='op'>|</span>
+    <span class='id identifier rubyid_next_entry'>next_entry</span> <span class='op'>=</span> <span class='id identifier rubyid_sorted'>sorted</span><span class='lbracket'>[</span><span class='id identifier rubyid_i'>i</span> <span class='op'>+</span> <span class='int'>1</span><span class='rbracket'>]</span>
+    <span class='id identifier rubyid_entry'>entry</span><span class='period'>.</span><span class='id identifier rubyid_end_page'>end_page</span> <span class='op'>=</span> <span class='id identifier rubyid_next_entry'>next_entry</span> <span class='op'>?</span> <span class='id identifier rubyid_next_entry'>next_entry</span><span class='period'>.</span><span class='id identifier rubyid_start_page'>start_page</span> <span class='op'>-</span> <span class='int'>1</span> <span class='op'>:</span> <span class='id identifier rubyid_total_pages'>total_pages</span>
+  <span class='kw'>end</span>
+  <span class='id identifier rubyid_sorted'>sorted</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="build-class_method">
+  
+    .<strong>build</strong>(monolith_path:, blocks:)  &#x21d2; <tt>Hash{Integer =&gt; <span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span>}</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Build the map by parsing the monolith's outline and matching
+each bookmark title to a Block.</p>
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>monolith_path</span>
+      
+      
+        <span class='type'>(<tt>String</tt>, <tt>Pathname</tt>)</span>
+      
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>blocks</span>
+      
+      
+        <span class='type'>(<tt>Array&lt;<span class='object_link'><a href="../Models/Block.html" title="Ucode::Models::Block (class)">Ucode::Models::Block</a></span>&gt;</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the parsed Blocks table</p></div>
+      
+    </li>
+  
+</ul>
+
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Hash{Integer =&gt; <span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span>}</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>keyed by block.range_first</p></div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/ucode/glyphs/monolith_page_map.rb', line 53</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_build'>build</span><span class='lparen'>(</span><span class='label'>monolith_path:</span><span class='comma'>,</span> <span class='label'>blocks:</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_name_to_first_cp'>name_to_first_cp</span> <span class='op'>=</span> <span class='id identifier rubyid_blocks'>blocks</span><span class='period'>.</span><span class='id identifier rubyid_each_with_object'>each_with_object</span><span class='lparen'>(</span><span class='lbrace'>{</span><span class='rbrace'>}</span><span class='rparen'>)</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_b'>b</span><span class='comma'>,</span> <span class='id identifier rubyid_h'>h</span><span class='op'>|</span>
+    <span class='id identifier rubyid_h'>h</span><span class='lbracket'>[</span><span class='id identifier rubyid_b'>b</span><span class='period'>.</span><span class='id identifier rubyid_name'>name</span><span class='rbracket'>]</span> <span class='op'>=</span> <span class='id identifier rubyid_b'>b</span><span class='period'>.</span><span class='id identifier rubyid_range_first'>range_first</span>
+  <span class='kw'>end</span>
+  <span class='id identifier rubyid_total_pages'>total_pages</span> <span class='op'>=</span> <span class='id identifier rubyid_page_count'>page_count</span><span class='lparen'>(</span><span class='id identifier rubyid_monolith_path'>monolith_path</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_entries'>entries</span> <span class='op'>=</span> <span class='id identifier rubyid_parse_bookmarks'>parse_bookmarks</span><span class='lparen'>(</span><span class='id identifier rubyid_dump_bookmarks'>dump_bookmarks</span><span class='lparen'>(</span><span class='id identifier rubyid_monolith_path'>monolith_path</span><span class='rparen'>)</span><span class='comma'>,</span> <span class='id identifier rubyid_name_to_first_cp'>name_to_first_cp</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_attach_end_pages'>attach_end_pages</span><span class='lparen'>(</span><span class='id identifier rubyid_entries'>entries</span><span class='comma'>,</span> <span class='id identifier rubyid_total_pages'>total_pages</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_entries'>entries</span><span class='period'>.</span><span class='id identifier rubyid_each_with_object'>each_with_object</span><span class='lparen'>(</span><span class='lbrace'>{</span><span class='rbrace'>}</span><span class='rparen'>)</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_e'>e</span><span class='comma'>,</span> <span class='id identifier rubyid_h'>h</span><span class='op'>|</span>
+    <span class='id identifier rubyid_h'>h</span><span class='lbracket'>[</span><span class='id identifier rubyid_e'>e</span><span class='period'>.</span><span class='id identifier rubyid_first_cp'>first_cp</span><span class='rbracket'>]</span> <span class='op'>=</span> <span class='id identifier rubyid_e'>e</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="dump_bookmarks-class_method">
+  
+    .<strong>dump_bookmarks</strong>(monolith_path)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>---- I/O helpers (impure) --------------------------------------</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+131
+132
+133
+134
+135
+136</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/ucode/glyphs/monolith_page_map.rb', line 131</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_dump_bookmarks'>dump_bookmarks</span><span class='lparen'>(</span><span class='id identifier rubyid_monolith_path'>monolith_path</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_out'>out</span><span class='comma'>,</span> <span class='id identifier rubyid_status'>status</span> <span class='op'>=</span> <span class='const'>Open3</span><span class='period'>.</span><span class='id identifier rubyid_capture2e'>capture2e</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>pdftk</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='id identifier rubyid_monolith_path'>monolith_path</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>dump_data</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+  <span class='kw'>return</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_end'>&quot;</span></span> <span class='kw'>unless</span> <span class='id identifier rubyid_status'>status</span><span class='period'>.</span><span class='id identifier rubyid_success?'>success?</span>
+
+  <span class='id identifier rubyid_out'>out</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="load-class_method">
+  
+    .<strong>load</strong>(monolith_path:, blocks:, cache_path: nil)  &#x21d2; <tt>Hash{Integer =&gt; <span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span>}</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Load from cache, or build and cache.</p>
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>monolith_path</span>
+      
+      
+        <span class='type'>(<tt>String</tt>, <tt>Pathname</tt>)</span>
+      
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>blocks</span>
+      
+      
+        <span class='type'>(<tt>Array&lt;<span class='object_link'><a href="../Models/Block.html" title="Ucode::Models::Block (class)">Ucode::Models::Block</a></span>&gt;</tt>)</span>
+      
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>cache_path</span>
+      
+      
+        <span class='type'>(<tt>String</tt>, <tt>Pathname</tt>, <tt>nil</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>nil</tt>)</em>
+      
+      
+    </li>
+  
+</ul>
+
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Hash{Integer =&gt; <span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span>}</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/ucode/glyphs/monolith_page_map.rb', line 110</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_load'>load</span><span class='lparen'>(</span><span class='label'>monolith_path:</span><span class='comma'>,</span> <span class='label'>blocks:</span><span class='comma'>,</span> <span class='label'>cache_path:</span> <span class='kw'>nil</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_cache'>cache</span> <span class='op'>=</span> <span class='id identifier rubyid_cache_path'>cache_path</span> <span class='op'>&amp;&amp;</span> <span class='const'>Pathname</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span><span class='id identifier rubyid_cache_path'>cache_path</span><span class='rparen'>)</span>
+  <span class='kw'>if</span> <span class='id identifier rubyid_cache'>cache</span><span class='op'>&amp;.</span><span class='id identifier rubyid_exist?'>exist?</span>
+    <span class='kw'>return</span> <span class='id identifier rubyid_load_from_json'>load_from_json</span><span class='lparen'>(</span><span class='id identifier rubyid_cache'>cache</span><span class='period'>.</span><span class='id identifier rubyid_read'>read</span><span class='rparen'>)</span>
+  <span class='kw'>end</span>
+
+  <span class='id identifier rubyid_map'>map</span> <span class='op'>=</span> <span class='id identifier rubyid_build'>build</span><span class='lparen'>(</span><span class='label'>monolith_path:</span> <span class='id identifier rubyid_monolith_path'>monolith_path</span><span class='comma'>,</span> <span class='label'>blocks:</span> <span class='id identifier rubyid_blocks'>blocks</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_write_cache'>write_cache</span><span class='lparen'>(</span><span class='id identifier rubyid_map'>map</span><span class='comma'>,</span> <span class='id identifier rubyid_cache'>cache</span><span class='rparen'>)</span> <span class='kw'>if</span> <span class='id identifier rubyid_cache'>cache</span>
+  <span class='id identifier rubyid_map'>map</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="page_count-class_method">
+  
+    .<strong>page_count</strong>(monolith_path)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+138
+139
+140
+141
+142
+143
+144</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/ucode/glyphs/monolith_page_map.rb', line 138</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_page_count'>page_count</span><span class='lparen'>(</span><span class='id identifier rubyid_monolith_path'>monolith_path</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_out'>out</span><span class='comma'>,</span> <span class='id identifier rubyid_status'>status</span> <span class='op'>=</span> <span class='const'>Open3</span><span class='period'>.</span><span class='id identifier rubyid_capture2e'>capture2e</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>pdfinfo</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='id identifier rubyid_monolith_path'>monolith_path</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span><span class='rparen'>)</span>
+  <span class='kw'>return</span> <span class='kw'>nil</span> <span class='kw'>unless</span> <span class='id identifier rubyid_status'>status</span><span class='period'>.</span><span class='id identifier rubyid_success?'>success?</span>
+
+  <span class='id identifier rubyid_match'>match</span> <span class='op'>=</span> <span class='id identifier rubyid_out'>out</span><span class='period'>.</span><span class='id identifier rubyid_match'>match</span><span class='lparen'>(</span><span class='tstring'><span class='regexp_beg'>/</span><span class='tstring_content'>^Pages:\s+(\d+)</span><span class='regexp_end'>/</span></span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_match'>match</span> <span class='op'>?</span> <span class='id identifier rubyid_match'>match</span><span class='lbracket'>[</span><span class='int'>1</span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_to_i'>to_i</span> <span class='op'>:</span> <span class='kw'>nil</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="parse_bookmarks-class_method">
+  
+    .<strong>parse_bookmarks</strong>(dump, name_to_first_cp)  &#x21d2; <tt>Array&lt;<span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span>&gt;</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Pure: parse a <code>pdftk dump_data</code> string into a list of
+MapEntry rows (without end_pages). Exposed for unit tests
+and any caller that already has the dump cached.</p>
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>dump</span>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the raw <code>pdftk dump_data</code> output</p></div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>name_to_first_cp</span>
+      
+      
+        <span class='type'>(<tt>Hash{String =&gt; Integer}</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Array&lt;<span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span>&gt;</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/ucode/glyphs/monolith_page_map.rb', line 72</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_parse_bookmarks'>parse_bookmarks</span><span class='lparen'>(</span><span class='id identifier rubyid_dump'>dump</span><span class='comma'>,</span> <span class='id identifier rubyid_name_to_first_cp'>name_to_first_cp</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_entries'>entries</span> <span class='op'>=</span> <span class='lbracket'>[</span><span class='rbracket'>]</span>
+  <span class='id identifier rubyid_current_title'>current_title</span> <span class='op'>=</span> <span class='kw'>nil</span>
+  <span class='id identifier rubyid_dump'>dump</span><span class='period'>.</span><span class='id identifier rubyid_each_line'>each_line</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_line'>line</span><span class='op'>|</span>
+    <span class='kw'>case</span> <span class='id identifier rubyid_line'>line</span>
+    <span class='kw'>when</span> <span class='const'>BookmarkTitleRegex</span>
+      <span class='id identifier rubyid_current_title'>current_title</span> <span class='op'>=</span> <span class='const'>Regexp</span><span class='period'>.</span><span class='id identifier rubyid_last_match'>last_match</span><span class='lparen'>(</span><span class='int'>1</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_strip'>strip</span>
+    <span class='kw'>when</span> <span class='const'>BookmarkPageRegex</span>
+      <span class='id identifier rubyid_page'>page</span> <span class='op'>=</span> <span class='const'>Regexp</span><span class='period'>.</span><span class='id identifier rubyid_last_match'>last_match</span><span class='lparen'>(</span><span class='int'>1</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_to_i'>to_i</span>
+      <span class='id identifier rubyid_cp'>cp</span> <span class='op'>=</span> <span class='id identifier rubyid_resolve_first_cp'>resolve_first_cp</span><span class='lparen'>(</span><span class='id identifier rubyid_current_title'>current_title</span><span class='comma'>,</span> <span class='id identifier rubyid_name_to_first_cp'>name_to_first_cp</span><span class='rparen'>)</span>
+      <span class='id identifier rubyid_entries'>entries</span> <span class='op'>&lt;&lt;</span> <span class='const'><span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span><span class='label'>first_cp:</span> <span class='id identifier rubyid_cp'>cp</span><span class='comma'>,</span> <span class='label'>start_page:</span> <span class='id identifier rubyid_page'>page</span><span class='rparen'>)</span> <span class='kw'>if</span> <span class='id identifier rubyid_cp'>cp</span>
+      <span class='id identifier rubyid_current_title'>current_title</span> <span class='op'>=</span> <span class='kw'>nil</span>
+    <span class='kw'>end</span>
+  <span class='kw'>end</span>
+  <span class='id identifier rubyid_entries'>entries</span><span class='period'>.</span><span class='id identifier rubyid_sort_by'>sort_by</span><span class='lparen'>(</span><span class='op'>&amp;</span><span class='symbol'>:start_page</span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="range_for-class_method">
+  
+    .<strong>range_for</strong>(map, block_first_cp)  &#x21d2; <tt><span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span></tt><sup>?</sup> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Look up a block's page range by its first cp.</p>
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>map</span>
+      
+      
+        <span class='type'>(<tt>Hash{Integer =&gt; <span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span>}</tt>)</span>
+      
+      
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>block_first_cp</span>
+      
+      
+        <span class='type'>(<tt>Integer</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="MonolithPageMap/MapEntry.html" title="Ucode::Glyphs::MonolithPageMap::MapEntry (class)">MapEntry</a></span></tt>, <tt>nil</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+125
+126
+127</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/ucode/glyphs/monolith_page_map.rb', line 125</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_range_for'>range_for</span><span class='lparen'>(</span><span class='id identifier rubyid_map'>map</span><span class='comma'>,</span> <span class='id identifier rubyid_block_first_cp'>block_first_cp</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_map'>map</span><span class='lbracket'>[</span><span class='id identifier rubyid_block_first_cp'>block_first_cp</span><span class='rbracket'>]</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Thu Jun 25 19:05:39 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.44 (ruby-3.4.8).
+</div>
+
+    </div>
+  </body>
+</html>

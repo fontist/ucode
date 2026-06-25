@@ -1,0 +1,12 @@
+# Fixture for extracted/DerivedGeneralCategory.txt — general category per range.
+# Format: XXXX[..YYYY]; gc_value
+# Covers a representative slice: control, letter, mark, number, punctuation,
+# symbol, separator, plus the CJK range that exercises range handling.
+0000..001F; Cc
+0020; Zs
+0021..002F; Po
+0030..0039; Nd
+0041..005A; Lu
+005B..0060; Ps
+0061..007A; Ll
+4E00..9FFF; Lo

@@ -1,0 +1,5 @@
+# Fixture for CJKRadicals.txt — first / middle / range sample.
+1; 2F00; 4E00
+2; 2F01; 4E28
+39; 2F26; 5DDB
+214; 2FD5; 9F9C

@@ -1,0 +1,10 @@
+# Fixture for auxiliary/IdentifierType.txt — fine-grained identifier exclusion reason.
+# Format: XXXX[..YYYY]; value (space-separated list of types)
+0024; Inclusion
+0030..0039; Inclusion
+0041..005A; Inclusion
+005F; Inclusion
+0061..007A; Inclusion
+00A0; Unwanted_White space
+1F600; Emoji
+0374; Obsolete

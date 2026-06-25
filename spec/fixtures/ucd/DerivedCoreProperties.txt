@@ -1,0 +1,14 @@
+# Fixture for DerivedCoreProperties.txt — derived binary properties.
+# Format: XXXX[..YYYY]; Property_Name
+# The file lists only positive assignments (absence ⇒ false).
+0040..005A; Uppercase
+0061..007A; Lowercase
+0041..005A; Alphabetic
+0061..007A; Alphabetic
+0028; Bidi_Control
+0029; Bidi_Control
+0024; ASCII_Hex_Digit
+0009..000D; White_Space
+0020; White_Space
+0041..005A; ASCII
+0061..007A; ASCII

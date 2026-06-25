@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Class: Ucode::Models::CodePoint
+  
+    &mdash; ucode API Documentation
+  
+</title>
+
+  <link rel="stylesheet" href="../../css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="../../css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "Ucode::Models::CodePoint";
+  relpath = '../../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="../../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../../_index.html">Index (C)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../../Ucode.html" title="Ucode (module)">Ucode</a></span></span> &raquo; <span class='title'><span class='object_link'><a href="../Models.html" title="Ucode::Models (module)">Models</a></span></span>
+     &raquo; 
+    <span class="title">CodePoint</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Class: Ucode::Models::CodePoint
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+  <dl>
+    <dt>Inherits:</dt>
+    <dd>
+      <span class="inheritName">Lutaml::Model::Serializable</span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">Lutaml::Model::Serializable</li>
+          
+            <li class="next">Ucode::Models::CodePoint</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+    </dd>
+  </dl>
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/ucode/models/codepoint.rb<span class="defines">,<br>
+  lib/ucode/models/codepoint/bidi.rb,<br> lib/ucode/models/codepoint/emoji.rb,<br> lib/ucode/models/codepoint/indic.rb,<br> lib/ucode/models/codepoint/casing.rb,<br> lib/ucode/models/codepoint/hangul.rb,<br> lib/ucode/models/codepoint/display.rb,<br> lib/ucode/models/codepoint/joining.rb,<br> lib/ucode/models/codepoint/identifier.rb,<br> lib/ucode/models/codepoint/case_folding.rb,<br> lib/ucode/models/codepoint/decomposition.rb,<br> lib/ucode/models/codepoint/normalization.rb,<br> lib/ucode/models/codepoint/numeric_value.rb,<br> lib/ucode/models/codepoint/break_segmentation.rb</span>
+
+</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>Central CodePoint entity. Carries identity, scalar UCD properties,
+and typed sub-model bundles. Every cross-codepoint reference is a
+&quot;U+XXXX&quot; string; nested CodePoint objects are forbidden (single
+source of truth — each codepoint's data lives only in its own
+folder).</p>
+<p>Sub-model classes are nested under CodePoint for cohesion (one
+namespace per concern). They're autoloaded from this file.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><h2>Defined Under Namespace</h2>
+<p class="children">
+  
+    
+  
+    
+      <strong class="classes">Classes:</strong> <span class='object_link'><a href="CodePoint/Bidi.html" title="Ucode::Models::CodePoint::Bidi (class)">Bidi</a></span>, <span class='object_link'><a href="CodePoint/BreakSegmentation.html" title="Ucode::Models::CodePoint::BreakSegmentation (class)">BreakSegmentation</a></span>, <span class='object_link'><a href="CodePoint/CaseFolding.html" title="Ucode::Models::CodePoint::CaseFolding (class)">CaseFolding</a></span>, <span class='object_link'><a href="CodePoint/Casing.html" title="Ucode::Models::CodePoint::Casing (class)">Casing</a></span>, <span class='object_link'><a href="CodePoint/Decomposition.html" title="Ucode::Models::CodePoint::Decomposition (class)">Decomposition</a></span>, <span class='object_link'><a href="CodePoint/Display.html" title="Ucode::Models::CodePoint::Display (class)">Display</a></span>, <span class='object_link'><a href="CodePoint/Emoji.html" title="Ucode::Models::CodePoint::Emoji (class)">Emoji</a></span>, <span class='object_link'><a href="CodePoint/HangulSyllable.html" title="Ucode::Models::CodePoint::HangulSyllable (class)">HangulSyllable</a></span>, <span class='object_link'><a href="CodePoint/Identifier.html" title="Ucode::Models::CodePoint::Identifier (class)">Identifier</a></span>, <span class='object_link'><a href="CodePoint/Indic.html" title="Ucode::Models::CodePoint::Indic (class)">Indic</a></span>, <span class='object_link'><a href="CodePoint/Joining.html" title="Ucode::Models::CodePoint::Joining (class)">Joining</a></span>, <span class='object_link'><a href="CodePoint/Normalization.html" title="Ucode::Models::CodePoint::Normalization (class)">Normalization</a></span>, <span class='object_link'><a href="CodePoint/NumericValue.html" title="Ucode::Models::CodePoint::NumericValue (class)">NumericValue</a></span>
+    
+  
+</p>
+
+
+
+
+
+
+
+
+  
+
+</div>
+
+      <div id="footer">
+  Generated on Thu Jun 25 19:05:39 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.44 (ruby-3.4.8).
+</div>
+
+    </div>
+  </body>
+</html>

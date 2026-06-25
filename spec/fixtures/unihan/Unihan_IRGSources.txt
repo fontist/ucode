@@ -1,0 +1,6 @@
+# Fixture for Unihan_IRGSources.txt — IRG working-set provenance.
+U+3400	kIRG_GSource	GBK
+U+3400	kIRG_JSource	J0-1234
+U+3401	kIRG_KSource	KR-5678
+U+4E00	kIRG_TSource	TC1-2345
+U+9F9C	kIRG_USource	UTC-00123

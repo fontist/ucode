@@ -1,0 +1,7 @@
+# Fixture for auxiliary/IndicPositionalCategory.txt — Indic shaping position.
+0900..097F; Bottom
+0980..09FF; Bottom
+0A00..0A7F; Bottom
+0A80..0AFF; Bottom
+0B00..0B7F; Bottom
+1CD0..1CFF; Top

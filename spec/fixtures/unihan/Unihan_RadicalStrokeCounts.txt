@@ -1,0 +1,7 @@
+# Fixture for Unihan_RadicalStrokeCounts.txt — radical/stroke decomposition.
+U+3400	kRSKangXi	1.4
+U+3401	kRSKangXi	2.5
+U+4E00	kRSKangXi	1.0
+U+9F9C	kRSKangXi	214.18
+U+4E00	kRSUnicode	1.0 3.1
+U+9F9C	kRSUnicode	214.18 213.19

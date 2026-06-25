@@ -1,0 +1,9 @@
+# Fixture for PropertyValueAliases.txt — sample for several properties.
+gc; Lu; Uppercase_Letter
+gc; Ll; Lowercase_Letter
+gc; Nd; Decimal_Number
+sc; Zyyy; Common
+sc; Latn; Latin
+sc; Grek; Greek
+ccc; 0; NR
+ccc; 230; Above

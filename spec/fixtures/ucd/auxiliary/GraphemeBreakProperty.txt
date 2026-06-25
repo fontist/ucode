@@ -1,0 +1,11 @@
+# Fixture for auxiliary/GraphemeBreakProperty.txt — grapheme cluster break.
+# Format: XXXX[..YYYY]; value
+0000..0009; Control
+000A; LF
+000B; Extend
+000D; CR
+0020; SpacingMark
+0030..0039; Other
+0041..005A; Other
+0061..007A; Other
+1F600..1F64F; Other

@@ -1,0 +1,22 @@
+# Fixture for DerivedAge.txt — Unicode version when each codepoint was introduced.
+# Format: XXXX[..YYYY]; M.N
+0020..007E; 1.1
+00A0..00FF; 1.1
+0100..017F; 1.1
+0180..024F; 1.1
+0250..02AF; 1.1
+0370..03FF; 1.1
+0400..04FF; 1.1
+0530..058F; 1.1
+1E00..1EFF; 1.1
+1F00..1FFF; 1.1
+2000..206F; 1.1
+2070..209F; 1.1
+20A0..20CF; 1.1
+20D0..20FF; 1.1
+2100..214F; 1.1
+3400..4DBF; 3.0
+4E00..9FFF; 1.1
+A000..A48F; 3.0
+10000..1007F; 4.0
+1F300..1F5FF; 6.0

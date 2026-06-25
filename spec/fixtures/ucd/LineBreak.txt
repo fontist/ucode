@@ -1,0 +1,13 @@
+# Fixture for LineBreak.txt — line break property class.
+# Format: XXXX[..YYYY]; lb_class
+0009..000D; BK
+0020; SP
+0021; EX
+0028; OP
+0029; CP
+002C; IS
+002D; BA
+0030..0039; NU
+0041..005A; AL
+0061..007A; AL
+1F600..1F64F; ID

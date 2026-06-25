@@ -1,0 +1,9 @@
+# Fixture for auxiliary/VerticalOrientation.txt — vertical glyph orientation.
+0000..007F; R
+0080..00FF; R
+0100..017F; R
+3000..303F; Tu
+3040..309F; Tr
+30A0..30FF; Tr
+4E00..9FFF; Tu
+FF00..FFEF; Tu

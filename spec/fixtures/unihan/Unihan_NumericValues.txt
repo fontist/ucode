@@ -1,0 +1,9 @@
+# Fixture for Unihan_NumericValues.txt — numeric-type metadata.
+U+0030	kNumericType	Decimal
+U+0030	kNumericValue	0
+U+0660	kNumericType	Decimal
+U+0660	kNumericValue	0
+U+3007	kNumericType	Numeric
+U+3007	kNumericValue	7
+U+4E00	kNumericType	Numeric
+U+4E00	kNumericValue	10000

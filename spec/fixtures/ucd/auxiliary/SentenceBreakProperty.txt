@@ -1,0 +1,11 @@
+# Fixture for auxiliary/SentenceBreakProperty.txt — sentence boundary segmentation.
+0000..0009; Other
+000A; LF
+000D; CR
+0021; STerm
+002E; ATerm
+0028; Close
+0029; Close
+0030..0039; Numeric
+0041..005A; Upper
+0061..007A; Lower

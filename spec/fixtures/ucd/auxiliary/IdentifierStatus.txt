@@ -1,0 +1,10 @@
+# Fixture for auxiliary/IdentifierStatus.txt — Unicode identifier allowed status.
+# Format: XXXX[..YYYY]; value (value is "allowed" or "restricted")
+0024; allowed
+0030..0039; allowed
+0041..005A; allowed
+005F; allowed
+0061..007A; allowed
+00A0; restricted
+0374; allowed
+1F600; restricted

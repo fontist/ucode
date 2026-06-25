@@ -1,0 +1,5 @@
+# Fixture for PropertyAliases.txt — sample of common properties.
+ccc; Canonical_Combining_Class; ccc
+gc; General_Category
+sc; Script
+bc; Bidi_Class

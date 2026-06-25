@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Module: Ucode::Parsers
+  
+    &mdash; ucode API Documentation
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "Ucode::Parsers";
+  relpath = '../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../_index.html">Index (P)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../Ucode.html" title="Ucode (module)">Ucode</a></span></span>
+     &raquo; 
+    <span class="title">Parsers</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Module: Ucode::Parsers
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/ucode/parsers.rb<span class="defines">,<br>
+  lib/ucode/parsers/base.rb,<br> lib/ucode/parsers/blocks.rb,<br> lib/ucode/parsers/unihan.rb,<br> lib/ucode/parsers/scripts.rb,<br> lib/ucode/parsers/auxiliary.rb,<br> lib/ucode/parsers/names_list.rb,<br> lib/ucode/parsers/derived_age.rb,<br> lib/ucode/parsers/case_folding.rb,<br> lib/ucode/parsers/cjk_radicals.rb,<br> lib/ucode/parsers/name_aliases.rb,<br> lib/ucode/parsers/unicode_data.rb,<br> lib/ucode/parsers/bidi_brackets.rb,<br> lib/ucode/parsers/bidi_mirroring.rb,<br> lib/ucode/parsers/special_casing.rb,<br> lib/ucode/parsers/named_sequences.rb,<br> lib/ucode/parsers/property_aliases.rb,<br> lib/ucode/parsers/script_extensions.rb,<br> lib/ucode/parsers/extracted_properties.rb,<br> lib/ucode/parsers/standardized_variants.rb,<br> lib/ucode/parsers/property_value_aliases.rb,<br> lib/ucode/parsers/derived_core_properties.rb,<br> lib/ucode/parsers/unicode_data/hangul_name.rb</span>
+
+</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>Parsers — one class per UCD text file.</p>
+<p>All parsers stream: they read line by line via <code>File.foreach</code>, never
+accumulate the whole file in memory, and yield one record at a time.
+When called without a block, they return a lazy Enumerator so the
+Coordinator can compose them.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><h2>Defined Under Namespace</h2>
+<p class="children">
+  
+    
+  
+    
+      <strong class="classes">Classes:</strong> <span class='object_link'><a href="Parsers/Auxiliary.html" title="Ucode::Parsers::Auxiliary (class)">Auxiliary</a></span>, <span class='object_link'><a href="Parsers/Base.html" title="Ucode::Parsers::Base (class)">Base</a></span>, <span class='object_link'><a href="Parsers/BidiBrackets.html" title="Ucode::Parsers::BidiBrackets (class)">BidiBrackets</a></span>, <span class='object_link'><a href="Parsers/BidiMirroring.html" title="Ucode::Parsers::BidiMirroring (class)">BidiMirroring</a></span>, <span class='object_link'><a href="Parsers/Blocks.html" title="Ucode::Parsers::Blocks (class)">Blocks</a></span>, <span class='object_link'><a href="Parsers/CaseFolding.html" title="Ucode::Parsers::CaseFolding (class)">CaseFolding</a></span>, <span class='object_link'><a href="Parsers/CjkRadicals.html" title="Ucode::Parsers::CjkRadicals (class)">CjkRadicals</a></span>, <span class='object_link'><a href="Parsers/DerivedAge.html" title="Ucode::Parsers::DerivedAge (class)">DerivedAge</a></span>, <span class='object_link'><a href="Parsers/DerivedCoreProperties.html" title="Ucode::Parsers::DerivedCoreProperties (class)">DerivedCoreProperties</a></span>, <span class='object_link'><a href="Parsers/ExtractedProperties.html" title="Ucode::Parsers::ExtractedProperties (class)">ExtractedProperties</a></span>, <span class='object_link'><a href="Parsers/NameAliases.html" title="Ucode::Parsers::NameAliases (class)">NameAliases</a></span>, <span class='object_link'><a href="Parsers/NamedSequences.html" title="Ucode::Parsers::NamedSequences (class)">NamedSequences</a></span>, <span class='object_link'><a href="Parsers/NamesList.html" title="Ucode::Parsers::NamesList (class)">NamesList</a></span>, <span class='object_link'><a href="Parsers/PropertyAliases.html" title="Ucode::Parsers::PropertyAliases (class)">PropertyAliases</a></span>, <span class='object_link'><a href="Parsers/PropertyValueAliases.html" title="Ucode::Parsers::PropertyValueAliases (class)">PropertyValueAliases</a></span>, <span class='object_link'><a href="Parsers/ScriptExtensions.html" title="Ucode::Parsers::ScriptExtensions (class)">ScriptExtensions</a></span>, <span class='object_link'><a href="Parsers/Scripts.html" title="Ucode::Parsers::Scripts (class)">Scripts</a></span>, <span class='object_link'><a href="Parsers/SpecialCasing.html" title="Ucode::Parsers::SpecialCasing (class)">SpecialCasing</a></span>, <span class='object_link'><a href="Parsers/StandardizedVariants.html" title="Ucode::Parsers::StandardizedVariants (class)">StandardizedVariants</a></span>, <span class='object_link'><a href="Parsers/UnicodeData.html" title="Ucode::Parsers::UnicodeData (class)">UnicodeData</a></span>, <span class='object_link'><a href="Parsers/Unihan.html" title="Ucode::Parsers::Unihan (class)">Unihan</a></span>
+    
+  
+</p>
+
+
+
+
+
+
+
+
+
+</div>
+
+      <div id="footer">
+  Generated on Thu Jun 25 19:05:38 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.44 (ruby-3.4.8).
+</div>
+
+    </div>
+  </body>
+</html>

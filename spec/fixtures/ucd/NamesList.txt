@@ -1,0 +1,30 @@
+# Fixture for NamesList.txt — Latin block samples covering every marker type.
+# Format mirrors the real Unicode NamesList.txt:
+#   cp; Name            ← column-0 header (new NamesListEntry)
+#     → U+XXXX note    ← see-also cross-reference
+#     × U+XXXX U+YYYY note (rendered: Á)  ← typical usage sequence
+#     ≡ U+XXXX note    ← compatibility equivalent
+#     = alias text     ← informal alias
+#     * footnote text  ← explanatory note
+#     % instruction    ← DROPPED (instructional)
+#     ~ heading        ← DROPPED (table-of-contents)
+@@ Latin
+~ Basic Latin, p. 1
+0041;LATIN CAPITAL LETTER A
+  = capital A
+  × U+0041 U+0301 Á (rendered: Á)
+  → U+0391 Greek capital alpha
+  → U+FF21 fullwidth capital A
+  → U+1D00 small capital A
+  * capital letter form used as a quantifier in mathematics
+  * derived from Phoenician aleph
+
+0042;LATIN CAPITAL LETTER B
+  ≡ U+0042 compatibility duplicate
+  * legacy typography variant
+
+% This line is instructional and must be dropped
+~ This is a section heading that must be dropped
+
+# A trailing codepoint with no annotations:
+0043;LATIN CAPITAL LETTER C

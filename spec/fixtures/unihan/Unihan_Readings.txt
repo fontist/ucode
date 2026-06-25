@@ -1,0 +1,10 @@
+# Fixture for Unihan_Readings.txt — definitions, pronunciations, glosses.
+U+3400	kDefinition	extension A character
+U+4E00	kDefinition	one; one; the same
+U+4E00	kMandarin	yī
+U+4E00	kCantonese	jat1
+U+9F9C	kDefinition	a turtle
+U+9F9C	kMandarin	guī
+U+9F9C	kJapaneseOn	KI
+U+9F9C	kJapaneseKun	KAME
+U+9F9C	kHangul	구

@@ -1,0 +1,4 @@
+# Fixture for SpecialCasing.txt — unconditional + conditional + locale rules.
+00DF; 00DF; 0053 0053; 0053 0053; # LATIN SMALL LETTER SHARP S
+1E9E; 00DF; 1E9E; 1E9E; Final_Sigma; # LATIN CAPITAL LETTER SHARP S
+0049; 0131; 0049; 0049; tr After_I; # LATIN CAPITAL LETTER I, i, Turkish

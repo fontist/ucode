@@ -1,0 +1,6 @@
+--output-dir docs/api
+--readme README.md
+--markup markdown
+--title "ucode API Documentation"
+--no-private
+lib/**/*.rb

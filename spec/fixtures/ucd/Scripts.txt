@@ -1,0 +1,5 @@
+# Fixture for Scripts.txt — three scripts with one range each.
+# @missing: 0000..10FFFF; Unknown
+0000..001F    ; Common # Cc  [32] <control-0000>..<control-001F>
+0041..005A    ; Latin # L&  [26] LATIN CAPITAL LETTER A..LATIN CAPITAL LETTER Z
+0391..03A9    ; Greek # Lu  [25] GREEK CAPITAL LETTER ALPHA..GREEK CAPITAL LETTER OMEGA

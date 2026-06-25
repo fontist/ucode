@@ -1,0 +1,10 @@
+# Fixture for EastAsianWidth.txt — east asian width property.
+# Format: XXXX[..YYYY]; width (F/H/W/Na/A/N)
+0000..001F; N
+0020..007E; Na
+00A0..00FF; A
+0100..017F; N
+4E00..9FFF; W
+FF00..FFEF; F
+1F300..1F5FF; W
+1F600..1F64F; W

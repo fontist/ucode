@@ -1,0 +1,7 @@
+# Fixture for NameAliases.txt — sample of each alias type.
+0000; NULL; control
+0009; CHARACTER TABULATION; correction
+0009; HT; abbreviation
+0009; HORIZONTAL TAB; alternate
+0009; Horizontal_Tab; figment
+0041; LATIN CAPITAL LETTER A; correction

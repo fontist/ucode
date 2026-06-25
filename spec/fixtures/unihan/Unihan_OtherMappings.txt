@@ -1,0 +1,8 @@
+# Fixture for Unihan_OtherMappings.txt — Big Five, CNS, GB, etc. mappings.
+U+3400	kBigFive	C8A1
+U+3400	kCNS1986	1-7721
+U+4E00	kBigFive	A440
+U+4E00	kCNS1986	1-4421
+U+4E00	kGB0	5232
+U+9F9C	kBigFive	C24E
+U+9F9C	kCNS1986	1-7660

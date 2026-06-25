@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Class: Ucode::Parsers::Unihan
+  
+    &mdash; ucode API Documentation
+  
+</title>
+
+  <link rel="stylesheet" href="../../css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="../../css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "Ucode::Parsers::Unihan";
+  relpath = '../../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="../../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../../_index.html">Index (U)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../../Ucode.html" title="Ucode (module)">Ucode</a></span></span> &raquo; <span class='title'><span class='object_link'><a href="../Parsers.html" title="Ucode::Parsers (module)">Parsers</a></span></span>
+     &raquo; 
+    <span class="title">Unihan</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Class: Ucode::Parsers::Unihan
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+  <dl>
+    <dt>Inherits:</dt>
+    <dd>
+      <span class="inheritName"><span class='object_link'><a href="Base.html" title="Ucode::Parsers::Base (class)">Base</a></span></span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next"><span class='object_link'><a href="Base.html" title="Ucode::Parsers::Base (class)">Base</a></span></li>
+          
+            <li class="next">Ucode::Parsers::Unihan</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+    </dd>
+  </dl>
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/ucode/parsers/unihan.rb
+</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>Parses all eight Unihan files (<code>Unihan_IRGSources.txt</code>,
+<code>Unihan_NumericValues.txt</code>, <code>Unihan_RadicalStrokeCounts.txt</code>,
+<code>Unihan_Readings.txt</code>, <code>Unihan_DictionaryIndices.txt</code>,
+<code>Unihan_DictionaryLikeData.txt</code>, <code>Unihan_Variants.txt</code>,
+<code>Unihan_OtherMappings.txt</code>).</p>
+<p>File format is uniform across all eight (Unihan documentation):</p>
+<pre class="code ruby"><code class="ruby"><span class='const'>U</span><span class='op'>+</span><span class='const'>XXXX</span><span class='op'>&lt;</span><span class='const'>TAB</span><span class='op'>&gt;</span><span class='id identifier rubyid_kField'>kField</span><span class='op'>&lt;</span><span class='const'>TAB</span><span class='op'>&gt;</span><span class='id identifier rubyid_value'>value</span>
+</code></pre>
+<p>The value may be a space-separated list (<code>kRSUnicode</code>, <code>kDefinition</code>
+for prose, <code>kCangjieInput</code> for multiple codes). <code>.split</code> (whitespace)
+produces the values array uniformly. Coordinator groups records by
+<code>cp</code> and writes into <code>CodePoint.unihan.fields[field]</code>.</p>
+<p>One parser, not eight: the format is uniform. The filename carries
+no parse-time information — every line is self-describing via its
+field name. Adding a new Unihan file is a one-line change to
+<code>FILES</code>; no parser modification (OCP).</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><h2>Defined Under Namespace</h2>
+<p class="children">
+  
+    
+  
+    
+      <strong class="classes">Classes:</strong> <span class='object_link'><a href="Unihan/Record.html" title="Ucode::Parsers::Unihan::Record (class)">Record</a></span>
+    
+  
+</p>
+
+  
+    <h2>
+      Constant Summary
+      <small><a href="#" class="constants_summary_toggle">collapse</a></small>
+    </h2>
+
+    <dl class="constants">
+      
+        <dt id="FILES-constant" class="">FILES =
+          
+        </dt>
+        <dd><pre class="code"><span class='qwords_beg'>%w[</span><span class='words_sep'>
+</span><span class='words_sep'>  </span><span class='tstring_content'>Unihan_DictionaryIndices.txt</span><span class='words_sep'>
+</span><span class='words_sep'>  </span><span class='tstring_content'>Unihan_DictionaryLikeData.txt</span><span class='words_sep'>
+</span><span class='words_sep'>  </span><span class='tstring_content'>Unihan_IRGSources.txt</span><span class='words_sep'>
+</span><span class='words_sep'>  </span><span class='tstring_content'>Unihan_NumericValues.txt</span><span class='words_sep'>
+</span><span class='words_sep'>  </span><span class='tstring_content'>Unihan_RadicalStrokeCounts.txt</span><span class='words_sep'>
+</span><span class='words_sep'>  </span><span class='tstring_content'>Unihan_Readings.txt</span><span class='words_sep'>
+</span><span class='words_sep'>  </span><span class='tstring_content'>Unihan_Variants.txt</span><span class='words_sep'>
+</span><span class='words_sep'>  </span><span class='tstring_content'>Unihan_OtherMappings.txt</span><span class='words_sep'>
+</span><span class='tstring_end'>]</span></span><span class='period'>.</span><span class='id identifier rubyid_freeze'>freeze</span></pre></dd>
+      
+    </dl>
+  
+
+
+
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#each_in_dir-class_method" title="each_in_dir (class method)">.<strong>each_in_dir</strong>(dir)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Iterates every known Unihan file in <code>dir</code>, yielding one Record per data line across all files.</p></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#each_record-class_method" title="each_record (class method)">.<strong>each_record</strong>(path)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Yields one Record per non-comment line in a single Unihan file.</p></div></span>
+  
+</li>
+
+      
+    </ul>
+    
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods inherited from <span class='object_link'><a href="Base.html" title="Ucode::Parsers::Base (class)">Base</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="Base.html#each_line-class_method" title="Ucode::Parsers::Base.each_line (method)">each_line</a></span>, <span class='object_link'><a href="Base.html#parse_codepoint_or_range-class_method" title="Ucode::Parsers::Base.parse_codepoint_or_range (method)">parse_codepoint_or_range</a></span>, <span class='object_link'><a href="Base.html#parse_field-class_method" title="Ucode::Parsers::Base.parse_field (method)">parse_field</a></span>, <span class='object_link'><a href="Base.html#parse_hex_cp-class_method" title="Ucode::Parsers::Base.parse_hex_cp (method)">parse_hex_cp</a></span></p>
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="each_in_dir-class_method">
+  
+    .<strong>each_in_dir</strong>(dir)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Iterates every known Unihan file in <code>dir</code>, yielding one Record
+per data line across all files. Missing files are silently
+skipped (incremental runs, partial downloads).</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/ucode/parsers/unihan.rb', line 78</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_each_in_dir'>each_in_dir</span><span class='lparen'>(</span><span class='id identifier rubyid_dir'>dir</span><span class='rparen'>)</span>
+  <span class='kw'>return</span> <span class='id identifier rubyid_enum_for'>enum_for</span><span class='lparen'>(</span><span class='symbol'>:each_in_dir</span><span class='comma'>,</span> <span class='id identifier rubyid_dir'>dir</span><span class='rparen'>)</span> <span class='kw'>unless</span> <span class='id identifier rubyid_block_given?'>block_given?</span>
+
+  <span class='id identifier rubyid_dir_path'>dir_path</span> <span class='op'>=</span> <span class='const'>Pathname</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span><span class='id identifier rubyid_dir'>dir</span><span class='rparen'>)</span>
+  <span class='const'><span class='object_link'><a href="#FILES-constant" title="Ucode::Parsers::Unihan::FILES (constant)">FILES</a></span></span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_filename'>filename</span><span class='op'>|</span>
+    <span class='id identifier rubyid_path'>path</span> <span class='op'>=</span> <span class='id identifier rubyid_dir_path'>dir_path</span><span class='period'>.</span><span class='id identifier rubyid_join'>join</span><span class='lparen'>(</span><span class='id identifier rubyid_filename'>filename</span><span class='rparen'>)</span>
+    <span class='kw'>next</span> <span class='kw'>unless</span> <span class='id identifier rubyid_path'>path</span><span class='period'>.</span><span class='id identifier rubyid_exist?'>exist?</span>
+
+    <span class='id identifier rubyid_each_record'>each_record</span><span class='lparen'>(</span><span class='id identifier rubyid_path'>path</span><span class='rparen'>)</span> <span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_record'>record</span><span class='op'>|</span> <span class='kw'>yield</span> <span class='id identifier rubyid_record'>record</span> <span class='rbrace'>}</span>
+  <span class='kw'>end</span>
+
+  <span class='kw'>nil</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="each_record-class_method">
+  
+    .<strong>each_record</strong>(path)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Yields one Record per non-comment line in a single Unihan file.
+Returns a lazy Enumerator when no block is given.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/ucode/parsers/unihan.rb', line 52</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_each_record'>each_record</span><span class='lparen'>(</span><span class='id identifier rubyid_path'>path</span><span class='rparen'>)</span>
+  <span class='kw'>return</span> <span class='id identifier rubyid_enum_for'>enum_for</span><span class='lparen'>(</span><span class='symbol'>:each_record</span><span class='comma'>,</span> <span class='id identifier rubyid_path'>path</span><span class='rparen'>)</span> <span class='kw'>unless</span> <span class='id identifier rubyid_block_given?'>block_given?</span>
+
+  <span class='id identifier rubyid_path_str'>path_str</span> <span class='op'>=</span> <span class='id identifier rubyid_path'>path</span><span class='period'>.</span><span class='id identifier rubyid_to_s'>to_s</span>
+  <span class='id identifier rubyid_lineno'>lineno</span> <span class='op'>=</span> <span class='int'>0</span>
+
+  <span class='const'>File</span><span class='period'>.</span><span class='id identifier rubyid_foreach'>foreach</span><span class='lparen'>(</span><span class='id identifier rubyid_path_str'>path_str</span><span class='rparen'>)</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_raw'>raw</span><span class='op'>|</span>
+    <span class='id identifier rubyid_lineno'>lineno</span> <span class='op'>+=</span> <span class='int'>1</span>
+    <span class='id identifier rubyid_line'>line</span> <span class='op'>=</span> <span class='id identifier rubyid_raw'>raw</span><span class='period'>.</span><span class='id identifier rubyid_chomp'>chomp</span>
+    <span class='kw'>next</span> <span class='kw'>if</span> <span class='id identifier rubyid_line'>line</span><span class='period'>.</span><span class='id identifier rubyid_empty?'>empty?</span> <span class='op'>||</span> <span class='id identifier rubyid_line'>line</span><span class='period'>.</span><span class='id identifier rubyid_start_with?'>start_with?</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>#</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+
+    <span class='kw'>begin</span>
+      <span class='kw'>yield</span> <span class='id identifier rubyid_parse_line'>parse_line</span><span class='lparen'>(</span><span class='id identifier rubyid_line'>line</span><span class='rparen'>)</span>
+    <span class='kw'>rescue</span> <span class='const'><span class='object_link'><a href="../MalformedLineError.html" title="Ucode::MalformedLineError (class)">MalformedLineError</a></span></span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_e'>e</span>
+      <span class='id identifier rubyid_e'>e</span><span class='period'>.</span><span class='id identifier rubyid_context'>context</span><span class='lbracket'>[</span><span class='symbol'>:file</span><span class='rbracket'>]</span> <span class='op'>||=</span> <span class='id identifier rubyid_path_str'>path_str</span>
+      <span class='id identifier rubyid_e'>e</span><span class='period'>.</span><span class='id identifier rubyid_context'>context</span><span class='lbracket'>[</span><span class='symbol'>:line</span><span class='rbracket'>]</span> <span class='op'>||=</span> <span class='id identifier rubyid_lineno'>lineno</span>
+      <span class='id identifier rubyid_raise'>raise</span>
+    <span class='kw'>end</span>
+  <span class='kw'>end</span>
+
+  <span class='kw'>nil</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Thu Jun 25 19:05:39 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.44 (ruby-3.4.8).
+</div>
+
+    </div>
+  </body>
+</html>

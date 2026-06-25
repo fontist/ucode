@@ -1,0 +1,7 @@
+# Fixture for Unihan_DictionaryIndices.txt — dictionary lookup indices.
+# Format: U+XXXX<TAB>kField<TAB>value
+U+3400	kCowrin	12.345
+U+3401	kCowrin	23.456
+U+4E00	kCowrin	1.7890
+U+4E00	kHanYu	12345.010
+U+9F9C	kHanYu	67890.020

@@ -1,0 +1,4 @@
+# Fixture for ScriptExtensions.txt — codepoints with multiple scripts.
+0028          ; Latn Grek Cyrl # Ps       LEFT PARENTHESIS
+005E          ; Latn Grek Cyrl Hebr # Sk  CIRCUMFLEX ACCENT
+0061          ; Latn          # Ll        LATIN SMALL LETTER A

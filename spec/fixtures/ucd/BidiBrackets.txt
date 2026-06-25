@@ -1,0 +1,5 @@
+# Fixture for BidiBrackets.txt — paired brackets with open/close types.
+0028; 0029; o
+0029; 0028; c
+005B; 005D; o
+005D; 005B; c

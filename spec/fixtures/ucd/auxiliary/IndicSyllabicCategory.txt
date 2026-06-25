@@ -1,0 +1,7 @@
+# Fixture for auxiliary/IndicSyllabicCategory.txt — Indic shaping syllabic type.
+0900..094F; Bindu
+0950; Other
+0951..0954; Cantillation_Mark
+0958..0963; Number_Joiner
+0966..096F; Number
+0980; Other

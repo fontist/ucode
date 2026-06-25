@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Module: Ucode::DbBuilder
+  
+    &mdash; ucode API Documentation
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "Ucode::DbBuilder";
+  relpath = '../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../_index.html">Index (D)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../Ucode.html" title="Ucode (module)">Ucode</a></span></span>
+     &raquo; 
+    <span class="title">DbBuilder</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Module: Ucode::DbBuilder
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/ucode/db_builder.rb
+</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>Builds the SQLite cache for one UCD version.</p>
+<p>Single entry point: <code>DbBuilder.build(version)</code>. Streams the
+Coordinator output through an IndexBuilder, then persists the
+coalesced block + script ranges into a SQLite DB at
+<code>Cache.sqlite_path(version)</code>.</p>
+<p><strong>Streaming</strong>: the Coordinator yields one CodePoint at a time; the
+IndexBuilder folds it into per-property accumulators. Peak memory
+is the in-progress accumulators (~10 MB for the full UCD) plus one
+CodePoint — never all 160k CodePoints at once.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div>
+
+
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#build-class_method" title="build (class method)">.<strong>build</strong>(version)  &#x21d2; Pathname </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Path to the built SQLite file.</p></div></span>
+  
+</li>
+
+      
+    </ul>
+    
+  
+
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="build-class_method">
+  
+    .<strong>build</strong>(version)  &#x21d2; <tt>Pathname</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns path to the built SQLite file.</p>
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>version</span>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Pathname</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>path to the built SQLite file</p></div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/ucode/db_builder.rb', line 56</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_build'>build</span><span class='lparen'>(</span><span class='id identifier rubyid_version'>version</span><span class='rparen'>)</span>
+  <span class='const'><span class='object_link'><a href="../Ucode.html" title="Ucode (module)">Ucode</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="VersionResolver.html" title="Ucode::VersionResolver (module)">VersionResolver</a></span></span><span class='period'>.</span><span class='id identifier rubyid_validate!'><span class='object_link'><a href="VersionResolver.html#validate!-class_method" title="Ucode::VersionResolver.validate! (method)">validate!</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_version'>version</span><span class='rparen'>)</span>
+
+  <span class='id identifier rubyid_ucd_dir'>ucd_dir</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="Cache.html" title="Ucode::Cache (module)">Cache</a></span></span><span class='period'>.</span><span class='id identifier rubyid_ucd_dir'><span class='object_link'><a href="Cache.html#ucd_dir-class_method" title="Ucode::Cache.ucd_dir (method)">ucd_dir</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_version'>version</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_unihan_dir'>unihan_dir</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="Cache.html" title="Ucode::Cache (module)">Cache</a></span></span><span class='period'>.</span><span class='id identifier rubyid_unihan_dir'><span class='object_link'><a href="Cache.html#unihan_dir-class_method" title="Ucode::Cache.unihan_dir (method)">unihan_dir</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_version'>version</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_db_path'>db_path</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="Cache.html" title="Ucode::Cache (module)">Cache</a></span></span><span class='period'>.</span><span class='id identifier rubyid_sqlite_path'><span class='object_link'><a href="Cache.html#sqlite_path-class_method" title="Ucode::Cache.sqlite_path (method)">sqlite_path</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_version'>version</span><span class='rparen'>)</span>
+
+  <span class='const'><span class='object_link'><a href="Cache.html" title="Ucode::Cache (module)">Cache</a></span></span><span class='period'>.</span><span class='id identifier rubyid_ensure_version_dir!'><span class='object_link'><a href="Cache.html#ensure_version_dir!-class_method" title="Ucode::Cache.ensure_version_dir! (method)">ensure_version_dir!</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_version'>version</span><span class='rparen'>)</span>
+
+  <span class='id identifier rubyid_builder'>builder</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="IndexBuilder.html" title="Ucode::IndexBuilder (class)">IndexBuilder</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="IndexBuilder.html#initialize-instance_method" title="Ucode::IndexBuilder#initialize (method)">new</a></span></span>
+  <span class='const'><span class='object_link'><a href="Coordinator.html" title="Ucode::Coordinator (class)">Coordinator</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="Coordinator.html#initialize-instance_method" title="Ucode::Coordinator#initialize (method)">new</a></span></span><span class='period'>.</span><span class='id identifier rubyid_each_codepoint'><span class='object_link'><a href="Coordinator.html#each_codepoint-instance_method" title="Ucode::Coordinator#each_codepoint (method)">each_codepoint</a></span></span><span class='lparen'>(</span><span class='label'>ucd_dir:</span> <span class='id identifier rubyid_ucd_dir'>ucd_dir</span><span class='comma'>,</span> <span class='label'>unihan_dir:</span> <span class='id identifier rubyid_unihan_dir'>unihan_dir</span><span class='rparen'>)</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_cp'>cp</span><span class='op'>|</span>
+    <span class='id identifier rubyid_builder'>builder</span><span class='period'>.</span><span class='id identifier rubyid_add'>add</span><span class='lparen'>(</span><span class='id identifier rubyid_cp'>cp</span><span class='rparen'>)</span>
+  <span class='kw'>end</span>
+
+  <span class='id identifier rubyid_write_db'>write_db</span><span class='lparen'>(</span><span class='id identifier rubyid_db_path'>db_path</span><span class='comma'>,</span> <span class='id identifier rubyid_version'>version</span><span class='comma'>,</span> <span class='id identifier rubyid_builder'>builder</span><span class='period'>.</span><span class='id identifier rubyid_blocks_index'>blocks_index</span><span class='comma'>,</span> <span class='id identifier rubyid_builder'>builder</span><span class='period'>.</span><span class='id identifier rubyid_scripts_index'>scripts_index</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_db_path'>db_path</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Thu Jun 25 19:05:38 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.44 (ruby-3.4.8).
+</div>
+
+    </div>
+  </body>
+</html>

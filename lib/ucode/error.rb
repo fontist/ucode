@@ -22,7 +22,8 @@ module Ucode
   #   │   └── Ucode::UnknownVersionError
   #   └── Ucode::GlyphError
   #       ├── Ucode::PdfRenderError
-  #       └── Ucode::GridDetectionError
+  #       ├── Ucode::GridDetectionError
+  #       └── Ucode::LastResortMissingError
   class Error < StandardError
     attr_reader :context
 
@@ -83,4 +84,8 @@ module Ucode
 
   # Grid detection couldn't anchor on codepoint labels.
   class GridDetectionError < GlyphError; end
+
+  # The Last Resort Font UFO source cannot be located or is missing a
+  # required artifact (cmap-f13.ttx, font.ufo/glyphs/, contents.plist).
+  class LastResortMissingError < GlyphError; end
 end

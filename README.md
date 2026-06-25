@@ -107,14 +107,11 @@ Then:
 cd site && npm install && npm run dev
 ```
 
-## Glyph extraction (experimental)
+## Glyph extraction (experimental in v0.1; concrete plan for v0.2)
 
 The `ucode glyphs` command and the `--include-glyphs` flag on `ucode build`
 are **opt-in and experimental in v0.1**. They emit per-codepoint `glyph.svg`
-files, but the current cell-extraction pipeline includes cell-border
-decorations alongside the actual character outline because the Code Charts
-PDFs composite the two into a single glyph definition. The output is
-therefore not yet suitable for end-user display.
+files today, but the output is not yet suitable for end-user display.
 
 To run the pipeline anyway (e.g. for development or benchmarking):
 
@@ -123,10 +120,52 @@ ucode glyphs 17.0.0 --to ./output --include-glyphs
 ucode build 17.0.0 --to ./output --include-glyphs
 ```
 
-Both emit a one-line experimental warning on stderr. The v0.2 plan is to
-either separate the border decoration from the character outline by
-post-processing the composite path, or to render glyphs directly from the
-Unicode Last Resort Font for codepoints without a real glyph.
+Both emit a one-line experimental warning on stderr.
+
+### Why v0.1 glyph output is wrong
+
+The Code Charts PDFs composite each cell's content — the cell-border
+decoration (L-shaped corner ticks + dashed edges) **and** the actual
+character outline — into a single glyph definition. `pdftocairo -svg` (or
+any other PDF→SVG renderer) faithfully emits that composite as one `<path>`,
+so the v0.1 cell extractor grabs border + character together. Trying to
+post-process that composite path (drop sub-paths that hug the cell edge,
+keep the largest interior cluster) is fragile because the border and the
+character overlap.
+
+### The v0.2 plan — two pillars
+
+The v0.1 cell-position resolution (`GridDetector` + `CellExtractor`) is
+correct — the right `<use>` element is selected. The fix is not to keep
+post-processing the rendered SVG; it is to **bypass the renderer entirely**
+and read the character outline straight from the source:
+
+1. **Real character glyphs — extract the subsetted fonts from the PDF.**
+   `CodeCharts.pdf` embeds 80+ subsetted fonts (`Uni*`/`UCS*` prefixes —
+   Unicode's naming convention for its per-block fonts, plus contributor
+   fonts like `MyriadPro-Bold` for row/column labels). Each font program
+   contains **only** the character outline — no cell-border decoration,
+   because the border is drawn as page content, not as part of the glyph.
+   The v0.2 pipeline extracts these font streams, parses them with
+   `ttfunk` (TrueType) / CFF parser (Type 1C), walks the ToUnicode CMap to
+   attribute each glyph ID to its codepoint, and renders the outline
+   directly to SVG. There is no "UCS.ttf" — that is just how the subsetted
+   blocks are named.
+
+2. **Last Resort placeholders — render directly from the UFO source.** For
+   codepoints whose chart cell shows a placeholder box (unassigned,
+   noncharacter, PUA), the chart glyph is a fallback drawn from Unicode's
+   [Last Resort Font](https://github.com/unicode-org/last-resort-font)
+   (SIL OFL 1.1). The Last Resort Font ships as a
+   [UFO](https://unifiedfontobject.org/) source — 380 `.glif` files (one
+   per Unicode block + a handful of special types) plus a Format 13 `cmap`
+   (`cmap-f13.ttx`) that maps codepoint ranges to glyph names. v0.2 reads
+   the `.glif` outlines directly and converts them to SVG, so the output
+   matches the placeholder box the Code Charts actually display.
+
+The two pillars are MECE: every codepoint in the charts is either a real
+character (pillar 1) or a Last Resort placeholder (pillar 2). The v0.1
+cell extractor is retired once both pillars ship.
 
 ## System dependencies
 

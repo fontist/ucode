@@ -63,15 +63,28 @@ see "Deferred" below.
 ### Deferred (v0.2)
 
 - **Per-codepoint SVG glyph extraction is experimental.** The
-  `Ucode::Glyphs` pipeline (`PdfFetcher`, `PageRenderer`, `GridDetector`,
-  `CellExtractor`, `Writer`, `MonolithPageMap`) is fully implemented and
-  tested, but the Code Charts PDFs composite the cell-border decorations
-  and the actual character outline into a single glyph definition, so the
-  current `CellExtractor` output includes both. The CLI gates the step
-  behind `--include-glyphs` (default off) and prints a warning. The v0.2
-  plan is either to post-process the composite path to separate the
-  border decoration from the character outline, or to render directly
-  from the Unicode Last Resort Font for codepoints that lack a real glyph.
+  `Ucode::Glyphs` pipeline shipped in v0.1 (`PdfFetcher`, `PageRenderer`,
+  `GridDetector`, `CellExtractor`, `Writer`, `MonolithPageMap`) is fully
+  implemented and tested, but the Code Charts PDFs composite the
+  cell-border decorations and the actual character outline into a single
+  glyph definition, so the current `CellExtractor` output includes both.
+  The CLI gates the step behind `--include-glyphs` (default off) and prints
+  a warning.
+- **v0.2 strategy — two pillars that bypass the cell extractor entirely:**
+  1. **Real character glyphs** are read straight from the subsetted fonts
+     embedded in `CodeCharts.pdf` (the `Uni*`/`UCS*`-prefixed per-block
+     fonts). Each font program contains only the character outline — the
+     cell-border decoration is page content, not part of the glyph — so
+     extracting the font stream + walking the ToUnicode CMap yields clean
+     per-codepoint SVGs without any post-processing of composite paths.
+  2. **Last Resort placeholders** (unassigned, noncharacter, PUA
+     codepoints) are rendered directly from the
+     [Last Resort Font](https://github.com/unicode-org/last-resort-font)
+     UFO source (380 `.glif` files + Format 13 `cmap`), matching the
+     placeholder box the Code Charts actually display.
+- The v0.1 cell-position resolution (`GridDetector` +
+  `CellExtractor#find_use_at`) is correct and is retained as the
+  authoritative cell→codepoint map; only the rendering path is replaced.
 
 ### Tooling
 

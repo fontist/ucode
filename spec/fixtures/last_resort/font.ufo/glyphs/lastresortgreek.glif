@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="lastresortgreek" format="1">
+  <advance width="2350"/>
+  <outline>
+    <contour>
+      <point x="500" y="900" type="curve"/>
+      <point x="200" y="600"/>
+      <point x="200" y="300"/>
+      <point x="500" y="0" type="curve"/>
+      <point x="800" y="300"/>
+      <point x="800" y="600"/>
+      <point x="500" y="900"/>
+    </contour>
+  </outline>
+</glyph>

@@ -20,5 +20,6 @@ module Ucode
     autoload :CellExtractor, "ucode/glyphs/cell_extractor"
     autoload :MonolithPageMap, "ucode/glyphs/monolith_page_map"
     autoload :Writer, "ucode/glyphs/writer"
+    autoload :LastResort, "ucode/glyphs/last_resort"
   end
 end

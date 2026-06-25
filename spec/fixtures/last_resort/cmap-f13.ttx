@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ttFont sfntVersion="\x00\x01\x00\x00" ttLibVersion="4.33">
+
+  <cmap>
+    <tableVersion version="0"/>
+    <cmap_format_13 platformID="0" platEncID="6" format="13" reserved="0" length="64" language="0" nGroups="3">
+      <map code="0x0" name="lastresortlatin"/>
+      <map code="0x1" name="lastresortlatin"/>
+      <map code="0x40" name="lastresortlatin"/>
+      <map code="0x41" name="lastresortlatin"/>
+      <map code="0x42" name="lastresortlatin"/>
+      <map code="0x372" name="lastresortgreek"/>
+      <map code="0x373" name="lastresortgreek"/>
+      <map code="0xfffe" name="lastresortnonabmp"/>
+      <map code="0xffff" name="lastresortnonabmp"/>
+    </cmap_format_13>
+    <cmap_format_4 platformID="3" platEncID="1" language="0">
+    </cmap_format_4>
+  </cmap>
+
+</ttFont>

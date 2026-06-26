@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "open3"
-require "set"
 require "pathname"
 
 require_relative "../../error"
@@ -33,8 +32,14 @@ module Ucode
       # block's font wins — the expected behavior for the Code Charts.
       class Catalog
         # @param source [Source]
-        def initialize(source)
+        # @param correlator_configs [Hash{Integer=>ContentStreamCorrelator::Config}]
+        #   maps a Type0 font's PDF object ID to the pillar-2 config to
+        #   use when the font has no /ToUnicode CMap. Empty by default
+        #   — fonts without ToUnicode and without a config are skipped
+        #   (the v0.1 behavior).
+        def initialize(source, correlator_configs: {})
           @source = source
+          @correlator_configs = correlator_configs
           @index = nil
         end
 
@@ -93,7 +98,7 @@ module Ucode
           type0_dicts = fetch_objects(type0_refs.keys)
           descendant_refs = []
           tounicode_refs = []
-          type0_refs.each do |font_obj_id, base_font|
+          type0_refs.each_key do |font_obj_id|
             d = type0_dicts[font_obj_id] || {}
             desc_ref = first_ref(d["DescendantFonts"])
             tu_ref = first_ref(d["ToUnicode"])
@@ -161,7 +166,8 @@ module Ucode
         def fetch_objects(obj_ids)
           return {} if obj_ids.empty?
 
-          args = ["mutool", "show", "-g", @source.pdf_to_s].concat(obj_ids.map(&:to_s))
+          args = ["mutool", "show", "-g",
+                  @source.pdf_to_s].concat(obj_ids.map(&:to_s))
           out, err, status = Open3.capture3(*args)
           unless status.success?
             raise Ucode::EmbeddedFontsMissingError,
@@ -196,12 +202,15 @@ module Ucode
           body = body.to_s
           {
             "BaseFont" => field_match(body, %r{/BaseFont/([^\s/<>]+)}),
-            "DescendantFonts" => field_match(body, %r{/DescendantFonts\s*\[\s*(\d+)\s+0\s+R\s*\]}),
+            "DescendantFonts" => field_match(body,
+                                             %r{/DescendantFonts\s*\[\s*(\d+)\s+0\s+R\s*\]}),
             "ToUnicode" => field_match(body, %r{/ToUnicode\s+(\d+)\s+0\s+R}),
-            "FontDescriptor" => field_match(body, %r{/FontDescriptor\s+(\d+)\s+0\s+R}),
+            "FontDescriptor" => field_match(body,
+                                            %r{/FontDescriptor\s+(\d+)\s+0\s+R}),
             "FontFile2" => field_match(body, %r{/FontFile2\s+(\d+)\s+0\s+R}),
             "FontFile3" => field_match(body, %r{/FontFile3\s+(\d+)\s+0\s+R}),
-            "CIDToGIDMap" => field_match(body, %r{/CIDToGIDMap(?:/([^\s/<>]+)|\s+(\d+)\s+0\s+R)}),
+            "CIDToGIDMap" => field_match(body,
+                                         %r{/CIDToGIDMap(?:/([^\s/<>]+)|\s+(\d+)\s+0\s+R)}),
           }.compact
         end
 
@@ -220,24 +229,27 @@ module Ucode
           Integer(value)
         end
 
-        def build_entry(font_obj_id:, base_font:, type0_dict:, descendant_dicts:, fontdesc_dicts:)
+        def build_entry(font_obj_id:, base_font:, type0_dict:,
+                        descendant_dicts:, fontdesc_dicts:)
           desc_ref = first_ref(type0_dict["DescendantFonts"])
           tu_ref = first_ref(type0_dict["ToUnicode"])
-          return nil unless desc_ref && tu_ref
+          return nil unless desc_ref
 
           desc_dict = descendant_dicts[desc_ref] || {}
-          fd_ref = first_ref(desc_dict["FontDescriptor"])
-          return nil unless fd_ref
+          fd_dict = fontdesc_for(desc_dict, fontdesc_dicts)
+          return nil unless fd_dict
 
-          fd_dict = fontdesc_dicts[fd_ref] || {}
           fontfile_obj_id, fontfile_kind = resolve_fontfile(fd_dict)
           return nil unless fontfile_obj_id
 
           cid_map_kind = resolve_cid_to_gid(desc_dict)
           return nil unless cid_map_kind
 
-          cmap_text = fetch_tounicode(tu_ref)
-          cp_to_gid = build_codepoint_map(ToUnicode.parse(cmap_text), cid_map_kind)
+          cp_to_gid = build_codepoint_to_gid(
+            font_obj_id: font_obj_id,
+            tu_ref: tu_ref,
+            cid_map_kind: cid_map_kind,
+          )
           return nil if cp_to_gid.empty?
 
           FontEntry.new(
@@ -252,13 +264,45 @@ module Ucode
           )
         end
 
+        def fontdesc_for(desc_dict, fontdesc_dicts)
+          fd_ref = first_ref(desc_dict["FontDescriptor"])
+          return nil unless fd_ref
+
+          fontdesc_dicts[fd_ref]
+        end
+
+        # Tier-1 path: parse the /ToUnicode CMap. Pillar-2 fallback:
+        # when no /ToUnicode is present, consult the correlator_configs
+        # registry — if the user supplied a config for this font, render
+        # the relevant page(s) to SVG and run positional correlation.
+        # Returns an empty hash when neither path produces a map (the
+        # caller treats that as "skip this font").
+        def build_codepoint_to_gid(font_obj_id:, tu_ref:, cid_map_kind:)
+          return {} if cid_map_kind != :identity
+
+          return codepoint_map_from_tounicode(tu_ref) if tu_ref
+
+          codepoint_map_from_correlator(font_obj_id)
+        end
+
+        def codepoint_map_from_tounicode(tu_ref)
+          cmap_text = fetch_tounicode(tu_ref)
+          build_codepoint_map(ToUnicode.parse(cmap_text), :identity)
+        end
+
+        def codepoint_map_from_correlator(font_obj_id)
+          config = @correlator_configs[font_obj_id]
+          return {} unless config
+
+          svg = render_pages(config.page_numbers)
+          ContentStreamCorrelator.new(config).correlate(svg)
+        end
+
         def resolve_fontfile(fd_dict)
           if fd_dict.key?("FontFile2")
             [first_ref(fd_dict["FontFile2"]), :ttf]
           elsif fd_dict.key?("FontFile3")
             [first_ref(fd_dict["FontFile3"]), :cff]
-          else
-            nil
           end
         end
 
@@ -271,8 +315,6 @@ module Ucode
           # is captured as the integer obj id — not supported yet.
           if raw.to_s == "Identity"
             :identity
-          else
-            nil
           end
         end
 
@@ -282,11 +324,38 @@ module Ucode
             ok = system("mutool", "show", "-o", tmp.path, "-b",
                         @source.pdf_to_s, obj_id.to_s,
                         out: File::NULL, err: File::NULL)
-            raise Ucode::EmbeddedFontsMissingError,
-                  "mutool show failed for ToUnicode obj=#{obj_id}" unless ok
+            unless ok
+              raise Ucode::EmbeddedFontsMissingError,
+                    "mutool show failed for ToUnicode obj=#{obj_id}"
+            end
 
             File.binread(tmp.path).force_encoding("UTF-8")
           end
+        end
+
+        # Render the given 1-based PDF pages to a single SVG string
+        # suitable for {ContentStreamCorrelator#correlate}. Each page
+        # is a separate `<svg>...</svg>` document; the correlator's
+        # `<use>` regex tolerates either a single concatenated blob or
+        # multiple documents. Output is captured from mutool's stdout.
+        def render_pages(page_numbers)
+          return "" if page_numbers.nil? || page_numbers.empty?
+
+          out, err, status = run_mutool_draw(page_numbers)
+          unless status.success?
+            raise Ucode::EmbeddedFontsMissingError,
+                  "mutool draw failed: #{err.strip}"
+          end
+
+          out
+        end
+
+        def run_mutool_draw(page_numbers)
+          Open3.capture3(
+            "mutool", "draw", "-F", "svg",
+            @source.pdf_to_s,
+            *page_numbers.map(&:to_s)
+          )
         end
 
         def build_codepoint_map(cid_to_cp, cid_map_kind)

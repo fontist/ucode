@@ -66,4 +66,42 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::Catalog do
       expect(catalog.send(:resolve_cid_to_gid, "CIDToGIDMap" => "999")).to be_nil
     end
   end
+
+  describe "#build_codepoint_to_gid (pillar 2 fallback)" do
+    # Catalog is constructed with correlator_configs mapping a font
+    # object ID to a ContentStreamCorrelator::Config. The render_pages
+    # method shells out to mutool; we exercise the dispatch logic via
+    # a real config object and verify that an absent tu_ref + absent
+    # config yields an empty map (preserving the v0.1 skip behavior).
+    let(:correlator_config) do
+      Ucode::Glyphs::EmbeddedFonts::ContentStreamCorrelator::Config.new(
+        label_font_ids: [3],
+        specimen_font_id: 4,
+        page_numbers: [2],
+      )
+    end
+
+    it "returns an empty map when tu_ref is nil and no config is registered" do
+      result = catalog.send(
+        :build_codepoint_to_gid,
+        font_obj_id: 999, tu_ref: nil, cid_map_kind: :identity,
+      )
+      expect(result).to eq({})
+    end
+
+    it "returns an empty map when cid_map_kind is not :identity" do
+      # Even with a config, non-Identity CIDToGIDMap fonts are skipped
+      # — the positional correlation yields CIDs, not GIDs, and we
+      # can't translate without parsing the CIDToGIDMap stream.
+      catalog_with_config = described_class.new(
+        source,
+        correlator_configs: { 999 => correlator_config },
+      )
+      result = catalog_with_config.send(
+        :build_codepoint_to_gid,
+        font_obj_id: 999, tu_ref: nil, cid_map_kind: nil,
+      )
+      expect(result).to eq({})
+    end
+  end
 end

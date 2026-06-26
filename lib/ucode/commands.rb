@@ -14,5 +14,6 @@ module Ucode
     autoload :LookupCommand, "ucode/commands/lookup"
     autoload :CacheCommand, "ucode/commands/cache"
     autoload :BuildCommand, "ucode/commands/build"
+    autoload :FontCoverageCommand, "ucode/commands/font_coverage"
   end
 end

@@ -152,6 +152,12 @@ and read the character outline straight from the source:
    directly to SVG. There is no "UCS.ttf" — that is just how the subsetted
    blocks are named.
 
+   **Status: implemented (v0.2 pillar 1).** `Ucode::Glyphs::EmbeddedFonts`
+   is the production pipeline. See
+   [How embedded font extraction works](#how-embedded-font-extraction-works)
+   below for the architecture (PDF font object graph, CID/GID/codepoint
+   correlation, pipeline components).
+
 2. **Last Resort placeholders — render directly from the UFO source.** For
    codepoints whose chart cell shows a placeholder box (unassigned,
    noncharacter, PUA), the chart glyph is a fallback drawn from Unicode's
@@ -167,12 +173,257 @@ The two pillars are MECE: every codepoint in the charts is either a real
 character (pillar 1) or a Last Resort placeholder (pillar 2). The v0.1
 cell extractor is retired once both pillars ship.
 
+## How embedded font extraction works
+
+The v0.1 cell extractor rendered each Code Charts page to SVG and grabbed
+the `<path>` that landed in a grid cell. That grabbed the cell-border
+decoration along with the character. v0.2 pillar 1
+(`Ucode::Glyphs::EmbeddedFonts`) bypasses the renderer entirely and reads
+the character outline straight from the embedded font program — which
+contains only the character, never the border.
+
+### The PDF font object graph
+
+Every modern Code Charts font is a Type0 (composite) font whose PDF object
+graph has three layers below the Type0 outer font:
+
+```
+Type0 font (referenced from page content streams)
+  /BaseFont          /CIAIIP+Uni2000Generalpunctuation
+  /Encoding          /Identity-H          ← 2-byte CID encoding
+  /DescendantFonts   [ <CIDFontType2 ref> ]
+  /ToUnicode         <stream ref>         ← CID → Unicode codepoint
+       │
+       ▼
+CIDFontType2 (the "inner" CID font)
+  /BaseFont          /CIAIIP+Uni2000Generalpunctuation
+  /CIDToGIDMap       /Identity            ← CID == GID (common case)
+  /FontDescriptor    <ref>
+       │
+       ▼
+FontDescriptor
+  /FontFile2         <stream ref>         ← TrueType program
+  /FontFile3         <stream ref>         ← CFF / Type 1C (alternative)
+```
+
+The font program (the binary stream `/FontFile2` or `/FontFile3` points at)
+is the actual outline data — the `glyf` table for TrueType, the
+`CharStrings` dict for CFF. Reading it gives you the character outline with
+zero PDF page content attached.
+
+### The three ID spaces
+
+Three different integer ID spaces flow through the graph, and the
+architecture's job is to chain them:
+
+| ID space | What it numbers | Where it lives |
+| --- | --- | --- |
+| **CID** | Code shown in the content stream (`Tj`/`TJ` operators) | per-font; with `/Identity-H` it is a 16-bit index |
+| **GID** | Glyph in the font program's outline table | the font program itself |
+| **Unicode codepoint** | The scalar value (U+XXXX) the glyph represents | the `/ToUnicode` CMap |
+
+Two PDF-side maps connect them:
+
+- **CID → GID** via `/CIDToGIDMap`. If `/Identity`, they are equal.
+  Otherwise it is a binary stream lookup table (which ucode does not
+  currently parse — fonts that need it are skipped).
+- **CID → Unicode codepoint** via the `/ToUnicode` CMap stream
+  (Adobe Technical Note #5014). This is the same map the PDF viewer uses
+  to make text selectable and searchable.
+
+The third map — **GID → outline** — lives in the font program itself,
+queried by GID.
+
+### Correlation walk: codepoint → outline
+
+To render U+2010 (HYPHEN) the pipeline chains all three maps:
+
+1. **codepoint → FontEntry.** `Catalog#lookup(0x2010)` returns the
+   FontEntry whose ToUnicode CMap mentions U+2010 —
+   `CIAIIP+Uni2000Generalpunctuation`.
+2. **codepoint → GID.** `FontEntry#gid_for(0x2010)` looks up the per-font
+   `codepoint_to_gid` Hash. That Hash was built by inverting the parsed
+   ToUnicode `{cid => cp}` to `{cp => cid}`, then (with
+   `/CIDToGIDMap /Identity`) treating `cid == gid`. So GID = the CID the
+   CMap named.
+3. **GID → outline.** `FontEntry#accessor.outline_for_id(gid)` asks
+   fontisan for the outline at that GID — returns a `GlyphOutline` with
+   contours, control points, and bbox.
+4. **outline → SVG.** `Svg` walks `outline.to_commands`, emits each
+   command with y negated (fonts grow up, SVG grows down), wraps in a
+   viewBox padded 8% around the bbox, and produces a standalone XML
+   document.
+
+For U+2010 specifically, the ToUnicode CMap of
+`CIAIIP+Uni2000Generalpunctuation` contains:
+
+```
+1 beginbfchar
+<000A> <2010>
+endbfchar
+```
+
+CID `0x000A` → Unicode `U+2010`. With Identity CIDToGIDMap, GID = CID =
+10. The renderer asks fontisan for the outline at GID 10.
+
+**Why this is authoritative.** The ToUnicode CMap is the same data the
+PDF viewer uses to make text selectable and searchable. The Code Charts
+authors generated it when subsetting the font; it tells you exactly which
+glyph represents which codepoint. We are not guessing from glyph shape or
+grid position — we are reading the same correlation table the PDF itself
+uses.
+
+### Pipeline components
+
+```
+                  ┌──────────────────────────────────────┐
+                  │ Source                                │
+                  │  resolves CodeCharts.pdf + cache_dir │
+                  └──────────────┬───────────────────────┘
+                                 │
+                                 ▼
+                  ┌──────────────────────────────────────┐
+                  │ Catalog                               │
+                  │  walks PDF via mutool →               │
+                  │  builds { codepoint => FontEntry }    │
+                  └────────┬──────────────┬───────────────┘
+                           │              │
+                           ▼              ▼
+              ┌──────────────────┐  ┌──────────────────────┐
+              │ ToUnicode        │  │ FontEntry             │
+              │  parse CMap →    │  │  lazy fontisan accessor│
+              │  { cid => cp }   │  │  + codepoint_to_gid   │
+              └──────────────────┘  └──────────┬───────────┘
+                                               │ on first lookup
+                                               ▼
+                          ┌────────────────────────────────────┐
+                          │ mutool show -o <tmp> -b            │
+                          │   extracts /FontFile2 or /FontFile3│
+                          │   stream → cache_dir/<font>.ttf    │
+                          └────────────────┬───────────────────┘
+                                           │
+                                           ▼
+                          ┌────────────────────────────────────┐
+                          │ fontisan FontLoader                │
+                          │   parses glyf / CharStrings        │
+                          │   → GlyphAccessor                  │
+                          │   → OutlineExtractor               │
+                          │   → GlyphOutline#to_commands       │
+                          └────────────────┬───────────────────┘
+                                           │
+                                           ▼
+                          ┌────────────────────────────────────┐
+                          │ Svg                                │
+                          │   y-flip, viewBox + 8% padding,    │
+                          │   standalone XML                   │
+                          └────────────────────────────────────┘
+```
+
+**`Source`** — resolves the PDF path (`pdf:` arg →
+`UCODE_CODE_CHARTS_PDF` env → `<gem_root>/CodeCharts.pdf`) and the cache
+directory for extracted font programs (same pattern,
+`UCODE_PDF_FONT_CACHE` env, default `<gem_root>/data/pdf-fonts/`). Raises
+`EmbeddedFontsMissingError` when the resolved PDF doesn't exist.
+
+**`Catalog`** — walks the PDF once via `mutool` and builds the global
+`{codepoint => FontEntry}` index. Discovery happens in five batched
+`mutool` calls:
+
+- `mutool info CodeCharts.pdf` — lists every Type0 font and its object ID.
+- `mutool show -g <pdf> <id1> <id2> ...` — batched fetch of Type0 dicts.
+- Same for descendant CIDFont dicts.
+- Same for FontDescriptors.
+- Per-font `mutool show -o <tmp> -b <pdf> <tu_ref>` — fetches each
+  ToUnicode stream (cannot be batched because each is a separate binary
+  stream).
+
+PDF dict parsing is **not** a full grammar walk — instead, `Catalog`
+regex-extracts each field it needs (`/BaseFont`, `/DescendantFonts[<ref>]`,
+`/ToUnicode <ref>`, `/FontDescriptor <ref>`, `/FontFile2/3 <ref>`,
+`/CIDToGIDMap /Identity|<ref>`). The targeted approach is robust to the
+`<<...>>`/`[...]` nesting that breaks naive whitespace-split parsers.
+
+**`ToUnicode`** — parses a CMap stream text into a frozen
+`{cid => codepoint}` Hash. Supports:
+
+- `beginbfchar` / `endbfchar` — one-to-one `<cid> <uni>` pairs.
+- `beginbfrange` / `endbfrange` — two forms:
+  - `<lo> <hi> <start>` — cids `lo..hi` map to consecutive codepoints
+    starting at `start`.
+  - `<lo> <hi> [<u1> ... <un>]` — explicit per-cid codepoints within the
+    range.
+- UTF-16 surrogate-pair decoding — 8 hex digits (e.g. `D83DDE00`) decode
+  to one astral codepoint (U+1F600).
+
+`codespacerange` and `notdefrange` blocks are ignored; multi-codepoint
+targets (ligatures) take only the first codepoint.
+
+**`FontEntry`** — value object per Type0 font, holds the identity
+(`base_font`, object IDs), the kind of font program (`:ttf` or `:cff`),
+the resolved `cid_to_gid_map` (`:identity` or nil), and the frozen
+`codepoint_to_gid` Hash. The fontisan accessor is built lazily on first
+`#accessor` call: extracts the font stream via `mutool show -o <tmp> -b`
+to a `Tempfile`, atomically moves it into the cache (`FileUtils.mv`), then
+loads via `Fontisan::FontLoader`. Cache hits skip extraction entirely;
+cache files are invalidated by comparing mtime against the source PDF.
+
+**`Svg`** — converts a `GlyphOutline` into a standalone SVG document. Two
+coordinate transforms happen at emit time: y-negation (font space y grows
+up, SVG y grows down) and viewBox computation (bbox plus 8% padding on
+each side, y-flipped). Walks `outline.to_commands` and emits
+`M`/`L`/`Q`/`Z` directly — no intermediate path string is parsed back.
+Emits a `<title>` of the form `U+XXXX (Code Charts: <base_font>)` for
+debugging.
+
+**`Renderer`** — thin orchestrator: `Catalog#lookup` →
+`FontEntry#gid_for` → `FontEntry#accessor.outline_for_id` → `Svg#to_s`.
+Returns a `Result` struct (`codepoint`, `base_font`, `gid`, `svg`) on
+success or nil on any miss.
+
+**`Writer`** — iterates codepoints (defaults to `Catalog#codepoints`),
+calls `Renderer#render`, writes `glyph.svg` into the per-codepoint output
+folder. Idempotent via `Repo::AtomicWrites` (content-hash compare;
+existing identical files are left untouched). Returns a tally
+`{written:, skipped:, missing:, total:}`. `block_lookup:` is a callable
+that maps a codepoint to its original block name (verbatim from
+`Blocks.txt`) — codepoints returning nil are skipped.
+
+### What pillar 1 does not cover
+
+Pillar 1 handles only the fonts where correlation is unambiguous:
+
+- **Label fonts** (`MyriadPro-Bold` and friends) — these draw row/column
+  header text, not character glyphs. They are not Type0 with a ToUnicode
+  CMap, so they are invisible to discovery.
+- **Type0 fonts without `/ToUnicode`** — older subset practice. Without
+  the CMap we cannot attribute a glyph to a codepoint, so the font is
+  skipped. These codepoints fall back to pillar 2 (Last Resort).
+- **Stream-form `/CIDToGIDMap`** — a binary lookup table. Treated as
+  unsupported; the font is skipped.
+- **Bare CFF streams fontisan does not yet recognize** — a separate
+  fontisan-side issue; flagged for investigation.
+
+Code Charts cells not covered by pillar 1 are exactly the cells whose
+character is not drawn from the embedded subsetted fonts — either a label
+or a placeholder. Pillar 2 (Last Resort UFO) handles the placeholder case;
+the small remainder are correctly absent from the dataset.
+
 ## System dependencies
 
 - Ruby ≥ 3.1
-- `pdftocairo` (poppler) — only required for the experimental `glyphs`
-  command. Alternatives (`mutool`, `pdf2svg`, `dvisvgm`) are auto-detected.
-- `pdftk` — only required for the `glyphs` command's monolith fallback path.
+- `mupdf-tools` (provides the `mutool` binary) — required for **v0.2 pillar 1
+  glyph extraction** (the default pipeline). `mutool` enumerates the subsetted
+  fonts embedded in `CodeCharts.pdf` and extracts their font program streams
+  for outline parsing. Install via Homebrew with `brew install mupdf-tools`,
+  or via apt with `apt install mupdf-tools`.
+- `fontisan` Ruby gem — pulled in automatically through the `Gemfile`; used
+  by pillar 1 to parse extracted TrueType (`.ttf`) and CFF/Type 1C font
+  programs and emit per-glyph outline data (contours, control points, bbox).
+- `pdftocairo` (poppler) — only required for the experimental v0.1
+  `glyphs` cell-extractor path. Alternatives (`pdf2svg`, `dvisvgm`) are
+  auto-detected.
+- `pdftk` — only required for the v0.1 `glyphs` command's monolith fallback
+  path.
 
 ## Architecture
 

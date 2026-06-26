@@ -40,6 +40,8 @@ module Ucode
       autoload :ToUnicode, "ucode/glyphs/embedded_fonts/tounicode"
       autoload :FontEntry, "ucode/glyphs/embedded_fonts/font_entry"
       autoload :Catalog, "ucode/glyphs/embedded_fonts/catalog"
+      autoload :ContentStreamCorrelator,
+               "ucode/glyphs/embedded_fonts/content_stream_correlator"
       autoload :Svg, "ucode/glyphs/embedded_fonts/svg"
       autoload :Renderer, "ucode/glyphs/embedded_fonts/renderer"
       autoload :Writer, "ucode/glyphs/embedded_fonts/writer"

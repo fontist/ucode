@@ -21,5 +21,7 @@ module Ucode
     autoload :MonolithPageMap, "ucode/glyphs/monolith_page_map"
     autoload :Writer, "ucode/glyphs/writer"
     autoload :LastResort, "ucode/glyphs/last_resort"
+    autoload :EmbeddedFonts, "ucode/glyphs/embedded_fonts"
+    autoload :RealFonts, "ucode/glyphs/real_fonts"
   end
 end

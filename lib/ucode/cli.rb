@@ -221,5 +221,52 @@ module Ucode
       )
       puts JSON.pretty_generate(result)
     end
+
+    # ─────────────── font-coverage ───────────────
+    desc "font-coverage FONT [FONT...]", "Audit Unicode 17 block coverage for one or more fonts"
+    long_desc <<~LONG
+      Each FONT argument is either a fontist formula name (resolved via
+      `Fontist::Font.find` then `install`) or `label=/path/to/font.ttf`
+      (uses the local file directly). For every font, walks the cmap via
+      fontisan and emits per-Unicode-17-block coverage to
+      `<to>/font_coverage/<label>.json`.
+
+      Examples:
+
+        ucode font-coverage Lentariso=/tmp/lentariso/TTFs/Lentariso-Re.ttf \\
+                             Kedebideri=/tmp/kedebideri/Kedebideri-3.001/Kedebideri-Regular.ttf
+
+        ucode font-coverage Kedebideri  # resolves + installs via fontist
+    LONG
+    option :to, type: :string, default: "./output"
+    option :no_install, type: :boolean, default: false,
+                        desc: "Don't auto-install missing fonts via fontist"
+    def font_coverage(*fonts)
+      raise Thor::Error, "Provide at least one font" if fonts.empty?
+
+      results = Commands::FontCoverageCommand.new.call(
+        fonts,
+        output_root: options[:to],
+        install: !options[:no_install],
+      )
+      puts JSON.pretty_generate(results.map { |r| result_to_h(r) })
+    end
+
+    private
+
+    def result_to_h(result)
+      if result.error
+        { spec: result.spec, error: result.error }
+      else
+        {
+          spec: result.spec,
+          label: result.located.name,
+          source: result.located.path.to_s,
+          via: result.located.via,
+          output_path: result.output_path.to_s,
+          complete_blocks: result.complete_blocks,
+        }
+      end
+    end
   end
 end

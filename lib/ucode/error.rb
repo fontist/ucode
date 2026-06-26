@@ -23,7 +23,8 @@ module Ucode
   #   └── Ucode::GlyphError
   #       ├── Ucode::PdfRenderError
   #       ├── Ucode::GridDetectionError
-  #       └── Ucode::LastResortMissingError
+  #       ├── Ucode::LastResortMissingError
+  #       └── Ucode::EmbeddedFontsMissingError
   class Error < StandardError
     attr_reader :context
 
@@ -88,4 +89,8 @@ module Ucode
   # The Last Resort Font UFO source cannot be located or is missing a
   # required artifact (cmap-f13.ttx, font.ufo/glyphs/, contents.plist).
   class LastResortMissingError < GlyphError; end
+
+  # The Code Charts PDF (per-block or monolith) cannot be located, or
+  # `mutool` is not installed on the PATH.
+  class EmbeddedFontsMissingError < GlyphError; end
 end

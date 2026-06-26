@@ -14,3 +14,6 @@ group :development do
   gem "simplecov"
   gem "yard"
 end
+
+# Local sibling checkout for in-development fontisan (glyph extraction).
+gem "fontisan", "~> 0.2", path: "../fontisan" if Dir.exist?("../fontisan")

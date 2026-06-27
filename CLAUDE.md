@@ -122,13 +122,27 @@ Five concerns, each isolated:
    knows its file's specific column layout. **All parsers stream** — read line by line,
    never load whole files into memory.
 
-3. **`Ucode::Glyphs`** — converts Code Charts PDF pages into per-codepoint SVGs.
-   Pipeline: fetch per-block PDF into `data/pdfs/U<XXXX>.pdf` → render page to SVG paths
-   (`mutool draw -F svg` / `dvisvgm --pdf --no-fonts` / `pdf2svg`, to be benchmarked) →
-   detect the chart grid (origin from row codepoint labels printed next to each row) → for
-   each cell, lift the vector paths whose bounding-box centre lies inside that cell →
-   normalize viewBox and write `glyph.svg`. This is **vector extraction, not OCR** — never
-   run OCR.
+3. **`Ucode::Glyphs`** — produces an SVG glyph per codepoint via the
+   **4-tier sourcing strategy** (see `docs/architecture.md` for the full
+   reference; lower tiers are fallbacks):
+   - **Tier 1** — `RealFonts::*`: real-font cmap via `fontist` (discovery)
+     + `fontisan` (parsing). Highest fidelity.
+   - **Pillar 1** — `EmbeddedFonts::Catalog`: PDF-embedded CIDFont +
+     `/ToUnicode` CMap. Walks the Type0 → CIDFont → FontDescriptor →
+     FontFile2/3 object graph.
+   - **Pillar 2** — `EmbeddedFonts::ContentStreamCorrelator`: PDF
+     content-stream positional correlation for CIDFonts without
+     `/ToUnicode` (renders page to SVG, partitions labels from specimens,
+     matches positionally).
+   - **Pillar 3** — `LastResort::*`: Last Resort UFO `.glif` outlines for
+     placeholders (unassigned, PUA, noncharacter) and any codepoint no
+     higher tier produced a glyph for.
+   The v0.1 cell extractor (`GridDetector` + `CellExtractor`) is the
+   retired path: it rendered each page to SVG via `mutool draw -F svg` /
+   `dvisvgm` / `pdf2svg` and lifted the path inside a chart grid cell, but
+   compositing made the output unusable. The 4-tier pipeline bypasses the
+   renderer entirely. This is **vector extraction, not OCR** — never run
+   OCR.
 
 4. **`Ucode::Repo`** — writes the output tree under `output/`. **One folder per codepoint,
    no exceptions** (CJK included — ~45 k ideograph folders):

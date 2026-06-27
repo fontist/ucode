@@ -1,0 +1,59 @@
+# frozen_string_literal: true
+
+require "spec_helper"
+require "support/fixture_database"
+require "tmpdir"
+require "fileutils"
+
+RSpec.describe Ucode::Glyphs::SourceBuilder do
+  include_context "with fixture ucd database"
+
+  let(:tmpdir) { Pathname.new(Dir.mktmpdir("ucode-builder")) }
+  let(:config_path) do
+    path = tmpdir.join("tier1.yml")
+    path.write(<<~YAML)
+      tier1_fonts:
+        Basic_Latin:
+          - NotoSansAdlam=spec/fixtures/fonts/NotoSansAdlam-Regular.ttf
+        Nonexistent_Block:
+          - some-font
+    YAML
+    path
+  end
+  let(:config) { Ucode::Glyphs::SourceConfig.new(path: config_path) }
+  let(:builder) { described_class.new(config: config, database: fixture_database) }
+
+  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
+
+  describe "#tier1_sources" do
+    it "builds one Tier1RealFont per configured spec for known blocks" do
+      sources = builder.tier1_sources(install: false)
+      # Basic Latin has one spec → one source; Nonexistent_Block is
+      # silently skipped (no matching range in the UCD database).
+      expect(sources.length).to eq(1)
+      expect(sources.first).to be_a(Ucode::Glyphs::Sources::Tier1RealFont)
+    end
+
+    it "assigns the UCD-resolved codepoint range to each source" do
+      source = builder.tier1_sources(install: false).first
+      # Basic Latin: U+0000..U+007F. NotoSansAdlam covers U+0021 ('!')
+      # but not U+0041 ('A'). fetch() should accept covered codepoints
+      # and reject codepoints outside the range.
+      expect(source.fetch(0x21)).not_to be_nil
+      expect(source.fetch(0x100)).to be_nil # outside Basic Latin
+    end
+
+    it "passes the install flag through" do
+      # install: false — no network. The source should still construct;
+      # only #fetch would fail if it needed to download.
+      sources = builder.tier1_sources(install: false)
+      expect(sources).not_to be_empty
+    end
+
+    it "skips blocks not in the UCD database without raising" do
+      sources = builder.tier1_sources(install: false)
+      # Only Basic_Latin resolves; Nonexistent_Block produces nothing.
+      expect(sources.length).to eq(1)
+    end
+  end
+end

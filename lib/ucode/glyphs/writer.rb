@@ -177,7 +177,13 @@ module Ucode
       def render_page(pdf_path, page_num)
         Dir.mktmpdir do |dir|
           out = File.join(dir, "p#{page_num}.svg")
-          result = @renderer.render(Pathname.new(pdf_path), page_num, out)
+          begin
+            result = @renderer.render(Pathname.new(pdf_path), page_num, out)
+          rescue Ucode::PdfRenderError
+            # Graceful degradation: a broken renderer (e.g. mutool on a
+            # host without LCMS) yields no_grid → placeholders downstream.
+            next nil
+          end
           return nil unless result == :ok && File.exist?(out)
 
           Nokogiri::XML(File.read(out))

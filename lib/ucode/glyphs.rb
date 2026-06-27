@@ -23,5 +23,10 @@ module Ucode
     autoload :LastResort, "ucode/glyphs/last_resort"
     autoload :EmbeddedFonts, "ucode/glyphs/embedded_fonts"
     autoload :RealFonts, "ucode/glyphs/real_fonts"
+    autoload :Source, "ucode/glyphs/source"
+    autoload :Resolver, "ucode/glyphs/resolver"
+    autoload :SourceConfig, "ucode/glyphs/source_config"
+    autoload :SourceBuilder, "ucode/glyphs/source_builder"
+    autoload :Sources, "ucode/glyphs/sources"
   end
 end

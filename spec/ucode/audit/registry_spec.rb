@@ -22,6 +22,7 @@ RSpec.describe Ucode::Audit::Registry do
       Ucode::Audit::Extractors::ColorCapabilities,
       Ucode::Audit::Extractors::VariationDetail,
       Ucode::Audit::Extractors::OpenTypeLayout,
+      Ucode::Audit::Extractors::Aggregations,
     ]
   end
 
@@ -32,7 +33,7 @@ RSpec.describe Ucode::Audit::Registry do
       expect(visited).to eq(brief_extractors)
     end
 
-    it "iterates the cheap + expensive extractors in :full mode (TODO 10 appends Aggregations)" do
+    it "iterates the cheap + expensive extractors plus Aggregations in :full mode" do
       visited = []
       described_class.each(mode: :full) { |e| visited << e }
       expect(visited).to eq(ordered_extractors)
@@ -77,7 +78,7 @@ RSpec.describe Ucode::Audit::Registry do
       expect(described_class::BRIEF_EXTRACTORS).to eq(brief_extractors)
     end
 
-    it "ORDERED_EXTRACTORS lists 10 extractors (TODO 10 appends Aggregations)" do
+    it "ORDERED_EXTRACTORS lists 11 extractors (5 cheap + 5 expensive + Aggregations)" do
       expect(described_class::ORDERED_EXTRACTORS).to eq(ordered_extractors)
     end
   end
@@ -122,7 +123,12 @@ RSpec.describe Ucode::Audit::Registry do
     let(:context) do
       Ucode::Audit::Context.new(
         font: font, font_path: font_path, font_index: 0,
-        num_fonts_in_source: 1, options: {}
+        num_fonts_in_source: 1,
+        # Use a bogus UCD version so the Aggregations extractor degrades
+        # gracefully regardless of whether a real cache exists on the
+        # developer's machine. The other 10 extractors don't touch the
+        # baseline.
+        options: { ucd_version: "99.9.9" },
       )
     end
 
@@ -140,7 +146,10 @@ RSpec.describe Ucode::Audit::Registry do
       expect(report.metrics).to be_a(Ucode::Models::Audit::Metrics)
       expect(report.hinting).to be_a(Ucode::Models::Audit::Hinting)
       expect(report.color_capabilities).to be_a(Ucode::Models::Audit::ColorCapabilities)
-      expect(report.baseline).to be_nil
+      # Aggregations extractor ran but degraded: no baseline for 99.9.9.
+      expect(report.blocks).to eq([])
+      expect(report.scripts).to eq([])
+      expect(report.plane_summaries).to eq([])
     end
   end
 end

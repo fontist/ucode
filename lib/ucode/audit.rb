@@ -19,5 +19,9 @@ module Ucode
     autoload :Registry, "ucode/audit/registry"
     autoload :Extractors, "ucode/audit/extractors"
     autoload :CodepointRangeCoalescer, "ucode/audit/codepoint_range_coalescer"
+    autoload :BlockAggregator, "ucode/audit/block_aggregator"
+    autoload :ScriptAggregator, "ucode/audit/script_aggregator"
+    autoload :PlaneAggregator, "ucode/audit/plane_aggregator"
+    autoload :DiscrepancyDetector, "ucode/audit/discrepancy_detector"
   end
 end

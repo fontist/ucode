@@ -14,8 +14,8 @@ module Ucode
     module Registry
       # Full audit: every concern. The five cheap extractors come from
       # TODO 08; the five expensive extractors come from TODO 09. The
-      # Aggregations extractor (TODO 10) is still pending — it sits
-      # last because it depends on UCD baseline resolution.
+      # Aggregations extractor (TODO 10) sits last because it depends
+      # on UCD baseline resolution.
       ORDERED_EXTRACTORS = [
         Extractors::Provenance,
         Extractors::Identity,
@@ -27,6 +27,7 @@ module Ucode
         Extractors::ColorCapabilities,
         Extractors::VariationDetail,
         Extractors::OpenTypeLayout,
+        Extractors::Aggregations,
       ].freeze
 
       # Brief audit: cheap, name-table-only extractors. Used by

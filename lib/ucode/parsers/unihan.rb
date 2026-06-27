@@ -39,8 +39,10 @@ module Ucode
 
       # Stream record: one Unihan line. Internal pipeline data — a Struct
       # avoids lutaml-model ceremony for transient values. The final
-      # `UnihanEntry` model carries the merged, persisted shape.
-      Record = Struct.new(:cp, :field, :values, keyword_init: true) do
+      # `UnihanEntry` model carries the merged, persisted shape. The
+      # member is `field_values` (not `values`) to avoid overriding
+      # `Struct#values` (the array of all member values).
+      Record = Struct.new(:cp, :field, :field_values, keyword_init: true) do
         def cp_id
           format("U+%04X", cp)
         end
@@ -114,7 +116,7 @@ module Ucode
           Record.new(
             cp: parse_hex_cp(cp_str[2..]),
             field: field.strip,
-            values: value.strip.split
+            field_values: value.strip.split
           )
         end
       end

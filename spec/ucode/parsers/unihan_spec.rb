@@ -39,29 +39,29 @@ RSpec.describe Ucode::Parsers::Unihan do
     expect(records(readings_path).size).to eq(9)
   end
 
-  it "yields Record structs with cp, field, values" do
+  it "yields Record structs with cp, field, field_values" do
     record = records(readings_path).first
     expect(record).to be_a(described_class::Record)
     expect(record.cp).to be_an(Integer)
     expect(record.field).to be_a(String)
-    expect(record.values).to be_an(Array)
+    expect(record.field_values).to be_an(Array)
   end
 
   it "parses codepoint and field name from the TAB-separated line" do
     record = records(radical_strokes).find { |r| r.field == "kRSKangXi" && r.cp == 0x4E00 }
     expect(record.cp).to eq(0x4E00)
     expect(record.cp_id).to eq("U+4E00")
-    expect(record.values).to eq(["1.0"])
+    expect(record.field_values).to eq(["1.0"])
   end
 
   it "splits space-separated values into arrays" do
     record = records(radical_strokes).find { |r| r.cp == 0x9F9C && r.field == "kRSUnicode" }
-    expect(record.values).to eq(["214.18", "213.19"])
+    expect(record.field_values).to eq(["214.18", "213.19"])
   end
 
   it "splits prose kDefinition into whitespace tokens (per TODO contract)" do
     record = records(readings_path).find { |r| r.cp == 0x4E00 && r.field == "kDefinition" }
-    expect(record.values).to eq(%w[one; one; the same])
+    expect(record.field_values).to eq(%w[one; one; the same])
   end
 
   describe ".each_in_dir" do
@@ -104,7 +104,7 @@ RSpec.describe Ucode::Parsers::Unihan do
   describe "acceptance criterion: kTotalStrokes for U+3400" do
     it "yields a record with values ['5']" do
       record = records(dict_like).find { |r| r.cp == 0x3400 && r.field == "kTotalStrokes" }
-      expect(record.values).to eq(["5"])
+      expect(record.field_values).to eq(["5"])
     end
   end
 
@@ -113,7 +113,7 @@ RSpec.describe Ucode::Parsers::Unihan do
       grouped = {}
       described_class.each_in_dir(fixtures_dir) do |record|
         grouped[record.cp] ||= {}
-        grouped[record.cp][record.field] = record.values
+        grouped[record.cp][record.field] = record.field_values
       end
 
       turtle_cp = 0x9F9C

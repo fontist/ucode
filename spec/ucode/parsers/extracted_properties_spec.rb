@@ -19,17 +19,17 @@ RSpec.describe Ucode::Parsers::ExtractedProperties do
     expect(records.size).to eq(8)
   end
 
-  it "captures first, last, and value for a range row" do
+  it "captures range_first, range_last, and value for a range row" do
     control = records.find { |r| r.value == "Cc" }
-    expect(control.first).to eq(0x0000)
-    expect(control.last).to eq(0x001F)
+    expect(control.range_first).to eq(0x0000)
+    expect(control.range_last).to eq(0x001F)
     expect(control.single?).to eq(false)
   end
 
-  it "marks single-codepoint rows as single? with first == last" do
+  it "marks single-codepoint rows as single? with range_first == range_last" do
     space = records.find { |r| r.value == "Zs" }
-    expect(space.first).to eq(0x0020)
-    expect(space.last).to eq(0x0020)
+    expect(space.range_first).to eq(0x0020)
+    expect(space.range_last).to eq(0x0020)
     expect(space.single?).to eq(true)
   end
 

@@ -23,20 +23,21 @@ module Ucode
     class ExtractedProperties < Base
       # Lightweight record yielded by `.each_record`. The Coordinator
       # consumes these immediately; no need for full lutaml-model
-      # overhead.
-      Tuple = Struct.new(:first, :last, :value, keyword_init: true) do
+      # overhead. Members are named `range_first` / `range_last` (not
+      # `first` / `last`) to avoid overriding `Enumerable#first`.
+      Tuple = Struct.new(:range_first, :range_last, :value, keyword_init: true) do
         # The inclusive Range of codepoints this assignment covers.
         def range
-          Range.new(first, last)
+          Range.new(range_first, range_last)
         end
 
         # Enumerator over every codepoint id in this tuple's range.
         def cp_ids
-          (first..last).map { |cp| format("U+%04X", cp) }
+          (range_first..range_last).map { |cp| format("U+%04X", cp) }
         end
 
         def single?
-          first == last
+          range_first == range_last
         end
       end
 
@@ -62,9 +63,9 @@ module Ucode
 
         def build_tuple(range, value)
           if range.is_a?(Range)
-            Tuple.new(first: range.first, last: range.last, value: value)
+            Tuple.new(range_first: range.first, range_last: range.last, value: value)
           else
-            Tuple.new(first: range, last: range, value: value)
+            Tuple.new(range_first: range, range_last: range, value: value)
           end
         end
       end

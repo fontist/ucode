@@ -38,71 +38,71 @@ RSpec.describe Ucode::Parsers::Auxiliary do
     end
   end
 
-  it "yields Tuple instances with first, last, value" do
+  it "yields Tuple instances with range_first, range_last, value" do
     records = described_class.each_record(grapheme_path).to_a
-    a = records.find { |r| r.value == "Other" && r.first == 0x0041 }
+    a = records.find { |r| r.value == "Other" && r.range_first == 0x0041 }
     expect(a).to be_a(Ucode::Parsers::ExtractedProperties::Tuple)
-    expect(a.last).to eq(0x005A)
+    expect(a.range_last).to eq(0x005A)
   end
 
   describe "acceptance samples per file" do
     it "GraphemeBreakProperty yields Other for U+0041" do
-      record = described_class.each_record(grapheme_path).to_a.find { |r| r.first == 0x0041 }
+      record = described_class.each_record(grapheme_path).to_a.find { |r| r.range_first == 0x0041 }
       expect(record.value).to eq("Other")
     end
 
     it "WordBreakProperty yields ALetter for U+0041" do
-      record = described_class.each_record(word_path).to_a.find { |r| r.first == 0x0041 }
+      record = described_class.each_record(word_path).to_a.find { |r| r.range_first == 0x0041 }
       expect(record.value).to eq("ALetter")
     end
 
     it "SentenceBreakProperty yields Upper for U+0041" do
-      record = described_class.each_record(sentence_path).to_a.find { |r| r.first == 0x0041 }
+      record = described_class.each_record(sentence_path).to_a.find { |r| r.range_first == 0x0041 }
       expect(record.value).to eq("Upper")
     end
 
     it "GraphemeBreakProperty yields Other for U+1F600" do
-      record = described_class.each_record(grapheme_path).to_a.find { |r| r.first == 0x1F600 }
+      record = described_class.each_record(grapheme_path).to_a.find { |r| r.range_first == 0x1F600 }
       expect(record.value).to eq("Other")
     end
 
     it "EastAsianWidth yields W (wide) for U+1F600" do
-      record = described_class.each_record(east_asian_path).to_a.find { |r| r.first == 0x1F600 }
+      record = described_class.each_record(east_asian_path).to_a.find { |r| r.range_first == 0x1F600 }
       expect(record.value).to eq("W")
     end
 
     it "LineBreak yields AL for U+0041 and ID for U+1F600" do
-      al = described_class.each_record(line_break_path).to_a.find { |r| r.first == 0x0041 }
+      al = described_class.each_record(line_break_path).to_a.find { |r| r.range_first == 0x0041 }
       expect(al.value).to eq("AL")
-      id = described_class.each_record(line_break_path).to_a.find { |r| r.first == 0x1F600 }
+      id = described_class.each_record(line_break_path).to_a.find { |r| r.range_first == 0x1F600 }
       expect(id.value).to eq("ID")
     end
 
     it "VerticalOrientation yields Tu for CJK" do
-      record = described_class.each_record(vert_orient_path).to_a.find { |r| r.first == 0x4E00 }
+      record = described_class.each_record(vert_orient_path).to_a.find { |r| r.range_first == 0x4E00 }
       expect(record.value).to eq("Tu")
     end
 
     it "IndicPositionalCategory yields Bottom for Devanagari" do
-      record = described_class.each_record(indic_pos_path).to_a.find { |r| r.first == 0x0900 }
+      record = described_class.each_record(indic_pos_path).to_a.find { |r| r.range_first == 0x0900 }
       expect(record.value).to eq("Bottom")
     end
 
     it "IndicSyllabicCategory yields Bindu for U+0900" do
-      record = described_class.each_record(indic_syl_path).to_a.find { |r| r.first == 0x0900 }
+      record = described_class.each_record(indic_syl_path).to_a.find { |r| r.range_first == 0x0900 }
       expect(record.value).to eq("Bindu")
     end
 
     it "IdentifierStatus yields allowed for U+0041 and restricted for U+1F600" do
       records = described_class.each_record(ident_status_path).to_a
-      allowed = records.find { |r| r.first == 0x0041 }
+      allowed = records.find { |r| r.range_first == 0x0041 }
       expect(allowed.value).to eq("allowed")
-      restricted = records.find { |r| r.first == 0x1F600 }
+      restricted = records.find { |r| r.range_first == 0x1F600 }
       expect(restricted.value).to eq("restricted")
     end
 
     it "IdentifierType captures multi-word exclusion reason verbatim" do
-      record = described_class.each_record(ident_type_path).to_a.find { |r| r.first == 0x00A0 }
+      record = described_class.each_record(ident_type_path).to_a.find { |r| r.range_first == 0x00A0 }
       expect(record.value).to eq("Unwanted_White space")
     end
   end

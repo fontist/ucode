@@ -45,8 +45,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "base64"
-  spec.add_dependency "bindata", "~> 2.5"
-  spec.add_dependency "brotli", "~> 0.5"
   spec.add_dependency "fontisan", "~> 0.2"
   spec.add_dependency "fontist", "~> 3.0"
   spec.add_dependency "logger"

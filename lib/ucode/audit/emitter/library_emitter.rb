@@ -27,8 +27,12 @@ module Ucode
           write_atomic(path, payload)
         end
 
-        private
-
+        # Build the library index.json shape (a Hash). Exposed so the
+        # HTML browser ({Browser::LibraryPage}) can reuse the exact
+        # same shape when inlining overview data into its template.
+        #
+        # @param summary [Models::Audit::LibrarySummary]
+        # @return [Hash]
         def build_index(summary)
           {
             "root_path" => summary.root_path,
@@ -43,9 +47,12 @@ module Ucode
           }
         end
 
+        private
+
         def face_cards(summary)
           summary.per_face_reports.map do |report|
             label = face_label(report)
+            covered_total, assigned_total, complete, partial = block_rollup(report)
             {
               "label" => label,
               "family_name" => report.family_name,
@@ -53,10 +60,31 @@ module Ucode
               "weight_class" => report.weight_class,
               "total_codepoints" => report.total_codepoints,
               "total_glyphs" => report.total_glyphs,
+              "covered_total" => covered_total,
+              "total_assigned_total" => assigned_total,
+              "blocks_complete" => complete,
+              "blocks_partial" => partial,
               "source_sha256" => report.source_sha256,
               "index_path" => "#{label}/index.json",
+              "html_path" => "#{label}/index.html",
             }
           end
+        end
+
+        def block_rollup(report)
+          covered = 0
+          assigned = 0
+          complete = 0
+          partial = 0
+          report.blocks.each do |b|
+            covered += b.covered_count
+            assigned += b.total_assigned
+            case b.status
+            when Models::Audit::BlockSummary::STATUS_COMPLETE then complete += 1
+            when Models::Audit::BlockSummary::STATUS_PARTIAL  then partial  += 1
+            end
+          end
+          [covered, assigned, complete, partial]
         end
 
         def face_label(report)

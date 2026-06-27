@@ -29,13 +29,24 @@ RSpec.describe Ucode::Glyphs::LastResort::Source do
   end
 
   it "falls back to the conventional sibling path when env is unset and no explicit root" do
-    # The conventional path is <gem_root>/../external/unicode/last-resort-font.
-    # Real repo layout: /.../src/fontist/ucode  +  /.../src/external/unicode/last-resort-font
-    # — i.e. two levels up from the gem root, then external/unicode/last-resort-font.
-    # We use the actual repo root so the test exercises the real path.
-    repo_root = Pathname.new(__dir__).join("..", "..", "..", "..").expand_path
-    source = described_class.new(gem_root: repo_root)
-    expect(source.root).to eq(Pathname.new("/Users/mulgogi/src/external/unicode/last-resort-font"))
+    # The conventional path is <gem_root>/../external/unicode/last-resort-font
+    # (two levels up from the gem root, then external/unicode/last-resort-font).
+    # Build a real tmpdir tree matching the expected layout so the
+    # Source's existence checks pass without depending on a dev-machine
+    # checkout.
+    Dir.mktmpdir do |grandparent|
+      grandparent = Pathname.new(grandparent)
+      gem_root = grandparent.join("workspace", "ucode")
+      gem_root.mkpath
+      # conventional_path: gem_root.parent.parent = grandparent
+      ufo_root = grandparent.join("external", "unicode", "last-resort-font")
+      ufo_root.join("font.ufo", "glyphs").mkpath
+      ufo_root.join("cmap-f13.ttx").write("<x/>")
+      ufo_root.join("font.ufo", "glyphs", "contents.plist").write("<x/>")
+
+      source = described_class.new(gem_root: gem_root)
+      expect(source.root).to eq(ufo_root)
+    end
   end
 
   it "returns a missing error when the conventional path doesn't exist (no env, no explicit)" do

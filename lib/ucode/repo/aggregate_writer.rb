@@ -322,16 +322,42 @@ module Ucode
 
       # ---- Manifest ---------------------------------------------------
 
+      # Fields that define the manifest's semantic content. When these
+      # match the existing manifest on disk, we preserve the old
+      # `generated_at` so that re-runs are byte-idempotent (no rewrite
+      # unless something actually changed).
+      MANIFEST_CONTENT_KEYS = %w[
+        ucd_version codepoint_count glyph_count schema_version
+      ].freeze
+      private_constant :MANIFEST_CONTENT_KEYS
+
       def write_manifest(ucd_version:, glyph_count:)
         path = Paths.manifest_path(@output_root)
-        payload = {
+        content = {
           "ucd_version"     => ucd_version,
-          "generated_at"    => Time.now.utc.iso8601,
           "codepoint_count" => @codepoint_count,
           "glyph_count"     => glyph_count,
           "schema_version"  => "1",
         }
+        ts = preserved_or_new_timestamp(path, content)
+        payload = content.merge("generated_at" => ts)
         write_atomic(path, to_pretty_json(payload)) ? 1 : 0
+      end
+
+      def preserved_or_new_timestamp(path, content)
+        existing = read_manifest(path)
+        return Time.now.utc.iso8601 unless existing
+
+        unchanged = MANIFEST_CONTENT_KEYS.all? { |k| existing[k] == content[k] }
+        unchanged ? existing["generated_at"] : Time.now.utc.iso8601
+      end
+
+      def read_manifest(path)
+        return nil unless path.exist?
+
+        JSON.parse(path.read)
+      rescue JSON::ParserError
+        nil
       end
     end
   end

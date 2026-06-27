@@ -26,6 +26,7 @@ module Ucode
       autoload :Emoji, "ucode/models/codepoint/emoji"
       autoload :Identifier, "ucode/models/codepoint/identifier"
       autoload :Normalization, "ucode/models/codepoint/normalization"
+      autoload :Glyph, "ucode/models/codepoint/glyph"
 
       # Identity + scalar attributes
       attribute :cp, :integer
@@ -74,6 +75,7 @@ module Ucode
                 collection: true, default: -> { [] }
       attribute :unihan, "Ucode::Models::UnihanEntry"
       attribute :names_list, "Ucode::Models::NamesListEntry"
+      attribute :glyph, Glyph
 
       key_value do
         map "codepoint", to: :cp
@@ -116,6 +118,7 @@ module Ucode
         map "standardized_variants", to: :standardized_variants
         map "unihan", to: :unihan
         map "names_list", to: :names_list
+        map "glyph", to: :glyph
       end
     end
   end

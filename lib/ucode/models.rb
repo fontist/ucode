@@ -43,5 +43,6 @@ module Ucode
     autoload :BinaryPropertyAssignment, "ucode/models/binary_property_assignment"
     autoload :Relationship, "ucode/models/relationship"
     autoload :Audit, "ucode/models/audit"
+    autoload :BuildReport, "ucode/models/build_report"
   end
 end

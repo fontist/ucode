@@ -169,6 +169,47 @@ RSpec.describe Ucode::Audit::Emitter::FaceDirectory, type: :emitter_spec do
     end
   end
 
+  describe "#emit_library with emit_browser: true" do
+    let(:emitter) { described_class.new(output_root: root, emit_browser: true) }
+    let(:reports) do
+      [
+        build_audit_report(postscript_name: "MonaSans-Regular",
+                           family_name: "MonaSans",
+                           source_sha256: "a" * 64),
+        build_audit_report(postscript_name: "NotoSans-Regular",
+                           family_name: "Noto Sans",
+                           full_name: "Noto Sans Regular",
+                           source_sha256: "b" * 64),
+      ]
+    end
+    let(:summary) { build_library_summary(reports: reports) }
+
+    it "writes one index.html per face" do
+      emitter.emit_library(summary: summary)
+      mona = Ucode::Audit::Emitter::Paths.face_dir(root, "MonaSans-Regular").join("index.html")
+      noto = Ucode::Audit::Emitter::Paths.face_dir(root, "NotoSans-Regular").join("index.html")
+      expect(mona.exist?).to be(true)
+      expect(noto.exist?).to be(true)
+      expect(mona.read).to include("MonaSans Regular")
+      expect(noto.read).to include("Noto Sans Regular")
+    end
+
+    it "writes the library-level index.html" do
+      emitter.emit_library(summary: summary)
+      html_path = Ucode::Audit::Emitter::Paths.library_html_path(root)
+      expect(html_path.exist?).to be(true)
+      expect(html_path.read).to include("MonaSans")
+      expect(html_path.read).to include("Noto Sans")
+    end
+
+    it "skips browser pages when emit_browser: false" do
+      no_browser = described_class.new(output_root: root, emit_browser: false)
+      no_browser.emit_library(summary: summary)
+      html_path = Ucode::Audit::Emitter::Paths.library_html_path(root)
+      expect(html_path.exist?).to be(false)
+    end
+  end
+
   describe "verbatim block filename preservation" do
     let(:report_with_special_blocks) do
       build_audit_report(

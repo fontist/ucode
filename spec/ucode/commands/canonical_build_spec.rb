@@ -112,4 +112,33 @@ RSpec.describe Ucode::Commands::CanonicalBuildCommand do
       expect(parsed["failures"].first["message"]).to eq("synthetic source failure")
     end
   end
+
+  it "runs BuildValidator by default and surfaces validation_report_path" do
+    Dir.mktmpdir do |out|
+      result = described_class.new.call(
+        fixture_version, output_root: out, resolver: resolver,
+      )
+      expect(result.key?(:validation_report_path)).to be(true)
+      expect(result[:validation_report_path].exist?).to be(true)
+      expect(result[:validation_passed]).to be(true)
+
+      parsed = JSON.parse(File.read(result[:validation_report_path]))
+      expect(parsed["totals"]["failures"]).to eq(0)
+      statuses = parsed["checks"].to_h { |c| [c["name"], c["status"]] }
+      expect(statuses["completeness"]).to eq("passed")
+      expect(statuses["schema"]).to eq("passed")
+      expect(statuses["provenance_sanity"]).to eq("passed")
+      expect(statuses["block_coverage"]).to eq("skipped")
+    end
+  end
+
+  it "skips validation when validate: false" do
+    Dir.mktmpdir do |out|
+      result = described_class.new.call(
+        fixture_version, output_root: out, resolver: resolver, validate: false,
+      )
+      expect(result.key?(:validation_report_path)).to be(false)
+      expect(Pathname.new(out).join("validation-report.json").exist?).to be(false)
+    end
+  end
 end

@@ -20,5 +20,6 @@ module Ucode
     autoload :AggregateWriter, "ucode/repo/aggregate_writer"
     autoload :BuildReportAccumulator, "ucode/repo/build_report_accumulator"
     autoload :BuildReportWriter, "ucode/repo/build_report_writer"
+    autoload :BuildValidator, "ucode/repo/build_validator"
   end
 end

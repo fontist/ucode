@@ -35,8 +35,12 @@ module Ucode
           write_atomic(Paths.index_under(face_dir), payload)
         end
 
-        private
-
+        # Build the index.json shape (a Hash) for a report. Exposed so
+        # the HTML browser ({Browser::FacePage}) can reuse the exact
+        # same shape when inlining overview data into its template.
+        #
+        # @param report [Models::Audit::AuditReport]
+        # @return [Hash]
         def build_index(report)
           {
             "generated_at" => report.generated_at,
@@ -50,6 +54,8 @@ module Ucode
             "script_summaries" => report.scripts.map(&:to_hash),
           }.compact
         end
+
+        private
 
         def font_section(report)
           {

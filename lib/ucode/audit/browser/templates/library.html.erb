@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= page_title %></title>
+  <style>
+<%= _css %>
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <h1>ucode audit library</h1>
+    <p class="tagline" id="library-tagline"></p>
+  </header>
+
+  <main>
+    <section id="controls" class="controls">
+      <input type="search" id="filter-search" placeholder="Filter by family or PostScript name…"
+             aria-label="Search fonts">
+      <select id="sort-select" aria-label="Sort fonts">
+        <option value="name">Sort: name</option>
+        <option value="codepoints">Sort: codepoint count</option>
+        <option value="glyphs">Sort: glyph count</option>
+        <option value="weight">Sort: weight class</option>
+      </select>
+      <select id="status-select" aria-label="Filter by status">
+        <option value="">All fonts</option>
+        <option value="complete">Complete coverage</option>
+        <option value="partial">Partial only</option>
+      </select>
+    </section>
+
+    <section id="cards" aria-live="polite" aria-busy="true"></section>
+  </main>
+
+  <script type="application/json" id="library-overview"><%= library_json %></script>
+  <script>
+<%= _js %>
+  </script>
+</body>
+</html>

@@ -38,5 +38,8 @@ module Ucode
 
     # Mode 2 directory output writers (TODO 13).
     autoload :Emitter, "ucode/audit/emitter"
+
+    # Standalone HTML browsers for Mode 2 output (TODOs 14+15).
+    autoload :Browser, "ucode/audit/browser"
   end
 end

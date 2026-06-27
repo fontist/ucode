@@ -11,6 +11,8 @@ require "ucode/audit/emitter/codepoint_emitter"
 require "ucode/audit/emitter/glyph_emitter"
 require "ucode/audit/emitter/collection_emitter"
 require "ucode/audit/emitter/library_emitter"
+require "ucode/audit/browser/face_page"
+require "ucode/audit/browser/library_page"
 
 module Ucode
   module Audit
@@ -46,12 +48,16 @@ module Ucode
         #   resolver (TODO 20) when ready.
         # @param database [Ucode::Database, nil] baseline UCD lookup for
         #   {CodepointEmitter} enrichment
+        # @param emit_browser [Boolean] also write the self-contained
+        #   HTML browsers — `<face_dir>/index.html` per face and
+        #   `<library_root>/index.html` for library mode. Default false.
         def initialize(output_root:, verbose: false, with_glyphs: false,
                        glyph_resolver: GlyphEmitter::DEFAULT_RESOLVER,
-                       database: nil)
+                       database: nil, emit_browser: false)
           @output_root = output_root
           @verbose = verbose
           @with_glyphs = with_glyphs
+          @emit_browser = emit_browser
           @database = database
           @index_emitter = IndexEmitter.new
           @block_emitter = BlockEmitter.new
@@ -84,7 +90,9 @@ module Ucode
           summary.per_face_reports.each do |report|
             emit_face(label: face_label(report), report: report)
           end
-          @library_emitter.emit(@output_root, summary)
+          written = @library_emitter.emit(@output_root, summary)
+          emit_library_browser(summary) if @emit_browser
+          written
         end
 
         # Hook called by {CollectionEmitter} to write one face under a
@@ -117,7 +125,20 @@ module Ucode
           report.scripts.each { |s| @script_emitter.emit(face_dir, s) }
           emit_codepoints(face_dir, report) if @verbose
           emit_glyphs(face_dir, report)     if @with_glyphs
+          emit_face_browser(face_dir, report) if @emit_browser
           face_dir
+        end
+
+        def emit_face_browser(face_dir, report)
+          Ucode::Audit::Browser::FacePage.new(
+            report: report,
+            verbose: @verbose,
+            with_glyphs: @with_glyphs,
+          ).write(face_dir)
+        end
+
+        def emit_library_browser(summary)
+          Ucode::Audit::Browser::LibraryPage.new(summary: summary).write(@output_root)
         end
 
         def emit_codepoints(face_dir, report)

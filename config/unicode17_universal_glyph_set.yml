@@ -1,0 +1,877 @@
+unicode_version: "17.0.0"
+ucode_version: "0.2.0"
+generated_at: "2026-06-28T00:00:00Z"
+map:
+  Basic_Latin:
+    sources:
+      - kind: fontist
+        label: noto-sans
+        priority: 1
+        license: OFL
+        provenance: "Google Noto Sans; system fallback for Latin"
+  Latin-1_Supplement:
+    sources:
+      - kind: fontist
+        label: noto-sans
+        priority: 1
+        license: OFL
+  Latin_Extended-A:
+    sources: []
+  Latin_Extended-B:
+    sources: []
+  IPA_Extensions:
+    sources: []
+  Spacing_Modifier_Letters:
+    sources: []
+  Combining_Diacritical_Marks:
+    sources: []
+  Greek_and_Coptic:
+    sources:
+      - kind: fontist
+        label: noto-sans
+        priority: 1
+        license: OFL
+  Cyrillic:
+    sources: []
+  Cyrillic_Supplement:
+    sources: []
+  Armenian:
+    sources: []
+  Hebrew:
+    sources: []
+  Arabic:
+    sources: []
+  Syriac:
+    sources: []
+  Arabic_Supplement:
+    sources: []
+  Thaana:
+    sources: []
+  NKo:
+    sources: []
+  Samaritan:
+    sources: []
+  Mandaic:
+    sources: []
+  Syriac_Supplement:
+    sources: []
+  Arabic_Extended-B:
+    sources: []
+  Arabic_Extended-A:
+    sources: []
+  Devanagari:
+    sources: []
+  Bengali:
+    sources: []
+  Gurmukhi:
+    sources: []
+  Gujarati:
+    sources: []
+  Oriya:
+    sources: []
+  Tamil:
+    sources: []
+  Telugu:
+    sources: []
+  Kannada:
+    sources: []
+  Malayalam:
+    sources: []
+  Sinhala:
+    sources: []
+  Thai:
+    sources: []
+  Lao:
+    sources: []
+  Tibetan:
+    sources: []
+  Myanmar:
+    sources: []
+  Georgian:
+    sources: []
+  Hangul_Jamo:
+    sources: []
+  Ethiopic:
+    sources: []
+  Ethiopic_Supplement:
+    sources: []
+  Cherokee:
+    sources: []
+  Unified_Canadian_Aboriginal_Syllabics:
+    sources: []
+  Ogham:
+    sources: []
+  Runic:
+    sources: []
+  Tagalog:
+    sources: []
+  Hanunoo:
+    sources: []
+  Buhid:
+    sources: []
+  Tagbanwa:
+    sources: []
+  Khmer:
+    sources: []
+  Mongolian:
+    sources: []
+  Unified_Canadian_Aboriginal_Syllabics_Extended:
+    sources: []
+  Limbu:
+    sources: []
+  Tai_Le:
+    sources: []
+  New_Tai_Lue:
+    sources: []
+  Khmer_Symbols:
+    sources: []
+  Buginese:
+    sources: []
+  Tai_Tham:
+    sources: []
+  Combining_Diacritical_Marks_Extended:
+    sources: []
+  Balinese:
+    sources: []
+  Sundanese:
+    sources: []
+  Batak:
+    sources: []
+  Lepcha:
+    sources: []
+  Ol_Chiki:
+    sources: []
+  Cyrillic_Extended-C:
+    sources: []
+  Georgian_Extended:
+    sources: []
+  Sundanese_Supplement:
+    sources: []
+  Vedic_Extensions:
+    sources: []
+  Phonetic_Extensions:
+    sources: []
+  Phonetic_Extensions_Supplement:
+    sources: []
+  Combining_Diacritical_Marks_Supplement:
+    sources: []
+  Latin_Extended_Additional:
+    sources: []
+  Greek_Extended:
+    sources: []
+  General_Punctuation:
+    sources: []
+  Superscripts_and_Subscripts:
+    sources: []
+  Currency_Symbols:
+    sources: []
+  Combining_Diacritical_Marks_for_Symbols:
+    sources: []
+  Letterlike_Symbols:
+    sources: []
+  Number_Forms:
+    sources: []
+  Arrows:
+    sources: []
+  Mathematical_Operators:
+    sources: []
+  Miscellaneous_Technical:
+    sources: []
+  Control_Pictures:
+    sources: []
+  Optical_Character_Recognition:
+    sources: []
+  Enclosed_Alphanumerics:
+    sources: []
+  Box_Drawing:
+    sources: []
+  Block_Elements:
+    sources: []
+  Geometric_Shapes:
+    sources: []
+  Miscellaneous_Symbols:
+    sources: []
+  Dingbats:
+    sources: []
+  Miscellaneous_Mathematical_Symbols-A:
+    sources: []
+  Supplemental_Arrows-A:
+    sources: []
+  Braille_Patterns:
+    sources: []
+  Supplemental_Arrows-B:
+    sources: []
+  Miscellaneous_Mathematical_Symbols-B:
+    sources: []
+  Supplemental_Mathematical_Operators:
+    sources: []
+  Miscellaneous_Symbols_and_Arrows:
+    sources: []
+  Glagolitic:
+    sources: []
+  Latin_Extended-C:
+    sources: []
+  Coptic:
+    sources: []
+  Georgian_Supplement:
+    sources: []
+  Tifinagh:
+    sources: []
+  Ethiopic_Extended:
+    sources: []
+  Cyrillic_Extended-A:
+    sources: []
+  Supplemental_Punctuation:
+    sources: []
+  CJK_Radicals_Supplement:
+    sources: []
+  Kangxi_Radicals:
+    sources: []
+  Ideographic_Description_Characters:
+    sources: []
+  CJK_Symbols_and_Punctuation:
+    sources: []
+  Hiragana:
+    sources: []
+  Katakana:
+    sources: []
+  Bopomofo:
+    sources: []
+  Hangul_Compatibility_Jamo:
+    sources: []
+  Kanbun:
+    sources: []
+  Bopomofo_Extended:
+    sources: []
+  CJK_Strokes:
+    sources: []
+  Katakana_Phonetic_Extensions:
+    sources: []
+  Enclosed_CJK_Letters_and_Months:
+    sources: []
+  CJK_Compatibility:
+    sources: []
+  CJK_Unified_Ideographs_Extension_A:
+    sources:
+      - kind: path
+        label: FSung-2
+        priority: 1
+        license: OFL
+        path: "~/Downloads/全宋體/FSung-2.ttf"
+      - kind: fontist
+        label: noto-sans-cjk-jp
+        priority: 99
+  Yijing_Hexagram_Symbols:
+    sources: []
+  CJK_Unified_Ideographs:
+    sources:
+      - kind: path
+        label: FSung-1
+        priority: 1
+        license: OFL
+        provenance: "Taiwan MOE 全宋體; covers U+4E00..U+9FFF core"
+        path: "~/Downloads/全宋體/FSung-1.ttf"
+      - kind: fontist
+        label: noto-sans-cjk-jp
+        priority: 99
+        provenance: "Catch-all fallback for CJK codepoints FSung misses"
+  Yi_Syllables:
+    sources: []
+  Yi_Radicals:
+    sources: []
+  Lisu:
+    sources: []
+  Vai:
+    sources: []
+  Cyrillic_Extended-B:
+    sources: []
+  Bamum:
+    sources: []
+  Modifier_Tone_Letters:
+    sources: []
+  Latin_Extended-D:
+    sources: []
+  Syloti_Nagri:
+    sources: []
+  Common_Indic_Number_Forms:
+    sources: []
+  Phags-pa:
+    sources: []
+  Saurashtra:
+    sources: []
+  Devanagari_Extended:
+    sources: []
+  Kayah_Li:
+    sources: []
+  Rejang:
+    sources: []
+  Hangul_Jamo_Extended-A:
+    sources: []
+  Javanese:
+    sources: []
+  Myanmar_Extended-B:
+    sources: []
+  Cham:
+    sources: []
+  Myanmar_Extended-A:
+    sources: []
+  Tai_Viet:
+    sources: []
+  Meetei_Mayek_Extensions:
+    sources: []
+  Ethiopic_Extended-A:
+    sources: []
+  Latin_Extended-E:
+    sources: []
+  Cherokee_Supplement:
+    sources: []
+  Meetei_Mayek:
+    sources: []
+  Hangul_Syllables:
+    sources: []
+  Hangul_Jamo_Extended-B:
+    sources: []
+  High_Surrogates:
+    sources: []
+  High_Private_Use_Surrogates:
+    sources: []
+  Low_Surrogates:
+    sources: []
+  Private_Use_Area:
+    sources: []
+  CJK_Compatibility_Ideographs:
+    sources: []
+  Alphabetic_Presentation_Forms:
+    sources: []
+  Arabic_Presentation_Forms-A:
+    sources: []
+  Variation_Selectors:
+    sources: []
+  Vertical_Forms:
+    sources: []
+  Combining_Half_Marks:
+    sources: []
+  CJK_Compatibility_Forms:
+    sources: []
+  Small_Form_Variants:
+    sources: []
+  Arabic_Presentation_Forms-B:
+    sources: []
+  Halfwidth_and_Fullwidth_Forms:
+    sources: []
+  Specials:
+    sources: []
+  Linear_B_Syllabary:
+    sources: []
+  Linear_B_Ideograms:
+    sources: []
+  Aegean_Numbers:
+    sources: []
+  Ancient_Greek_Numbers:
+    sources: []
+  Ancient_Symbols:
+    sources: []
+  Phaistos_Disc:
+    sources: []
+  Lycian:
+    sources: []
+  Carian:
+    sources: []
+  Coptic_Epact_Numbers:
+    sources: []
+  Old_Italic:
+    sources: []
+  Gothic:
+    sources: []
+  Old_Permic:
+    sources: []
+  Ugaritic:
+    sources: []
+  Old_Persian:
+    sources: []
+  Deseret:
+    sources: []
+  Shavian:
+    sources: []
+  Osmanya:
+    sources: []
+  Osage:
+    sources: []
+  Elbasan:
+    sources: []
+  Caucasian_Albanian:
+    sources: []
+  Vithkuqi:
+    sources: []
+  Todhri:
+    sources: []
+  Linear_A:
+    sources: []
+  Latin_Extended-F:
+    sources: []
+  Cypriot_Syllabary:
+    sources: []
+  Imperial_Aramaic:
+    sources: []
+  Palmyrene:
+    sources: []
+  Nabataean:
+    sources: []
+  Hatran:
+    sources: []
+  Phoenician:
+    sources: []
+  Lydian:
+    sources: []
+  Sidetic:
+    sources:
+      - kind: fontist
+        label: lentariso
+        priority: 1
+        license: OFL
+        provenance: "Lentariso >=1.029 (github.com/Bry10022/Lentariso); 26/26 cmap-verified"
+      - kind: fontist
+        label: noto-sans-sidetic
+        priority: 2
+  Meroitic_Hieroglyphs:
+    sources: []
+  Meroitic_Cursive:
+    sources: []
+  Kharoshthi:
+    sources: []
+  Old_South_Arabian:
+    sources: []
+  Old_North_Arabian:
+    sources: []
+  Manichaean:
+    sources: []
+  Avestan:
+    sources: []
+  Inscriptional_Parthian:
+    sources: []
+  Inscriptional_Pahlavi:
+    sources: []
+  Psalter_Pahlavi:
+    sources: []
+  Old_Turkic:
+    sources: []
+  Old_Hungarian:
+    sources: []
+  Hanifi_Rohingya:
+    sources: []
+  Garay:
+    sources: []
+  Rumi_Numeral_Symbols:
+    sources: []
+  Yezidi:
+    sources: []
+  Arabic_Extended-C:
+    sources: []
+  Old_Sogdian:
+    sources: []
+  Sogdian:
+    sources: []
+  Old_Uyghur:
+    sources: []
+  Chorasmian:
+    sources: []
+  Elymaic:
+    sources: []
+  Brahmi:
+    sources: []
+  Kaithi:
+    sources: []
+  Sora_Sompeng:
+    sources: []
+  Chakma:
+    sources: []
+  Mahajani:
+    sources: []
+  Sharada:
+    sources: []
+  Sinhala_Archaic_Numbers:
+    sources: []
+  Khojki:
+    sources: []
+  Multani:
+    sources: []
+  Khudawadi:
+    sources: []
+  Grantha:
+    sources: []
+  Tulu-Tigalari:
+    sources: []
+  Newa:
+    sources: []
+  Tirhuta:
+    sources: []
+  Siddham:
+    sources: []
+  Modi:
+    sources: []
+  Mongolian_Supplement:
+    sources: []
+  Takri:
+    sources: []
+  Myanmar_Extended-C:
+    sources: []
+  Ahom:
+    sources: []
+  Dogra:
+    sources: []
+  Warang_Citi:
+    sources: []
+  Dives_Akuru:
+    sources: []
+  Nandinagari:
+    sources: []
+  Zanabazar_Square:
+    sources: []
+  Soyombo:
+    sources: []
+  Unified_Canadian_Aboriginal_Syllabics_Extended-A:
+    sources: []
+  Pau_Cin_Hau:
+    sources: []
+  Devanagari_Extended-A:
+    sources: []
+  Sharada_Supplement:
+    sources:
+      - kind: fontist
+        label: noto-sans-sharada
+        priority: 1
+        license: OFL
+  Sunuwar:
+    sources: []
+  Bhaiksuki:
+    sources: []
+  Marchen:
+    sources: []
+  Masaram_Gondi:
+    sources: []
+  Gunjala_Gondi:
+    sources: []
+  Tolong_Siki:
+    sources:
+      - kind: fontist
+        label: noto-sans-tolong-siki
+        priority: 1
+        license: OFL
+  Makasar:
+    sources: []
+  Kawi:
+    sources: []
+  Lisu_Supplement:
+    sources: []
+  Tamil_Supplement:
+    sources: []
+  Cuneiform:
+    sources: []
+  Cuneiform_Numbers_and_Punctuation:
+    sources: []
+  Early_Dynastic_Cuneiform:
+    sources: []
+  Cypro-Minoan:
+    sources: []
+  Egyptian_Hieroglyphs:
+    sources:
+      - kind: path
+        label: UniHieroglyphica
+        priority: 1
+        license: OFL
+        provenance: "suignard.com; authoritative for Egyptian Hieroglyphs"
+        path: "data/fonts/UniHieroglyphica.ttf"
+  Egyptian_Hieroglyph_Format_Controls:
+    sources:
+      - kind: path
+        label: Egyptian-Text
+        priority: 1
+        license: OFL
+        provenance: "microsoft/font-tools; OFL"
+        path: "data/fonts/EgyptianText-Regular.ttf"
+  Egyptian_Hieroglyphs_Extended-A:
+    sources:
+      - kind: path
+        label: UniHieroglyphica
+        priority: 1
+        license: OFL
+        path: "data/fonts/UniHieroglyphica.ttf"
+  Anatolian_Hieroglyphs:
+    sources: []
+  Gurung_Khema:
+    sources: []
+  Bamum_Supplement:
+    sources: []
+  Mro:
+    sources: []
+  Tangsa:
+    sources: []
+  Bassa_Vah:
+    sources: []
+  Pahawh_Hmong:
+    sources: []
+  Kirat_Rai:
+    sources: []
+  Medefaidrin:
+    sources: []
+  Beria_Erfe:
+    sources:
+      - kind: fontist
+        label: kedebideri
+        priority: 1
+        license: OFL
+        provenance: "Kedebideri 3.001 (software.sil.org/kedebideri); 50/50 cmap-verified"
+  Miao:
+    sources: []
+  Ideographic_Symbols_and_Punctuation:
+    sources: []
+  Tangut:
+    sources:
+      - kind: fontist
+        label: noto-sans-tangut
+        priority: 1
+        license: OFL
+  Tangut_Components:
+    sources:
+      - kind: fontist
+        label: noto-sans-tangut
+        priority: 1
+        license: OFL
+  Khitan_Small_Script:
+    sources: []
+  Tangut_Supplement:
+    sources:
+      - kind: fontist
+        label: noto-sans-tangut
+        priority: 1
+        license: OFL
+  Tangut_Components_Supplement:
+    sources: []
+  Kana_Extended-B:
+    sources: []
+  Kana_Supplement:
+    sources: []
+  Kana_Extended-A:
+    sources: []
+  Small_Kana_Extension:
+    sources: []
+  Nushu:
+    sources: []
+  Duployan:
+    sources: []
+  Shorthand_Format_Controls:
+    sources: []
+  Symbols_for_Legacy_Computing_Supplement:
+    sources:
+      - kind: fontist
+        label: babelstone-pseudographica
+        priority: 1
+        license: OFL
+        provenance: "BabelStone; partial Unicode 17 coverage"
+  Miscellaneous_Symbols_Supplement:
+    sources:
+      - kind: fontist
+        label: noto-sans-symbols-2
+        priority: 1
+        license: OFL
+  Znamenny_Musical_Notation:
+    sources: []
+  Byzantine_Musical_Symbols:
+    sources: []
+  Musical_Symbols:
+    sources:
+      - kind: fontist
+        label: noto-music
+        priority: 1
+        license: OFL
+  Ancient_Greek_Musical_Notation:
+    sources: []
+  Kaktovik_Numerals:
+    sources: []
+  Mayan_Numerals:
+    sources: []
+  Tai_Xuan_Jing_Symbols:
+    sources: []
+  Counting_Rod_Numerals:
+    sources: []
+  Mathematical_Alphanumeric_Symbols:
+    sources: []
+  Sutton_SignWriting:
+    sources: []
+  Latin_Extended-G:
+    sources: []
+  Glagolitic_Supplement:
+    sources: []
+  Cyrillic_Extended-D:
+    sources: []
+  Nyiakeng_Puachue_Hmong:
+    sources: []
+  Toto:
+    sources: []
+  Wancho:
+    sources: []
+  Nag_Mundari:
+    sources: []
+  Ol_Onal:
+    sources: []
+  Tai_Yo:
+    sources:
+      - kind: path
+        label: NotoSerifTaiYo
+        priority: 1
+        license: OFL
+        provenance: "translationcommons.org; proven via correlate-v4 Pillar 2 extraction"
+        path: "data/fonts/NotoSerifTaiYo.ttf"
+  Ethiopic_Extended-B:
+    sources: []
+  Mende_Kikakui:
+    sources: []
+  Adlam:
+    sources:
+      - kind: path
+        label: NotoSansAdlam
+        priority: 1
+        license: OFL
+        provenance: "Noto Sans Adlam fixture; 88/88 cmap-verified at Unicode 16 baseline"
+        path: "spec/fixtures/fonts/NotoSansAdlam-Regular.ttf"
+  Indic_Siyaq_Numbers:
+    sources: []
+  Ottoman_Siyaq_Numbers:
+    sources: []
+  Arabic_Mathematical_Alphabetic_Symbols:
+    sources: []
+  Mahjong_Tiles:
+    sources: []
+  Domino_Tiles:
+    sources: []
+  Playing_Cards:
+    sources: []
+  Enclosed_Alphanumeric_Supplement:
+    sources: []
+  Enclosed_Ideographic_Supplement:
+    sources: []
+  Miscellaneous_Symbols_and_Pictographs:
+    sources: []
+  Emoticons:
+    sources: []
+  Ornamental_Dingbats:
+    sources: []
+  Transport_and_Map_Symbols:
+    sources: []
+  Alchemical_Symbols:
+    sources:
+      - kind: fontist
+        label: noto-sans-symbols
+        priority: 1
+        license: OFL
+      - kind: fontist
+        label: symbola
+        priority: 2
+  Geometric_Shapes_Extended:
+    sources: []
+  Supplemental_Arrows-C:
+    sources:
+      - kind: fontist
+        label: symbola
+        priority: 1
+  Supplemental_Symbols_and_Pictographs:
+    sources: []
+  Chess_Symbols:
+    sources: []
+  Symbols_and_Pictographs_Extended-A:
+    sources: []
+  Symbols_for_Legacy_Computing:
+    sources: []
+  CJK_Unified_Ideographs_Extension_B:
+    sources:
+      - kind: path
+        label: FSung-2
+        priority: 1
+        license: OFL
+        path: "~/Downloads/全宋體/FSung-2.ttf"
+      - kind: fontist
+        label: noto-sans-cjk-jp
+        priority: 99
+  CJK_Unified_Ideographs_Extension_C:
+    sources:
+      - kind: path
+        label: FSung-2
+        priority: 1
+        license: OFL
+        path: "~/Downloads/全宋體/FSung-2.ttf"
+      - kind: fontist
+        label: noto-sans-cjk-jp
+        priority: 99
+  CJK_Unified_Ideographs_Extension_D:
+    sources:
+      - kind: path
+        label: FSung-2
+        priority: 1
+        license: OFL
+        path: "~/Downloads/全宋體/FSung-2.ttf"
+      - kind: fontist
+        label: noto-sans-cjk-jp
+        priority: 99
+  CJK_Unified_Ideographs_Extension_E:
+    sources:
+      - kind: path
+        label: FSung-3
+        priority: 1
+        license: OFL
+        path: "~/Downloads/全宋體/FSung-3.ttf"
+      - kind: fontist
+        label: noto-sans-cjk-jp
+        priority: 99
+  CJK_Unified_Ideographs_Extension_F:
+    sources:
+      - kind: path
+        label: FSung-3
+        priority: 1
+        license: OFL
+        path: "~/Downloads/全宋體/FSung-3.ttf"
+      - kind: fontist
+        label: noto-sans-cjk-jp
+        priority: 99
+  CJK_Unified_Ideographs_Extension_I:
+    sources:
+      - kind: path
+        label: FSung-3
+        priority: 1
+        license: OFL
+        path: "~/Downloads/全宋體/FSung-3.ttf"
+  CJK_Compatibility_Ideographs_Supplement:
+    sources: []
+  CJK_Unified_Ideographs_Extension_G:
+    sources:
+      - kind: path
+        label: FSung-3
+        priority: 1
+        license: OFL
+        path: "~/Downloads/全宋體/FSung-3.ttf"
+      - kind: fontist
+        label: noto-sans-cjk-jp
+        priority: 99
+  CJK_Unified_Ideographs_Extension_H:
+    sources:
+      - kind: path
+        label: FSung-3
+        priority: 1
+        license: OFL
+        provenance: "FSung-3 cmap-verified 4192/4192 for Ext H"
+        path: "~/Downloads/全宋體/FSung-3.ttf"
+  CJK_Unified_Ideographs_Extension_J:
+    sources:
+      - kind: path
+        label: FSung-3
+        priority: 1
+        license: OFL
+        provenance: "FSung-3 cmap-verified 4298/4298 for Ext J (Unicode 17 new block)"
+        path: "~/Downloads/全宋體/FSung-3.ttf"
+  Tags:
+    sources: []
+  Variation_Selectors_Supplement:
+    sources: []
+  Supplementary_Private_Use_Area-A:
+    sources: []
+  Supplementary_Private_Use_Area-B:
+    sources: []

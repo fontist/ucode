@@ -3,34 +3,31 @@
 require "pathname"
 require "yaml"
 
+require "ucode/models/glyph_source_map"
+
 module Ucode
   module Glyphs
-    # Loads the block → Tier 1 font mapping from a YAML config file.
+    # Loads the curated Tier 1 font map from
+    # `config/unicode17_universal_glyph_set.yml` into a typed
+    # {Ucode::Models::GlyphSourceMap}.
     #
-    # The config is the bridge between {SourceBuilder} (which constructs
-    # Source instances) and the human-curated mapping of "which font
-    # covers which Unicode block". It's populated from the baseline
-    # coverage audit (see `docs/unicode17-coverage-baseline.md`).
+    # This is the policy half of the 4-tier resolver (TODO 23):
+    # "which font wins for which block, this Unicode version". The
+    # resolver mechanics live in {Resolver} + {Source}; the
+    # per-version curation lives in the YAML.
     #
-    # Config format:
+    # Block ids in the YAML use the canonical underscore form
+    # ("Basic_Latin", "CJK_Unified_Ideographs_Extension_J") — same
+    # convention as {Ucode::Parsers::Blocks} and the rest of the
+    # codebase. Never slugified beyond whitespace collapse.
     #
-    #   tier1_fonts:
-    #     Sidetic:
-    #       - label=Lentariso
-    #     Beria_Erfe:
-    #       - label=Kedebideri
-    #     CJK_Unified_Ideographs_Extension_J:
-    #       - label=FSung-3
-    #       - noto-sans-cjk-jp
-    #
-    # Block names use the original Unicode verbatim form (e.g.
-    # `CJK_Unified_Ideographs_Extension_J`, not slugified). Each entry
-    # under a block is a font specifier resolvable by
-    # {RealFonts::FontLocator}: either `label=/path/to/font.ttf` (direct
-    # path with a human label) or `fontist-formula-name` (resolved via
-    # fontist discovery).
+    # Loader semantics:
+    # - Missing file → `exist?` returns false; `map` is an empty
+    #   `GlyphSourceMap`; all queries return empty.
+    # - Empty `map:` section → same as missing file.
+    # - Malformed YAML → raises (the curator must fix the file).
     class SourceConfig
-      DEFAULT_PATH = Pathname.new("config/unicode17_tier1_fonts.yml")
+      DEFAULT_PATH = Pathname.new("config/unicode17_universal_glyph_set.yml")
       private_constant :DEFAULT_PATH
 
       # @param path [String, Pathname] path to the YAML config file.
@@ -46,40 +43,50 @@ module Ucode
         @path.exist?
       end
 
-      # The raw mapping of block name → array of font specifiers.
-      # Memoized. Empty hash when the file is missing or has no
-      # `tier1_fonts` section.
+      # The loaded typed map. Memoized on first access. An empty
+      # {Ucode::Models::GlyphSourceMap} when the file is missing or
+      # has no `map:` section.
       #
-      # @return [Hash{String=>Array<String>}]
-      def tier1_fonts
-        @tier1_fonts ||= load_tier1
+      # @return [Ucode::Models::GlyphSourceMap]
+      def map
+        @map ||= load_map
       end
 
-      # @param block_name [String] verbatim Unicode block name
-      # @return [Array<String>] font specs for this block; empty when
-      #   the block isn't configured
-      def specs_for_block(block_name)
-        Array(tier1_fonts[block_name])
+      # @param block_id [String] verbatim block id (underscore form)
+      # @return [Array<Ucode::Models::GlyphSource>] sources for this
+      #   block in priority order; empty when unconfigured.
+      def fonts_for(block_id)
+        map.sources_for(block_id)
       end
 
-      # @return [Array<String>] every block name with at least one Tier 1
-      #   font configured
-      def configured_blocks
-        tier1_fonts.keys
+      # @return [Array<String>] block_ids with at least one Tier 1
+      #   source configured.
+      def configured_block_ids
+        map.configured_block_ids
+      end
+
+      # Class-method shortcut: load and return the typed map. Useful
+      # for one-shot scripts that don't need to query `exist?` first.
+      #
+      # @param yaml_path [String, Pathname]
+      # @return [Ucode::Models::GlyphSourceMap]
+      def self.load(yaml_path = DEFAULT_PATH)
+        new(path: yaml_path).map
       end
 
       private
 
-      def load_tier1
-        return {} unless @path.exist?
+      def load_map
+        return empty_map unless @path.exist?
 
-        data = YAML.safe_load(@path.read)
-        return {} unless data.is_a?(Hash)
+        parsed = YAML.safe_load(@path.read, aliases: true)
+        return empty_map unless parsed.is_a?(Hash)
 
-        section = data["tier1_fonts"]
-        return {} unless section.is_a?(Hash)
+        Ucode::Models::GlyphSourceMap.from_hash(parsed)
+      end
 
-        section.transform_keys(&:to_s)
+      def empty_map
+        Ucode::Models::GlyphSourceMap.new
       end
     end
   end

@@ -24,23 +24,24 @@ module Ucode
       #
       # One Tier1RealFont per (block, font) pair. The {SourceBuilder}
       # expands a {SourceConfig} into a flat array of these, one per
-      # configured block × font entry. When multiple Tier 1 fonts are
-      # configured for the same block, each becomes a separate source
-      # and the resolver tries them in declared order.
+      # configured block × {Ucode::Models::GlyphSource} entry. When
+      # multiple Tier 1 fonts are configured for the same block, each
+      # becomes a separate source and the resolver tries them in
+      # declared order.
       class Tier1RealFont < Source
         # @param block_range [Range<Integer>] codepoints this source
         #   serves. Codepoints outside the range return nil without
         #   consulting the font.
-        # @param font_spec [String] a font specifier resolvable by
-        #   {RealFonts::FontLocator}: either `label=/path/to/font.ttf`
-        #   or `fontist-formula-name`.
+        # @param source [Ucode::Models::GlyphSource] typed curation
+        #   entry. Drives font resolution via
+        #   {RealFonts::FontLocator} through {GlyphSource#to_font_spec}.
         # @param install [Boolean] passed through to FontLocator. When
         #   true (default), fontist downloads missing fonts. Tests
         #   disable this to avoid network calls.
-        def initialize(block_range:, font_spec:, install: true)
+        def initialize(block_range:, source:, install: true)
           super()
           @block_range = block_range
-          @font_spec = font_spec
+          @source = source
           @install = install
         end
 
@@ -49,11 +50,10 @@ module Ucode
           :tier1
         end
 
-        # @return [String] "tier-1:<label>" — the label is the part
-        #   before `=` in a `label=path` spec, or the full spec
-        #   otherwise.
+        # @return [String] "tier-1:<label>" — the label is the
+        #   {GlyphSource#label} from the curation entry.
         def provenance
-          "tier-1:#{label}"
+          "tier-1:#{@source.label}"
         end
 
         # (see Source#fetch)
@@ -88,15 +88,11 @@ module Ucode
         end
 
         def path
-          @path ||= RealFonts::FontLocator.new.locate(@font_spec, install: @install).path
+          @path ||= RealFonts::FontLocator.new.locate(@source.to_font_spec, install: @install).path
         end
 
         def extractor
           @extractor ||= Fontisan::OutlineExtractor.new(font)
-        end
-
-        def label
-          @font_spec.include?("=") ? @font_spec.split("=", 2).first.strip : @font_spec
         end
 
         def base_font

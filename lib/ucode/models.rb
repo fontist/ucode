@@ -45,5 +45,7 @@ module Ucode
     autoload :Audit, "ucode/models/audit"
     autoload :BuildReport, "ucode/models/build_report"
     autoload :ValidationReport, "ucode/models/validation_report"
+    autoload :GlyphSource, "ucode/models/glyph_source"
+    autoload :GlyphSourceMap, "ucode/models/glyph_source_map"
   end
 end

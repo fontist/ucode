@@ -131,6 +131,24 @@ module Ucode
       entries(SCRIPTS_TABLE)
     end
 
+    # Every block range that shares the given block name. Empty for an
+    # unknown name. Used by the audit BlockAggregator to derive a
+    # block's assigned-codepoint set and span without a separate
+    # canonical-range lookup.
+    # @param name [String] block name as stored (e.g. "Basic_Latin")
+    # @return [Array<RangeEntry>] sorted by first_cp
+    def block_ranges_by_name(name)
+      ranges_by_name(BLOCKS_TABLE, name)
+    end
+
+    # Every script range that shares the given script code. Empty for an
+    # unknown name. Used by the audit ScriptAggregator.
+    # @param name [String] ISO 15924 script code (e.g. "Latn")
+    # @return [Array<RangeEntry>] sorted by first_cp
+    def script_ranges_by_name(name)
+      ranges_by_name(SCRIPTS_TABLE, name)
+    end
+
     # Close the underlying SQLite connection. Idempotent.
     # @return [void]
     def close
@@ -182,6 +200,14 @@ module Ucode
     def entries(table)
       @db.execute(
         "SELECT first_cp, last_cp, name FROM #{table} ORDER BY first_cp",
+      ).map { |row| RangeEntry.new(row["first_cp"], row["last_cp"], row["name"]) }
+    end
+
+    def ranges_by_name(table, name)
+      @db.execute(
+        "SELECT first_cp, last_cp, name FROM #{table} " \
+        "WHERE name = ? ORDER BY first_cp",
+        [name],
       ).map { |row| RangeEntry.new(row["first_cp"], row["last_cp"], row["name"]) }
     end
   end

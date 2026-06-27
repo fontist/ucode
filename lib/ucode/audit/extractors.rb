@@ -22,6 +22,10 @@ module Ucode
       autoload :ColorCapabilities, "ucode/audit/extractors/color_capabilities"
       autoload :VariationDetail,   "ucode/audit/extractors/variation_detail"
       autoload :OpenTypeLayout,    "ucode/audit/extractors/opentype_layout"
+
+      # Aggregations (TODO 10) — full-mode only. Driven by ucode's own
+      # UCD baseline, so it depends on baseline resolution succeeding.
+      autoload :Aggregations, "ucode/audit/extractors/aggregations"
     end
   end
 end

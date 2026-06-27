@@ -20,7 +20,9 @@ jobs:
       - name: Install system dependencies (PDF renderers)
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends mupdf-tools pdf2svg dvisvgm
+          sudo apt-get install -y --no-install-recommends \
+            mupdf-tools liblcms2-dev \
+            pdf2svg dvisvgm
 
       - uses: ruby/setup-ruby@v1
         with:

@@ -22,15 +22,29 @@ module Ucode
     #   - **Atomic**: writes go to `<path>.tmp`, then rename. A crash
     #     mid-write leaves either the old file or no file, never a
     #     truncated one.
+    #
+    # When a {Ucode::Glyphs::Resolver} is supplied via `resolver:`, each
+    # write also resolves the codepoint's glyph, writes `glyph.svg`
+    # alongside `index.json` (same atomic + idempotent semantics), and
+    # records the resolver tier + provenance on the codepoint's `glyph`
+    # attribute so it lands in the serialized JSON. When `resolver:` is
+    # nil (default), the writer is glyph-agnostic and only writes
+    # `index.json` — preserving backward compatibility.
     class CodepointWriter
       include AtomicWrites
 
       # @param output_root [String, Pathname]
       # @param parallel_workers [Integer] size of the worker pool. Set to
       #   1 (or less) to run synchronously — useful in tests.
-      def initialize(output_root, parallel_workers: 8)
+      # @param resolver [Ucode::Glyphs::Resolver, nil] when non-nil, each
+      #   write resolves the codepoint's glyph via this resolver and
+      #   writes `glyph.svg` next to `index.json`. Sources inside the
+      #   resolver must be safe for concurrent access — the worker pool
+      #   calls into them from multiple threads.
+      def initialize(output_root, parallel_workers: 8, resolver: nil)
         @output_root = Pathname.new(output_root)
         @parallel_workers = parallel_workers
+        @resolver = resolver
       end
 
       # Write one codepoint synchronously.
@@ -39,6 +53,8 @@ module Ucode
       #   (missing block_id or content-identical to existing file)
       def write(codepoint)
         return nil if codepoint.block_id.nil?
+
+        resolve_glyph!(codepoint) if @resolver
 
         path = Paths.codepoint_json_path(@output_root, codepoint.block_id, codepoint.id)
         payload = serialize(codepoint)
@@ -90,6 +106,27 @@ module Ucode
 
       def serialize(codepoint)
         codepoint.to_json(pretty: true)
+      end
+
+      def resolve_glyph!(codepoint)
+        result = @resolver.resolve(codepoint.cp)
+        codepoint.glyph = build_glyph_bundle(result)
+        return unless result
+
+        path = Paths.codepoint_glyph_path(@output_root, codepoint.block_id, codepoint.id)
+        write_atomic(path, result.svg)
+      end
+
+      def build_glyph_bundle(result)
+        return nil unless result
+
+        Ucode::Models::CodePoint::Glyph.new(
+          svg_path: Paths.glyph_filename,
+          source: Ucode::Models::CodePoint::Glyph::Source.new(
+            tier: result.tier.to_s,
+            provenance: result.provenance,
+          ),
+        )
       end
     end
   end

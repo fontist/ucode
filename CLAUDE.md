@@ -24,14 +24,19 @@ main, never push tags; never add AI attribution to commits.
 
 ## Authoritative source — UCD text files, NOT `ucd.all.flat.xml`
 
-`ucd.all.flat.xml` is present in the repo root but is **not authoritative** for this project.
-It carries only the machine-readable scalar properties per code point and omits the
-human-curated relationship data in `NamesList.txt`, `NamedSequences.txt`,
-`StandardizedVariants.txt`, `SpecialCasing.txt`, `CaseFolding.txt`, `BidiMirroring.txt`,
-`BidiBrackets.txt`, `CJKRadicals.txt`, etc. We parse those text files directly per the
-formats specified in UAX #44 and the per-file headers.
+The `ucd.all.flat.xml` machine-readable scalar dump (and its `.zip` distribution)
+were removed from this repo: they carry only the machine-readable scalar properties
+per code point and omit the human-curated relationship data this project depends on.
+Use the UCD text files instead (`UnicodeData.txt`, `NamesList.txt`, etc.) per the
+formats specified in UAX #44. The Code Charts monolith `CodeCharts.pdf` was likewise
+removed — per-block PDFs are fetched on demand from unicode.org/charts/.
 
 ### UCD text files we must parse (from `UCD.zip`)
+
+**Policy:** UCD text files, Unihan, and per-block chart PDFs are **never committed** to
+this repo. They are downloaded on first use via `bin/ucode fetch` into `data/` (which is
+gitignored). Only the small fixture slices under `spec/fixtures/ucd/` are committed, and
+only because they are exercised by tests.
 
 Per-code-point property data:
 - `UnicodeData.txt` — primary record (name, gc, ccc, bc, dt/dm, nt/nv, suc/slc/stc, …).
@@ -87,26 +92,15 @@ Human-curated relationship file (the one that makes this project valuable):
 `Unihan.zip` contains `Unihan_IRGSources.txt`, `Unihan_NumericValues.txt`,
 `Unihan_RadicalStrokeCounts.txt`, `Unihan_Readings.txt`, `Unihan_DictionaryIndices.txt`,
 `Unihan_DictionaryLikeData.txt`, `Unhan_Variants.txt`, `Unihan_OtherMappings.txt`. Parse all
-of them. Unihan field set is much larger than what `ucd.all.flat.xml` inlines — that is the
-second reason we cannot rely on the XML.
+of them. Unihan field set is much larger than what a flat XML dump would inline — that is the
+second reason we cannot rely on a flat dump.
 
 ### Glyphs (per-block PDFs from unicode.org/charts/)
 
 Default source: per-block PDFs at `https://www.unicode.org/charts/PDF/U<XXXX>.pdf` (the first
 codepoint of each block, zero-padded to 4 digits where possible). One PDF per block — small,
-incremental, easy to re-run. Fall back to slicing `CodeCharts.pdf` (3,156 pages) only when a
-block PDF is unavailable.
-
-## Source files in the repo root (DO NOT DELETE, DO NOT `git rm`)
-
-- `ucd.all.flat.xml` — retained as reference / cross-check; **not** parsed by this project.
-- `ucd.all.flat.zip` — compressed distribution of the above.
-- `CodeCharts.pdf` — full Unicode 17.0 code charts (3,156 pages, US-Letter 612×792 pt,
-  embedded subsetted vector fonts Type 1C + TrueType). Fallback for glyph extraction when a
-  per-block PDF is missing.
-
-These three files are source. The global rule "never delete source files" applies — they
-must not be moved, renamed, overwritten, or deleted even if they look "unused by code".
+incremental, easy to re-run. The monolithic `CodeCharts.pdf` (3,156 pages) was removed from
+the repo — per-block PDFs are sufficient for the pipeline.
 
 ## Architecture (target shape)
 
@@ -184,7 +178,7 @@ To be filled in once the gem skeleton exists. Expected shape:
   parser as a small state machine, not a regex.
 - **`UnicodeData.txt` range markers.** Lines with `na` of `<First>` / `<Last>` are range
   endpoints — expand to one record per codepoint using the range bounds. Do not store as
-  ranges. Final codepoint count should match `ucd.all.flat.xml` (~160 k for Unicode 17).
+  ranges. Final codepoint count should be ~160 k for Unicode 17.
 - **CID ↔ Unicode mapping in PDFs.** Code Charts fonts are subsetted with custom encodings.
   The reliable mapping is "the codepoint label printed next to the row/column" — i.e. use
   the chart's grid geometry, not the font's ToUnicode CMap, to attribute a glyph to a code
@@ -195,8 +189,9 @@ To be filled in once the gem skeleton exists. Expected shape:
 - **Original block names.** Use the exact `blk` attribute from `Blocks.txt`
   (e.g. `CJK_Ext_A`, `Greek_And_Coptic`) as the folder name and as the block identifier in
   JSON. Do not slugify.
-- **Per-block vs monolith PDFs.** Prefer per-block PDFs for development and incremental
-  runs; fall back to slicing `CodeCharts.pdf` only when a block PDF is missing.
+- **Per-block PDFs only.** Per-block PDFs are fetched on demand from
+  unicode.org/charts/PDF/ — no monolithic chart is committed. Each block
+  PDF is small and incremental, supporting clean re-runs.
 - **Idempotency.** All build steps must be resumable: re-running `ucode glyphs` should skip
   codepoints whose `glyph.svg` is already on disk and is newer than the source PDF; same for
   `index.json` vs `data/ucd/`.

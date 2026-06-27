@@ -47,5 +47,7 @@ module Ucode
     autoload :ValidationReport, "ucode/models/validation_report"
     autoload :GlyphSource, "ucode/models/glyph_source"
     autoload :GlyphSourceMap, "ucode/models/glyph_source_map"
+    autoload :UniversalSetEntry, "ucode/models/universal_set_entry"
+    autoload :UniversalSetManifest, "ucode/models/universal_set_manifest"
   end
 end

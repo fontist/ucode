@@ -9,12 +9,9 @@
 /.yardoc/
 /.rspec_status
 
-# Source files — NEVER ignore (per global rule). These three are canonical
-# Unicode assets that must remain in the repository even if no code
-# currently references them.
-#   ucd.all.flat.xml
-#   ucd.all.flat.zip
-#   CodeCharts.pdf
+# UCD text files, Unihan, and per-block PDFs are downloaded on first
+# use via `bin/ucode fetch` into data/. Never commit production UCD
+# assets — only the small fixture slices under spec/fixtures/ucd/.
 
 # Bundler local config
 /.bundle/config

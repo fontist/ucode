@@ -4,13 +4,20 @@ require "spec_helper"
 
 RSpec.describe Ucode::Glyphs::Sources::Tier1RealFont do
   subject(:source) do
-    described_class.new(block_range: adlam_range, font_spec: font_spec,
+    described_class.new(block_range: adlam_range, source: glyph_source,
                         install: false)
   end
 
   let(:font_path) { "spec/fixtures/fonts/NotoSansAdlam-Regular.ttf" }
   let(:adlam_range) { 0x1E900..0x1E95F }
-  let(:font_spec) { "NotoSansAdlam=#{font_path}" }
+  let(:glyph_source) do
+    Ucode::Models::GlyphSource.from_hash(
+      "kind" => "path",
+      "label" => "NotoSansAdlam",
+      "path" => font_path,
+      "priority" => 1,
+    )
+  end
 
   describe "#tier" do
     it { expect(source.tier).to eq(:tier1) }
@@ -45,10 +52,15 @@ RSpec.describe Ucode::Glyphs::Sources::Tier1RealFont do
     end
   end
 
-  describe "with an unresolvable font spec" do
+  describe "with an unresolvable font source" do
     subject(:bad_source) do
       described_class.new(block_range: adlam_range,
-                          font_spec: "Bogus=/no/such/font.ttf",
+                          source: Ucode::Models::GlyphSource.from_hash(
+                            "kind" => "path",
+                            "label" => "Bogus",
+                            "path" => "/no/such/font.ttf",
+                            "priority" => 1,
+                          ),
                           install: false)
     end
 
@@ -57,19 +69,28 @@ RSpec.describe Ucode::Glyphs::Sources::Tier1RealFont do
     end
   end
 
-  describe "label extraction from spec" do
-    it "uses the part before = as the label" do
-      source = described_class.new(block_range: adlam_range,
-                                   font_spec: "MyLabel=/path/to/font.ttf",
-                                   install: false)
-      expect(source.provenance).to eq("tier-1:MyLabel")
+  describe "provenance uses GlyphSource#label" do
+    it "reflects the label of a path-kind source" do
+      s = described_class.new(
+        block_range: adlam_range,
+        source: Ucode::Models::GlyphSource.from_hash(
+          "kind" => "path", "label" => "MyLabel", "path" => "/x.ttf",
+          "priority" => 1,
+        ),
+        install: false,
+      )
+      expect(s.provenance).to eq("tier-1:MyLabel")
     end
 
-    it "uses the full spec as label when no = is present" do
-      source = described_class.new(block_range: adlam_range,
-                                   font_spec: "noto-sans-adlam",
-                                   install: false)
-      expect(source.provenance).to eq("tier-1:noto-sans-adlam")
+    it "reflects the label of a fontist-kind source" do
+      s = described_class.new(
+        block_range: adlam_range,
+        source: Ucode::Models::GlyphSource.from_hash(
+          "kind" => "fontist", "label" => "noto-sans-adlam", "priority" => 1,
+        ),
+        install: false,
+      )
+      expect(s.provenance).to eq("tier-1:noto-sans-adlam")
     end
   end
 end

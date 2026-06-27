@@ -10,13 +10,21 @@ RSpec.describe Ucode::Glyphs::SourceBuilder do
 
   let(:tmpdir) { Pathname.new(Dir.mktmpdir("ucode-builder")) }
   let(:config_path) do
-    path = tmpdir.join("tier1.yml")
+    path = tmpdir.join("universal.yml")
     path.write(<<~YAML)
-      tier1_fonts:
+      unicode_version: "17.0.0"
+      map:
         Basic_Latin:
-          - NotoSansAdlam=spec/fixtures/fonts/NotoSansAdlam-Regular.ttf
+          sources:
+            - kind: path
+              label: NotoSansAdlam
+              path: spec/fixtures/fonts/NotoSansAdlam-Regular.ttf
+              priority: 1
         Nonexistent_Block:
-          - some-font
+          sources:
+            - kind: fontist
+              label: some-font
+              priority: 1
     YAML
     path
   end
@@ -26,10 +34,10 @@ RSpec.describe Ucode::Glyphs::SourceBuilder do
   after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
 
   describe "#tier1_sources" do
-    it "builds one Tier1RealFont per configured spec for known blocks" do
+    it "builds one Tier1RealFont per configured source for known blocks" do
       sources = builder.tier1_sources(install: false)
-      # Basic Latin has one spec → one source; Nonexistent_Block is
-      # silently skipped (no matching range in the UCD database).
+      # Basic_Latin has one source → one Tier1RealFont;
+      # Nonexistent_Block is silently skipped (no matching range).
       expect(sources.length).to eq(1)
       expect(sources.first).to be_a(Ucode::Glyphs::Sources::Tier1RealFont)
     end
@@ -54,6 +62,27 @@ RSpec.describe Ucode::Glyphs::SourceBuilder do
       sources = builder.tier1_sources(install: false)
       # Only Basic_Latin resolves; Nonexistent_Block produces nothing.
       expect(sources.length).to eq(1)
+    end
+
+    it "expands multiple sources for the same block into separate Tier1RealFonts" do
+      path = tmpdir.join("multi.yml")
+      path.write(<<~YAML)
+        map:
+          Basic_Latin:
+            sources:
+              - kind: path
+                label: NotoSansAdlam
+                path: spec/fixtures/fonts/NotoSansAdlam-Regular.ttf
+                priority: 1
+              - kind: fontist
+                label: noto-sans
+                priority: 2
+      YAML
+      multi_config = Ucode::Glyphs::SourceConfig.new(path: path)
+      multi_builder = described_class.new(config: multi_config, database: fixture_database)
+      sources = multi_builder.tier1_sources(install: false)
+      expect(sources.length).to eq(2)
+      expect(sources.map(&:provenance)).to contain_exactly("tier-1:NotoSansAdlam", "tier-1:noto-sans")
     end
   end
 end

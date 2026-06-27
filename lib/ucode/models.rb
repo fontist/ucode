@@ -44,5 +44,6 @@ module Ucode
     autoload :Relationship, "ucode/models/relationship"
     autoload :Audit, "ucode/models/audit"
     autoload :BuildReport, "ucode/models/build_report"
+    autoload :ValidationReport, "ucode/models/validation_report"
   end
 end

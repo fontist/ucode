@@ -348,5 +348,32 @@ module Ucode
 
     desc "audit", "Audit font coverage against the Unicode baseline"
     subcommand "audit", Audit
+
+    # ─────────────── universal-set ───────────────
+    class UniversalSetCmd < Thor
+      desc "build [VERSION]", "Materialize the universal glyph set (one SVG per assigned codepoint)"
+      option :to, type: :string, default: "./output/universal_glyph_set",
+                  desc: "Output directory"
+      option :source_config, type: :string, default: nil,
+                             desc: "Path to a Tier 1 source config YAML " \
+                                   "(default: config/unicode17_universal_glyph_set.yml)"
+      option :block, type: :string, default: nil,
+                     desc: "Limit the build to one block (canonical underscore form)"
+      option :parallel, type: :numeric, default: nil,
+                        desc: "Worker pool size (default: Ucode.configuration.parallel_workers)"
+      def build(version = nil)
+        result = Commands::UniversalSet::BuildCommand.new.call(
+          version,
+          output_root: options[:to],
+          source_config_path: options[:source_config],
+          block_filter: options[:block],
+          parallel_workers: options[:parallel] || Ucode.configuration.parallel_workers,
+        )
+        puts JSON.pretty_generate(result)
+      end
+    end
+
+    desc "universal-set", "Build and inspect the universal glyph set reference"
+    subcommand "universal-set", UniversalSetCmd
   end
 end

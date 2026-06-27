@@ -28,5 +28,6 @@ module Ucode
     autoload :SourceConfig, "ucode/glyphs/source_config"
     autoload :SourceBuilder, "ucode/glyphs/source_builder"
     autoload :Sources, "ucode/glyphs/sources"
+    autoload :UniversalSet, "ucode/glyphs/universal_set"
   end
 end

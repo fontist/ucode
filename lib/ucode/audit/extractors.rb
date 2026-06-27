@@ -5,15 +5,15 @@
 # Each extractor is a small MECE class with a single `#extract(context)`
 # method returning a hash of AuditReport fields. The Audit::Registry
 # declares the ordered list.
-#
-# Starts empty. TODOs 08 and 09 add extractors here in strict order:
-#
-#   08 (cheap):  Provenance, Identity, Style, Licensing, Coverage
-#   09 (pricy):  Metrics, Hinting, ColorCapabilities, VariationDetail,
-#                OpenTypeLayout, Aggregations
 module Ucode
   module Audit
     module Extractors
+      autoload :Base,       "ucode/audit/extractors/base"
+      autoload :Provenance, "ucode/audit/extractors/provenance"
+      autoload :Identity,   "ucode/audit/extractors/identity"
+      autoload :Style,      "ucode/audit/extractors/style"
+      autoload :Licensing,  "ucode/audit/extractors/licensing"
+      autoload :Coverage,   "ucode/audit/extractors/coverage"
     end
   end
 end

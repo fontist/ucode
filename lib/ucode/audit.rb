@@ -18,5 +18,6 @@ module Ucode
     autoload :Context, "ucode/audit/context"
     autoload :Registry, "ucode/audit/registry"
     autoload :Extractors, "ucode/audit/extractors"
+    autoload :CodepointRangeCoalescer, "ucode/audit/codepoint_range_coalescer"
   end
 end

@@ -16,6 +16,25 @@ module Ucode
   # Foundation
   autoload :Config, "ucode/config"
   autoload :Error, "ucode/error"
+  # Error subclasses are referenced independently of Ucode::Error in
+  # rescue / raise clauses throughout the library. Declaring autoloads
+  # for each ensures any one of them triggers the single load of
+  # error.rb (which defines all of them in one pass).
+  autoload :FetchError, "ucode/error"
+  autoload :NetworkError, "ucode/error"
+  autoload :ChecksumError, "ucode/error"
+  autoload :ParseError, "ucode/error"
+  autoload :MalformedLineError, "ucode/error"
+  autoload :UnknownPropertyError, "ucode/error"
+  autoload :LookupError, "ucode/error"
+  autoload :DatabaseMissingError, "ucode/error"
+  autoload :DatabaseSchemaError, "ucode/error"
+  autoload :UnknownVersionError, "ucode/error"
+  autoload :GlyphError, "ucode/error"
+  autoload :PdfRenderError, "ucode/error"
+  autoload :GridDetectionError, "ucode/error"
+  autoload :LastResortMissingError, "ucode/error"
+  autoload :EmbeddedFontsMissingError, "ucode/error"
 
   # Infrastructure
   autoload :Cache, "ucode/cache"
@@ -34,6 +53,7 @@ module Ucode
   autoload :Aggregator, "ucode/aggregator"
   autoload :Repo, "ucode/repo"
   autoload :Glyphs, "ucode/glyphs"
+  autoload :Audit, "ucode/audit"
   autoload :Site, "ucode/site"
   autoload :Commands, "ucode/commands"
   autoload :Cli, "ucode/cli"

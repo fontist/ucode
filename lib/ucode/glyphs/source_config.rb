@@ -27,8 +27,12 @@ module Ucode
     # - Empty `map:` section → same as missing file.
     # - Malformed YAML → raises (the curator must fix the file).
     class SourceConfig
+      # Default location of the curated Tier 1 font map. Public so the
+      # canonical build + universal set commands can reference it when
+      # no override is supplied. Keeping it on the class (not an
+      # instance attr) lets callers use it without constructing a
+      # SourceConfig first.
       DEFAULT_PATH = Pathname.new("config/unicode17_universal_glyph_set.yml")
-      private_constant :DEFAULT_PATH
 
       # @param path [String, Pathname] path to the YAML config file.
       def initialize(path: DEFAULT_PATH)

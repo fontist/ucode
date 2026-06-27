@@ -16,6 +16,7 @@ module Ucode
     autoload :BuildCommand, "ucode/commands/build"
     autoload :CanonicalBuildCommand, "ucode/commands/canonical_build"
     autoload :FontCoverageCommand, "ucode/commands/font_coverage"
+    autoload :UniversalSet, "ucode/commands/universal_set"
     autoload :Audit, "ucode/commands/audit"
   end
 end

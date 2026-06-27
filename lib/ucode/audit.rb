@@ -35,5 +35,8 @@ module Ucode
 
     # Human-readable text output (TODO 12).
     autoload :Formatters, "ucode/audit/formatters"
+
+    # Mode 2 directory output writers (TODO 13).
+    autoload :Emitter, "ucode/audit/emitter"
   end
 end

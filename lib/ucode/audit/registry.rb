@@ -12,15 +12,21 @@ module Ucode
     # `Ucode::Audit::Extractors::*` + one line in the appropriate list
     # below. AuditCommand never enumerates extractors directly.
     module Registry
-      # Full audit: every concern. The five cheap extractors are added
-      # in TODO 08; TODO 09 appends the expensive ones (Metrics, Hinting,
-      # ColorCapabilities, VariationDetail, OpenTypeLayout, Aggregations).
+      # Full audit: every concern. The five cheap extractors come from
+      # TODO 08; the five expensive extractors come from TODO 09. The
+      # Aggregations extractor (TODO 10) is still pending — it sits
+      # last because it depends on UCD baseline resolution.
       ORDERED_EXTRACTORS = [
         Extractors::Provenance,
         Extractors::Identity,
         Extractors::Style,
         Extractors::Licensing,
         Extractors::Coverage,
+        Extractors::Metrics,
+        Extractors::Hinting,
+        Extractors::ColorCapabilities,
+        Extractors::VariationDetail,
+        Extractors::OpenTypeLayout,
       ].freeze
 
       # Brief audit: cheap, name-table-only extractors. Used by

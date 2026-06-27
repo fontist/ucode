@@ -6,6 +6,24 @@ require "pathname"
 require "stringio"
 
 RSpec.describe Ucode::Commands::GlyphsCommand do
+  # GlyphsCommand reads Blocks.txt from Cache.ucd_dir(<version>). The
+  # default cache_root points at the operator's ~/.cache, which on a
+  # developer machine (or a CI runner where another spec downloaded
+  # UCD) can be populated — making block_count non-deterministic.
+  # Pin cache_root to a per-example tmpdir so load_blocks sees no
+  # Blocks.txt and the assertion on block_count is stable.
+  around do |example|
+    Dir.mktmpdir do |cache_root|
+      original = Ucode.configuration.cache_root
+      Ucode.configuration.cache_root = Pathname.new(cache_root)
+      begin
+        example.run
+      ensure
+        Ucode.configuration.cache_root = original
+      end
+    end
+  end
+
   describe ".experimental_warning" do
     it "exposes a non-empty banner that mentions experimental status" do
       warning = described_class.experimental_warning

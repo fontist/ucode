@@ -18,5 +18,7 @@ module Ucode
     autoload :AtomicWrites, "ucode/repo/atomic_writes"
     autoload :CodepointWriter, "ucode/repo/codepoint_writer"
     autoload :AggregateWriter, "ucode/repo/aggregate_writer"
+    autoload :BuildReportAccumulator, "ucode/repo/build_report_accumulator"
+    autoload :BuildReportWriter, "ucode/repo/build_report_writer"
   end
 end

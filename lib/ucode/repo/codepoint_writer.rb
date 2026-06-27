@@ -41,10 +41,19 @@ module Ucode
       #   writes `glyph.svg` next to `index.json`. Sources inside the
       #   resolver must be safe for concurrent access — the worker pool
       #   calls into them from multiple threads.
-      def initialize(output_root, parallel_workers: 8, resolver: nil)
+      # @param observer [#call, nil] when non-nil, invoked as
+      #   `observer.call(codepoint, result)` after each resolve attempt
+      #   (and before the JSON write). `result` is the
+      #   {Ucode::Glyphs::Source::Result} when a tier produced a glyph,
+      #   or nil when no resolver is configured / no tier matched. Used
+      #   by {Ucode::Repo::BuildReportAccumulator} to tally per-tier
+      #   stats. The observer must be thread-safe.
+      def initialize(output_root, parallel_workers: 8, resolver: nil,
+                     observer: nil)
         @output_root = Pathname.new(output_root)
         @parallel_workers = parallel_workers
         @resolver = resolver
+        @observer = observer
       end
 
       # Write one codepoint synchronously.
@@ -52,9 +61,9 @@ module Ucode
       # @return [Pathname, nil] the path written, or nil if skipped
       #   (missing block_id or content-identical to existing file)
       def write(codepoint)
+        result = codepoint.block_id.nil? ? nil : resolve_glyph(codepoint)
+        @observer&.call(codepoint, result)
         return nil if codepoint.block_id.nil?
-
-        resolve_glyph!(codepoint) if @resolver
 
         path = Paths.codepoint_json_path(@output_root, codepoint.block_id, codepoint.id)
         payload = serialize(codepoint)
@@ -108,13 +117,16 @@ module Ucode
         codepoint.to_json(pretty: true)
       end
 
-      def resolve_glyph!(codepoint)
+      def resolve_glyph(codepoint)
+        return nil unless @resolver
+
         result = @resolver.resolve(codepoint.cp)
         codepoint.glyph = build_glyph_bundle(result)
-        return unless result
+        return nil unless result
 
         path = Paths.codepoint_glyph_path(@output_root, codepoint.block_id, codepoint.id)
         write_atomic(path, result.svg)
+        result
       end
 
       def build_glyph_bundle(result)

@@ -46,9 +46,16 @@ module Ucode
       #   (`config/unicode17_tier1_fonts.yml`).
       # @param resolver [Ucode::Glyphs::Resolver, nil] inject a
       #   pre-built resolver (skips SourceBuilder); used by tests.
-      # @return [Hash] { version:, codepoint_count:, report_path: }
+      # @param validate [Boolean] run {Ucode::Repo::BuildValidator}
+      #   after the build and emit `validation-report.json`. Default
+      #   true; tests that don't care about validation pass false.
+      # @param baseline [Hash{String=>Integer}, nil] per-block expected
+      #   built counts forwarded to the validator when `validate:` is
+      #   true. nil skips the block_coverage check.
+      # @return [Hash] { version:, codepoint_count:, report_path:,
+      #   validation_report_path:, validation_passed: }
       def call(version_intent, output_root:, source_config_path: nil,
-               resolver: nil)
+               resolver: nil, validate: true, baseline: nil)
         version = VersionResolver.resolve(version_intent)
         root = Pathname.new(output_root)
 
@@ -74,15 +81,28 @@ module Ucode
         report = accumulator.to_report
         report_path = Repo::BuildReportWriter.new(root).write(report)
 
-        {
+        result = {
           version: version,
           codepoint_count: codepoint_count,
           report_path: report_path,
           totals: report.totals.to_hash,
         }
+        return result unless validate
+
+        merge_validation_result(result, root, version, baseline)
       end
 
       private
+
+      def merge_validation_result(result, root, version, baseline)
+        outcome = Repo::BuildValidator.new(
+          root, unicode_version: version, baseline: baseline,
+        ).validate
+        result.merge(
+          validation_report_path: outcome[:report_path],
+          validation_passed: outcome[:passed],
+        )
+      end
 
       def workers
         Ucode.configuration.parallel_workers

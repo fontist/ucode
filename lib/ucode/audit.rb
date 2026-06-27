@@ -23,5 +23,17 @@ module Ucode
     autoload :ScriptAggregator, "ucode/audit/script_aggregator"
     autoload :PlaneAggregator, "ucode/audit/plane_aggregator"
     autoload :DiscrepancyDetector, "ucode/audit/discrepancy_detector"
+
+    # Per-face orchestrator (TODO 11) — shared by LibraryAuditor and
+    # the future CLI AuditCommand.
+    autoload :FaceAuditor, "ucode/audit/face_auditor"
+
+    # Cross-report orchestration (TODO 11).
+    autoload :Differ, "ucode/audit/differ"
+    autoload :LibraryAuditor, "ucode/audit/library_auditor"
+    autoload :LibraryAggregator, "ucode/audit/library_aggregator"
+
+    # Human-readable text output (TODO 12).
+    autoload :Formatters, "ucode/audit/formatters"
   end
 end

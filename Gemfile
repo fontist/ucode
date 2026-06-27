@@ -15,5 +15,8 @@ group :development do
   gem "yard"
 end
 
-# Local sibling checkout for in-development fontisan (glyph extraction).
-gem "fontisan", "~> 0.2", path: "../fontisan" if Dir.exist?("../fontisan")
+# Default to the published fontisan from rubygems. To develop against a
+# local sibling checkout, set FONTISAN_PATH before running bundle.
+#   FONTISAN_PATH=../fontisan bundle install
+gem "fontisan", path: ENV["FONTISAN_PATH"] if ENV["FONTISAN_PATH"]
+gem "fontisan", "~> 0.2" unless ENV["FONTISAN_PATH"]

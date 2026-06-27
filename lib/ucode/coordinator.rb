@@ -212,7 +212,7 @@ module Ucode
 
       by_field = Hash.new { |h, k| h[k] = {} }
       Parsers::Unihan.each_in_dir(dir) do |record|
-        by_field[record.cp][record.field] = record.values
+        by_field[record.cp][record.field] = record.field_values
       end
 
       by_field.transform_values { |fields| Models::UnihanEntry.new(fields: fields) }

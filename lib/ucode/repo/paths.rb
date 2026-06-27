@@ -24,6 +24,14 @@ module Ucode
                        :PLANE_FILENAME_PREFIX
 
       class << self
+        # The fixed filename every codepoint's SVG glyph is written to
+        # (relative to the codepoint's own directory). Exposed so the
+        # Glyph model bundle records the same string the layout uses.
+        # @return [String]
+        def glyph_filename
+          GLYPH_FILENAME
+        end
+
         # Format an integer codepoint as the canonical "U+XXXX" id used
         # everywhere (paths, JSON, cross-references). Always at least
         # 4 hex digits, uppercase, no extra padding.

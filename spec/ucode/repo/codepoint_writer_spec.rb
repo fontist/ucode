@@ -291,4 +291,133 @@ RSpec.describe Ucode::Repo::CodepointWriter do
       end
     end
   end
+
+  describe "#write with a resolver" do
+    # Concrete Source subclass for resolver/writer integration testing.
+    # Returns a fixed SVG for codepoints in its set, nil otherwise.
+    # Not a double — a real Source subclass with real behavior.
+    let(:source_class) do
+      Class.new(Ucode::Glyphs::Source) do
+        def initialize(tier:, provenance:, svg:, codepoints:)
+          super()
+          @tier = tier
+          @provenance = provenance
+          @svg = svg
+          @codepoints = codepoints
+        end
+
+        def tier = @tier
+        def provenance = @provenance
+
+        def fetch(codepoint)
+          return nil unless @codepoints.include?(codepoint)
+
+          Ucode::Glyphs::Source::Result.new(
+            tier: @tier, codepoint: codepoint, svg: @svg,
+            provenance: @provenance,
+          )
+        end
+      end
+    end
+
+    let(:svg_payload) { "<svg xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M0 0\"/></svg>\n" }
+
+    let(:resolver) do
+      source = source_class.new(
+        tier: :tier1, provenance: "tier-1:fixture",
+        svg: svg_payload, codepoints: [0x41],
+      )
+      Ucode::Glyphs::Resolver.new(sources: [source])
+    end
+
+    let(:codepoint) do
+      Ucode::Models::CodePoint.new(
+        cp: 0x41, id: "U+0041", name: "LATIN CAPITAL LETTER A", block_id: "ASCII",
+      )
+    end
+
+    it "writes glyph.svg alongside index.json when the resolver returns a result" do
+      Dir.mktmpdir do |out|
+        writer = described_class.new(out, parallel_workers: 1, resolver: resolver)
+        writer.write(codepoint)
+        glyph_path = File.join(out, "blocks", "ASCII", "U+0041", "glyph.svg")
+        expect(File.exist?(glyph_path)).to eq(true)
+        expect(File.read(glyph_path)).to eq(svg_payload)
+      end
+    end
+
+    it "records svg_path + tier + provenance in index.json" do
+      Dir.mktmpdir do |out|
+        writer = described_class.new(out, parallel_workers: 1, resolver: resolver)
+        writer.write(codepoint)
+        parsed = JSON.parse(
+          File.read(File.join(out, "blocks", "ASCII", "U+0041", "index.json")),
+        )
+        expect(parsed["glyph"]).to eq(
+          "svg_path" => "glyph.svg",
+          "source" => { "tier" => "tier1", "provenance" => "tier-1:fixture" },
+        )
+      end
+    end
+
+    it "omits glyph from index.json and writes no glyph.svg when resolver returns nil" do
+      # Source above covers only 0x41; 0x42 falls through to nil.
+      other = Ucode::Models::CodePoint.new(
+        cp: 0x42, id: "U+0042", name: "LATIN CAPITAL LETTER B", block_id: "ASCII",
+      )
+      Dir.mktmpdir do |out|
+        writer = described_class.new(out, parallel_workers: 1, resolver: resolver)
+        writer.write(other)
+        parsed = JSON.parse(
+          File.read(File.join(out, "blocks", "ASCII", "U+0042", "index.json")),
+        )
+        expect(parsed.key?("glyph")).to eq(false)
+        expect(File.exist?(File.join(out, "blocks", "ASCII", "U+0042", "glyph.svg")))
+          .to eq(false)
+      end
+    end
+
+    it "is idempotent: rewriting unchanged content leaves both files untouched" do
+      Dir.mktmpdir do |out|
+        writer = described_class.new(out, parallel_workers: 1, resolver: resolver)
+        writer.write(codepoint)
+        json_path = File.join(out, "blocks", "ASCII", "U+0041", "index.json")
+        glyph_path = File.join(out, "blocks", "ASCII", "U+0041", "glyph.svg")
+        json_mtime = File.mtime(json_path)
+        glyph_mtime = File.mtime(glyph_path)
+        sleep(0.01)
+
+        fresh_cp = Ucode::Models::CodePoint.new(
+          cp: 0x41, id: "U+0041", name: "LATIN CAPITAL LETTER A", block_id: "ASCII",
+        )
+        writer.write(fresh_cp)
+        expect(File.mtime(json_path)).to eq(json_mtime)
+        expect(File.mtime(glyph_path)).to eq(glyph_mtime)
+      end
+    end
+
+    it "rewrites glyph.svg when the resolver returns different content" do
+      Dir.mktmpdir do |out|
+        writer = described_class.new(out, parallel_workers: 1, resolver: resolver)
+        writer.write(codepoint)
+        glyph_path = File.join(out, "blocks", "ASCII", "U+0041", "glyph.svg")
+        first_body = File.read(glyph_path)
+
+        new_svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M1 1\"/></svg>\n"
+        new_source = source_class.new(
+          tier: :pillar3, provenance: "pillar-3:last-resort",
+          svg: new_svg, codepoints: [0x41],
+        )
+        new_resolver = Ucode::Glyphs::Resolver.new(sources: [new_source])
+        new_writer = described_class.new(out, parallel_workers: 1,
+                                              resolver: new_resolver)
+        fresh_cp = Ucode::Models::CodePoint.new(
+          cp: 0x41, id: "U+0041", name: "LATIN CAPITAL LETTER A", block_id: "ASCII",
+        )
+        new_writer.write(fresh_cp)
+        expect(File.read(glyph_path)).not_to eq(first_body)
+        expect(File.read(glyph_path)).to eq(new_svg)
+      end
+    end
+  end
 end

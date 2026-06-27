@@ -20,10 +20,14 @@ module Ucode
       # @param options [Hash{Symbol=>Object}] forwarded to {Context}
       #   (ucd_version, all_codepoints, with_glyphs, audit_brief, …)
       # @param mode [Symbol] :full (default) or :brief
-      def initialize(font_path, options: {}, mode: :full)
+      # @param font_index [Integer, nil] when set and the source is a
+      #   collection (TTC/OTC/dfong), audit only that face index and
+      #   return a single AuditReport. Ignored for single-face sources.
+      def initialize(font_path, options: {}, mode: :full, font_index: nil)
         @font_path = font_path.to_s
         @options = options
         @mode = mode
+        @font_index = font_index
       end
 
       # @return [Models::Audit::AuditReport, Array<Models::Audit::AuditReport>]
@@ -40,10 +44,12 @@ module Ucode
       def audit_collection
         collection = Fontisan::FontLoader.load_collection(@font_path)
         num = collection.num_fonts
-        Array.new(num) do |index|
+        indices = @font_index ? [@font_index] : (0...num).to_a
+        results = indices.map do |index|
           font = Fontisan::FontLoader.load(@font_path, font_index: index)
           audit_face(font, index, num)
         end
+        @font_index ? results.first : results
       end
 
       def audit_face(font, font_index, num_fonts_in_source)

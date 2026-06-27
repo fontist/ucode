@@ -222,51 +222,131 @@ module Ucode
       puts JSON.pretty_generate(result)
     end
 
-    # ─────────────── font-coverage ───────────────
-    desc "font-coverage FONT [FONT...]", "Audit Unicode 17 block coverage for one or more fonts"
-    long_desc <<~LONG
-      Each FONT argument is either a fontist formula name (resolved via
-      `Fontist::Font.find` then `install`) or `label=/path/to/font.ttf`
-      (uses the local file directly). For every font, walks the cmap via
-      fontisan and emits per-Unicode-17-block coverage to
-      `<to>/font_coverage/<label>.json`.
+    # ─────────────── audit ───────────────
+    class Audit < Thor
+      desc "font PATH", "Audit a single font (or fontist formula name)"
+      option :label,       type: :string, default: nil,
+                           desc: "Output directory name (default: postscript_name)"
+      option :unicode_version, type: :string, default: nil
+      option :output,      type: :string,  default: "./output"
+      option :verbose,     type: :boolean, default: false,
+                           desc: "Emit per-codepoint detail chunks"
+      option :with_glyphs, type: :boolean, default: false,
+                           desc: "Emit per-codepoint SVG chunks (no-op until TODO 20)"
+      option :brief,       type: :boolean, default: false,
+                           desc: "Cheap-extractor-only mode"
+      option :browse,      type: :boolean, default: false,
+                           desc: "Also write the self-contained HTML browser"
+      option :no_install,  type: :boolean, default: false,
+                           desc: "Don't auto-install missing fonts via fontist"
+      def font(path)
+        result = Commands::Audit::FontCommand.new.call(
+          path,
+          label: options[:label],
+          unicode_version: options[:unicode_version],
+          verbose: options[:verbose],
+          with_glyphs: options[:with_glyphs],
+          brief: options[:brief],
+          output_root: options[:output],
+          browse: options[:browse],
+          install: !options[:no_install],
+        )
+        puts JSON.pretty_generate(result_to_h(result))
+      end
 
-      Examples:
+      desc "collection PATH", "Audit a TTC/OTC/dfong collection"
+      option :font_index,  type: :numeric, default: nil,
+                           desc: "Audit only face N (single-face output)"
+      option :label,       type: :string,  default: nil
+      option :unicode_version, type: :string, default: nil
+      option :output,      type: :string,  default: "./output"
+      option :verbose,     type: :boolean, default: false
+      option :with_glyphs, type: :boolean, default: false
+      option :brief,       type: :boolean, default: false
+      option :browse,      type: :boolean, default: false
+      def collection(path)
+        result = Commands::Audit::CollectionCommand.new.call(
+          path,
+          font_index: options[:font_index],
+          label: options[:label],
+          unicode_version: options[:unicode_version],
+          verbose: options[:verbose],
+          with_glyphs: options[:with_glyphs],
+          brief: options[:brief],
+          output_root: options[:output],
+          browse: options[:browse],
+        )
+        puts JSON.pretty_generate(result_to_h(result))
+      end
 
-        ucode font-coverage Lentariso=/tmp/lentariso/TTFs/Lentariso-Re.ttf \\
-                             Kedebideri=/tmp/kedebideri/Kedebideri-3.001/Kedebideri-Regular.ttf
+      desc "library DIR", "Walk a directory of fonts and audit each"
+      option :recursive, type: :boolean, default: false
+      option :unicode_version, type: :string, default: nil
+      option :output,      type: :string,  default: "./output"
+      option :verbose,     type: :boolean, default: false
+      option :with_glyphs, type: :boolean, default: false
+      option :brief,       type: :boolean, default: false
+      option :browse,      type: :boolean, default: false,
+                           desc: "Also write the library + face HTML browsers"
+      def library(dir)
+        result = Commands::Audit::LibraryCommand.new.call(
+          dir,
+          recursive: options[:recursive],
+          unicode_version: options[:unicode_version],
+          verbose: options[:verbose],
+          with_glyphs: options[:with_glyphs],
+          brief: options[:brief],
+          output_root: options[:output],
+          browse: options[:browse],
+        )
+        puts JSON.pretty_generate(result_to_h(result))
+      end
 
-        ucode font-coverage Kedebideri  # resolves + installs via fontist
-    LONG
-    option :to, type: :string, default: "./output"
-    option :no_install, type: :boolean, default: false,
-                        desc: "Don't auto-install missing fonts via fontist"
-    def font_coverage(*fonts)
-      raise Thor::Error, "Provide at least one font" if fonts.empty?
+      desc "compare LEFT RIGHT", "Diff two audits"
+      option :unicode_version, type: :string, default: nil
+      option :output,      type: :string, default: nil,
+                           desc: "Write text diff to file (default: stdout)"
+      def compare(left, right)
+        result = Commands::Audit::CompareCommand.new.call(
+          left, right,
+          unicode_version: options[:unicode_version],
+          output_file: options[:output],
+        )
+        if result.error
+          warn "compare failed: #{result.error}"
+          exit 1
+        elsif options[:output].nil?
+          puts result.text
+        else
+          puts "wrote #{options[:output]}"
+        end
+      end
 
-      results = Commands::FontCoverageCommand.new.call(
-        fonts,
-        output_root: options[:to],
-        install: !options[:no_install],
-      )
-      puts JSON.pretty_generate(results.map { |r| result_to_h(r) })
-    end
+      desc "browser", "Regenerate HTML browsers from existing JSON audits"
+      option :input,       type: :string,  default: "./output/font_audit"
+      option :faces_only,  type: :boolean, default: false
+      option :library_only, type: :boolean, default: false
+      def browser
+        result = Commands::Audit::BrowserCommand.new.call(
+          input: options[:input],
+          faces_only: options[:faces_only],
+          library_only: options[:library_only],
+        )
+        puts JSON.pretty_generate(result_to_h(result))
+      end
 
-    private
+      private
 
-    def result_to_h(result)
-      if result.error
-        { spec: result.spec, error: result.error }
-      else
-        {
-          spec: result.spec,
-          label: result.located.name,
-          source: result.located.path.to_s,
-          via: result.located.via,
-          output_path: result.output_path.to_s,
-          complete_blocks: result.complete_blocks,
-        }
+      def result_to_h(result)
+        return { error: result.error } if result.error
+
+        result.to_h.compact.transform_values do |v|
+          v.is_a?(Struct) ? v.to_h : v
+        end
       end
     end
+
+    desc "audit", "Audit font coverage against the Unicode baseline"
+    subcommand "audit", Audit
   end
 end

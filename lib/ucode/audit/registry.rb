@@ -11,15 +11,28 @@ module Ucode
     # MECE / OCP: a new concern = one file under
     # `Ucode::Audit::Extractors::*` + one line in the appropriate list
     # below. AuditCommand never enumerates extractors directly.
-    #
-    # Starts empty. TODOs 08 and 09 populate the lists in strict order.
     module Registry
-      # Full audit: every concern. Populated by TODOs 08 and 09.
-      ORDERED_EXTRACTORS = [].freeze
+      # Full audit: every concern. The five cheap extractors are added
+      # in TODO 08; TODO 09 appends the expensive ones (Metrics, Hinting,
+      # ColorCapabilities, VariationDetail, OpenTypeLayout, Aggregations).
+      ORDERED_EXTRACTORS = [
+        Extractors::Provenance,
+        Extractors::Identity,
+        Extractors::Style,
+        Extractors::Licensing,
+        Extractors::Coverage,
+      ].freeze
 
       # Brief audit: cheap, name-table-only extractors. Used by
-      # `ucode audit --brief` for a fast inventory pass.
-      BRIEF_EXTRACTORS = [].freeze
+      # `ucode audit --brief` for a fast inventory pass. Stable list —
+      # the expensive extractors are never part of brief mode.
+      BRIEF_EXTRACTORS = [
+        Extractors::Provenance,
+        Extractors::Identity,
+        Extractors::Style,
+        Extractors::Licensing,
+        Extractors::Coverage,
+      ].freeze
 
       # Iterate the extractors appropriate for the given mode.
       #

@@ -85,9 +85,9 @@ module Ucode
       private
 
       def extract_codepoints
-        return [] unless @font.has_table?(Fontisan::Constants::CMAP_TAG)
+        return [] unless @font.has_table?("cmap")
 
-        @font.table(Fontisan::Constants::CMAP_TAG).unicode_mappings.keys
+        @font.table("cmap").unicode_mappings.keys
       end
 
       def resolve_baseline

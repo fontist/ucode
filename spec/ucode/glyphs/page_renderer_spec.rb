@@ -43,8 +43,10 @@ RSpec.describe Ucode::Glyphs::PageRenderer do
   end
 
   describe ".default" do
-    it "returns the first available renderer" do
-      if described_class.available.any?
+    it "returns the first working renderer, falling back to available" do
+      if described_class.working.any?
+        expect(described_class.default).to eq(described_class.working.first)
+      elsif described_class.available.any?
         expect(described_class.default).to eq(described_class.available.first)
       end
     end
@@ -113,6 +115,68 @@ RSpec.describe Ucode::Glyphs::PageRenderer do
     end
   end
 
+  describe ".works?", :integration do
+    let(:fixture_pdf) do
+      Pathname.new(File.expand_path("../../fixtures/pdfs/basic_latin.pdf", __dir__))
+    end
+
+    it "returns false when the binary is not on PATH" do
+      stub_binary(described_class, "ucode_nonexistent_binary_xyz_123")
+      expect(described_class.works?(fixture_pdf: fixture_pdf)).to be(false)
+    end
+
+    it "returns false when the binary exists but render raises PdfRenderError" do
+      stub_binary(described_class, "ls")
+      allow(described_class).to receive(:render)
+        .and_raise(Ucode::PdfRenderError.new("simulated empty output"))
+      expect(described_class.works?(fixture_pdf: fixture_pdf)).to be(false)
+    end
+
+    it "returns false when the SVG lacks the <use>+glyph-id form" do
+      stub_binary(described_class, "ls")
+      allow(described_class).to receive(:render) do |_, _, out_path|
+        File.write(out_path, "<svg><defs><path id='font_1_2'/></defs></svg>")
+        :ok
+      end
+      expect(described_class.works?(fixture_pdf: fixture_pdf)).to be(false)
+    end
+
+    it "returns true when the SVG has <use> and glyph-id groups" do
+      stub_binary(described_class, "ls")
+      allow(described_class).to receive(:render) do |_, _, out_path|
+        File.write(out_path, "<svg><defs><g id=\"glyph-0-1\"><path/></g></defs>" \
+                             "<use xlink:href=\"#glyph-0-1\"/></svg>")
+        :ok
+      end
+      expect(described_class.works?(fixture_pdf: fixture_pdf)).to be(true)
+    end
+  end
+
+  describe ".working" do
+    after { described_class.reset_working_cache! }
+
+    it "is a subset of .available" do
+      expect(described_class.working).to all(be <= described_class)
+      (described_class.working - described_class.available).each do |r|
+        fail "working renderer #{r} not in available: #{described_class.available}"
+      end
+    end
+
+    it "caches the result across calls within the same process" do
+      calls = 0
+      described_class.all.each do |renderer|
+        allow(renderer).to receive(:works?).and_wrap_original do |m, **kw|
+          calls += 1
+          m.call(**kw)
+        end
+      end
+      described_class.reset_working_cache!
+      described_class.working
+      described_class.working
+      expect(calls).to eq(described_class.all.size) # not 2x
+    end
+  end
+
   describe ".render" do
     let(:fixture_pdf) do
       Pathname.new(File.expand_path("../../fixtures/pdfs/basic_latin.pdf", __dir__))
@@ -138,6 +202,11 @@ RSpec.describe "concrete renderers", :integration do
   Ucode::Glyphs::PageRenderer.available.each do |renderer|
     describe renderer do
       it "renders the fixture page to SVG with vector paths (acceptance)" do
+        unless renderer.works?(fixture_pdf: fixture_pdf)
+          skip "#{renderer.renderer_name} is installed but does not produce " \
+               "valid SVG output on this host (broken binary or missing deps)"
+        end
+
         Dir.mktmpdir do |dir|
           out = File.join(dir, "out.svg")
           result = renderer.render(fixture_pdf, 1, out)

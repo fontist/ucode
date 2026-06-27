@@ -232,10 +232,17 @@ RSpec.describe Ucode::Glyphs::Writer do
   def stub_failing_renderer
     Class.new(Ucode::Glyphs::PageRenderer) do
       def self.render(*)
-        :render_failed
+        raise Ucode::PdfRenderError.new(
+          "stub renderer failure",
+          context: { renderer: name },
+        )
       end
 
       def self.available?
+        true
+      end
+
+      def self.works?(**)
         true
       end
     end

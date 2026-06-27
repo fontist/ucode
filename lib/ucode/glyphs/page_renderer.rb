@@ -164,7 +164,7 @@ module Ucode
         #   the format `GridDetector` consumes (smoke-tested once per
         #   process via `works?`, then cached). Subset of `available`.
         def working
-          return @working if defined?(@working)
+          return @working if @working
 
           @working = all.select(&:works?).freeze
         end

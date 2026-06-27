@@ -1,0 +1,42 @@
+# Unicode 17.0 Tier 1 font mapping.
+#
+# Block → preferred Tier 1 real fonts. Each entry is a font specifier
+# resolvable by Ucode::Glyphs::RealFonts::FontLocator:
+#
+#   - "LabelName=/absolute/path/to/font.ttf" — direct path with a
+#     human label. Used for fonts not in fontist's formula index.
+#   - "fontist-formula-name" — resolved via `fontist find/install`.
+#
+# Block names use the original Unicode verbatim form, matching UCD
+# Blocks.txt. Do not slugify.
+#
+# Populated from docs/unicode17-coverage-baseline.md. See that file
+# for cmap-verified coverage numbers and pending font acquisitions.
+
+tier1_fonts:
+  # ✅ 4298/4298 cmap-verified via FSung-3 (全宋體, locally available).
+  # FSung-3 also covers CJK Extension H at 100%.
+  CJK_Unified_Ideographs_Extension_J:
+    - FSung-3=/Users/mulgogi/Downloads/全宋體/FSung-3.ttf
+
+  # ✅ 4192/4192 cmap-verified via FSung-3.
+  CJK_Unified_Ideographs_Extension_H:
+    - FSung-3=/Users/mulgogi/Downloads/全宋體/FSung-3.ttf
+
+  # ✅ 88/88 cmap-verified via Noto Sans Adlam (Unicode 16 baseline).
+  # Unicode 17 reportedly adds +29; pending re-audit with updated font.
+  Adlam:
+    - NotoSansAdlam=spec/fixtures/fonts/NotoSansAdlam-Regular.ttf
+
+  # The blocks below have cmap-verified coverage from prior sessions
+  # (see docs/unicode17-coverage-baseline.md) but their fonts are not
+  # currently on disk. Uncomment after acquiring the fonts and
+  # replacing the placeholder path:
+  #
+  # Sidetic (26/26 via Lentariso ≥1.029):
+  #   Sidetic:
+  #     - Lentariso=/path/to/Lentariso-Re.ttf
+  #
+  # Beria Erfe (50/50 via Kedebideri 3.001):
+  #   Beria_Erfe:
+  #     - Kedebideri=/path/to/Kedebideri-Regular.otf

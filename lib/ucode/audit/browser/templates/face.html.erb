@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= page_title %> — ucode audit</title>
+  <style>
+<%= _css %>
+  </style>
+</head>
+<body data-verbose="<%= verbose %>" data-with-glyphs="<%= with_glyphs %>">
+  <header class="page-header">
+    <h1><%= page_title %></h1>
+    <p class="tagline">ucode font audit — self-contained page</p>
+  </header>
+
+  <main id="audit" aria-live="polite">
+    <noscript>
+      <p class="hint">This page requires JavaScript for interactive block drilldown.
+      The overview below is read from inlined JSON and renders without JS.</p>
+    </noscript>
+    <p class="hint hidden" id="file-url-hint">
+      Open via a local server (e.g. <code>python3 -m http.server</code> in this
+      directory) for full functionality. Block detail and glyph fetches are
+      blocked under <code>file://</code>.
+    </p>
+    <section id="overview" aria-busy="true"></section>
+    <section id="blocks"></section>
+    <section id="detail" class="hidden"></section>
+    <section id="discrepancies" class="hidden"></section>
+  </main>
+
+  <script type="application/json" id="audit-overview"><%= overview_json %></script>
+  <script>
+<%= _js %>
+  </script>
+</body>
+</html>

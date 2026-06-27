@@ -134,10 +134,12 @@ RSpec.describe Ucode::Glyphs::CellExtractor do
     require "open3"
     require "tmpdir"
     pdf = Pathname.new(File.expand_path("../../fixtures/pdfs/basic_latin.pdf", __dir__))
+    renderer = Ucode::Glyphs::PageRenderer.working.first
+    skip "no working PDF renderer installed (tried: #{Ucode::Glyphs::PageRenderer.all.map(&:renderer_name).join(', ')})" unless renderer
+
     Dir.mktmpdir do |dir|
       out = File.join(dir, "p.svg")
-      Open3.capture2e("pdftocairo", "-svg", "-f", page_num.to_s, "-l", page_num.to_s,
-                      pdf.to_s, out)
+      renderer.render(pdf, page_num, out)
       Nokogiri::XML(File.read(out))
     end
   end

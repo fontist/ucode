@@ -133,45 +133,49 @@ post-process that composite path (drop sub-paths that hug the cell edge,
 keep the largest interior cluster) is fragile because the border and the
 character overlap.
 
-### The v0.2 plan — two pillars
+### The v0.2 plan — 4-tier glyph sourcing
 
 The v0.1 cell-position resolution (`GridDetector` + `CellExtractor`) is
 correct — the right `<use>` element is selected. The fix is not to keep
 post-processing the rendered SVG; it is to **bypass the renderer entirely**
-and read the character outline straight from the source:
+and read the character outline straight from one of four sources, tried in
+priority order. Lower tiers are fallbacks.
 
-1. **Real character glyphs — extract the subsetted fonts from the PDF.**
-   `CodeCharts.pdf` embeds 80+ subsetted fonts (`Uni*`/`UCS*` prefixes —
-   Unicode's naming convention for its per-block fonts, plus contributor
-   fonts like `MyriadPro-Bold` for row/column labels). Each font program
-   contains **only** the character outline — no cell-border decoration,
-   because the border is drawn as page content, not as part of the glyph.
-   The v0.2 pipeline extracts these font streams, parses them with
-   `ttfunk` (TrueType) / CFF parser (Type 1C), walks the ToUnicode CMap to
-   attribute each glyph ID to its codepoint, and renders the outline
-   directly to SVG. There is no "UCS.ttf" — that is just how the subsetted
-   blocks are named.
+| Priority | Tier         | Source                                              | Use when                                                                                                                          |
+| -------- | ------------ | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | **Tier 1**   | Real-font cmap (`fontist`-discovered)               | A redistributable/accessible font covers the codepoint. Highest fidelity; avoids Code Charts compositing of mark + base.          |
+| 2        | **Pillar 1** | PDF-embedded font + `/ToUnicode` CMap               | Code Charts PDF embeds a subsetted CIDFont whose `/ToUnicode` lets us map glyph IDs to codepoints directly.                       |
+| 3        | **Pillar 2** | PDF content-stream positional correlation           | Code Charts PDF embeds a CIDFont without `/ToUnicode`; glyphs are correlated to codepoints via chart-grid geometry (row/column labels). |
+| 4        | **Pillar 3** | Last Resort UFO                                     | Codepoint is a placeholder box (unassigned, PUA, noncharacter) or no higher tier produced a glyph.                                |
 
-   **Status: implemented (v0.2 pillar 1).** `Ucode::Glyphs::EmbeddedFonts`
-   is the production pipeline. See
-   [How embedded font extraction works](#how-embedded-font-extraction-works)
-   below for the architecture (PDF font object graph, CID/GID/codepoint
-   correlation, pipeline components).
+The naming distinguishes **Tier 1** (real fonts, off-PDF) from the three
+**pillars** (PDF-embedded or fallback). For full details — including the
+PDF font object graph and how each pillar attributes a glyph ID to a
+codepoint — see [docs/architecture.md → The 4-tier glyph sourcing
+strategy](docs/architecture.md#the-4-tier-glyph-sourcing-strategy).
 
-2. **Last Resort placeholders — render directly from the UFO source.** For
-   codepoints whose chart cell shows a placeholder box (unassigned,
-   noncharacter, PUA), the chart glyph is a fallback drawn from Unicode's
-   [Last Resort Font](https://github.com/unicode-org/last-resort-font)
-   (SIL OFL 1.1). The Last Resort Font ships as a
-   [UFO](https://unifiedfontobject.org/) source — 380 `.glif` files (one
-   per Unicode block + a handful of special types) plus a Format 13 `cmap`
-   (`cmap-f13.ttx`) that maps codepoint ranges to glyph names. v0.2 reads
-   the `.glif` outlines directly and converts them to SVG, so the output
-   matches the placeholder box the Code Charts actually display.
+**Status (post-v0.2):**
 
-The two pillars are MECE: every codepoint in the charts is either a real
-character (pillar 1) or a Last Resort placeholder (pillar 2). The v0.1
-cell extractor is retired once both pillars ship.
+- **Tier 1** (`Ucode::Glyphs::RealFonts`) — implemented. Uses
+  `fontist` for discovery and `fontisan` for parsing (never `ttfunk`).
+- **Pillar 1** (`Ucode::Glyphs::EmbeddedFonts::Catalog`) — implemented.
+  Walks Type0 → CIDFont → FontDescriptor → FontFile2/3; for fonts with
+  `/ToUnicode`, builds `{codepoint => gid}` directly from the CMap stream
+  and lifts the outline by GID.
+- **Pillar 2** (`Ucode::Glyphs::EmbeddedFonts::ContentStreamCorrelator`)
+  — implemented. Renders the relevant pages to SVG via `mutool draw -F
+  svg`, parses `<use>` elements, partitions labels from specimens by
+  font_obj_id, clusters by quantized (Y, X) position, decodes hex
+  codepoints from joined label glyphs, and matches positionally within
+  Y-rows.
+- **Pillar 3** (`Ucode::Glyphs::LastResort`) — implemented. Reads `.glif`
+  outlines directly from Unicode's
+  [Last Resort Font](https://github.com/unicode-org/last-resort-font) UFO
+  source and converts them to SVG.
+
+The 4 tiers are MECE: every codepoint in the charts is attributed to
+exactly one tier by the canonical resolver. The v0.1 cell extractor is
+retired once all four tiers ship.
 
 ## How embedded font extraction works
 
@@ -397,16 +401,21 @@ Pillar 1 handles only the fonts where correlation is unambiguous:
   CMap, so they are invisible to discovery.
 - **Type0 fonts without `/ToUnicode`** — older subset practice. Without
   the CMap we cannot attribute a glyph to a codepoint, so the font is
-  skipped. These codepoints fall back to pillar 2 (Last Resort).
+  skipped. These codepoints fall through to **pillar 2** (content-stream
+  positional correlation), and from there to **pillar 3** (Last Resort)
+  if pillar 2 cannot resolve them either.
 - **Stream-form `/CIDToGIDMap`** — a binary lookup table. Treated as
   unsupported; the font is skipped.
 - **Bare CFF streams fontisan does not yet recognize** — a separate
   fontisan-side issue; flagged for investigation.
 
 Code Charts cells not covered by pillar 1 are exactly the cells whose
-character is not drawn from the embedded subsetted fonts — either a label
-or a placeholder. Pillar 2 (Last Resort UFO) handles the placeholder case;
-the small remainder are correctly absent from the dataset.
+character is not drawn from an embedded subsetted font with
+`/ToUnicode` — either a label, a glyph in a font without `/ToUnicode`,
+or a placeholder. **Pillar 2** (content-stream positional correlation)
+handles the no-`/ToUnicode` case, and **pillar 3** (Last Resort UFO)
+handles the placeholder case; the small remainder are correctly absent
+from the dataset.
 
 ## System dependencies
 

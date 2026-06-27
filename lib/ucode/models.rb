@@ -42,5 +42,6 @@ module Ucode
     autoload :StandardizedVariant, "ucode/models/standardized_variant"
     autoload :BinaryPropertyAssignment, "ucode/models/binary_property_assignment"
     autoload :Relationship, "ucode/models/relationship"
+    autoload :Audit, "ucode/models/audit"
   end
 end

@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "support/local_http"
 require "tmpdir"
 require "pathname"
+require "fileutils"
 require "json"
 
 RSpec.describe Ucode::Commands::FetchCommand do
@@ -85,6 +87,45 @@ RSpec.describe Ucode::Commands::FetchCommand do
         .and_return(0)
 
       cmd.fetch_charts(version, block_first_cps: nil)
+    end
+  end
+
+  describe "#fetch_fonts" do
+    let(:workdir) { Pathname.new(Dir.mktmpdir("ucode-cmd-fonts-")) }
+    let(:manifest_path) { workdir.join("specialist_fonts.yml") }
+    let(:source_file) { workdir.join("Lentariso.otf") }
+    let(:url) { "https://example.com/Lentariso.otf" }
+    let(:http) { LocalHttp.new(url => source_file) }
+    let(:real_fetcher) do
+      Ucode::Fetch::SpecialistFontFetcher.new(
+        manifest_path: manifest_path, fonts_root: workdir.join("fonts"), http: http,
+      )
+    end
+
+    after { FileUtils.remove_entry(workdir) if workdir.exist? }
+
+    before do
+      source_file.dirname.mkpath
+      source_file.binwrite("FAKE-FONT-BYTES")
+      manifest_path.write(YAML.dump("fonts" => [
+        { "label" => "Lentariso", "license" => "OFL", "url" => url,
+          "sha256" => nil, "path" => "Lentariso.otf", "extract" => false },
+      ]))
+    end
+
+    it "delegates to SpecialistFontFetcher and returns a structured summary" do
+      allow(Ucode::Fetch::SpecialistFontFetcher).to receive(:new)
+        .with(hash_including(manifest_path: manifest_path,
+                             allow_proprietary: false,
+                             dry_run: false))
+        .and_return(real_fetcher)
+
+      result = cmd.fetch_fonts(manifest_path: manifest_path)
+      expect(result[:manifest]).to eq(manifest_path.to_s)
+      expect(result[:total]).to eq(1)
+      expect(result[:downloaded]).to eq(1)
+      expect(result[:failed]).to eq(0)
+      expect(result[:results].first).to be_downloaded
     end
   end
 end

@@ -1,0 +1,102 @@
+---
+# Specialist Tier 1 fonts not in fontist's formula index.
+#
+# Each entry has:
+#   label          — human + provenance key (matches the labels used in
+#                    config/unicode17_universal_glyph_set.yml)
+#   version        — upstream version string
+#   license        — OFL is the default. Anything else requires
+#                    --allow-proprietary on `ucode fetch fonts`.
+#   url            — canonical download URL. null = local-only (the
+#                    user supplies the file at `path`).
+#   sha256         — null until the first successful `ucode fetch fonts`
+#                    run; the fetcher computes it and writes it back
+#                    here as a checkpoint. After that, mismatches raise
+#                    Ucode::FontChecksumError.
+#   path           — destination under data/fonts/ (relative) or absolute.
+#                    Local-only entries may use ~ and shell globs.
+#   extract        — true if `url` is a zip; the fetcher extracts only
+#                    `extract_member` to `path`.
+#   extract_member — filename to pull out of the zip (required when
+#                    extract: true).
+#   provenance     — short citation; what this font covers and why we
+#                    need it.
+#
+# URLs are the canonical sources named in TODO.new/30. The first
+# `ucode fetch fonts` run verifies each URL resolves and records the
+# SHA256 here as a checkpoint commit.
+fonts:
+- label: Lentariso
+  version: '1.033'
+  license: OFL
+  url: https://github.com/Bry10022/Lentariso/releases/download/1.033/Lentariso.otf
+  sha256: null
+  path: data/fonts/Lentariso.otf
+  extract: false
+  provenance: github.com/Bry10022/Lentariso — Imperial Aramaic, Phoenician, Sidetic
+
+- label: Kedebideri
+  version: '3.001'
+  license: OFL
+  url: https://software.sil.org/downloads/r/kedebideri/Kedebideri-3.001.zip
+  sha256: null
+  path: data/fonts/Kedebideri-Regular.ttf
+  extract: true
+  extract_member: Kedebideri-Regular.ttf
+  provenance: SIL, first Unicode font for Beria Erfe
+
+- label: NotoSerifTaiYo
+  version: draft-2025-09
+  license: OFL
+  url: https://translationcommons.org/wp-content/uploads/2025/09/NotoSerifTaiYo.ttf
+  sha256: null
+  path: data/fonts/NotoSerifTaiYo.ttf
+  extract: false
+  provenance: translationcommons.org, pre-release Noto variant for Tai Yo
+
+- label: UniHieroglyphica
+  version: '16.0'
+  license: OFL
+  url: https://www.suignard.com/UniHieroglyphica/UniHieroglyphica-16.0.zip
+  sha256: null
+  path: data/fonts/UniHieroglyphica.ttf
+  extract: true
+  extract_member: UniHieroglyphica.ttf
+  provenance: suignard.com, authoritative for Egyptian Hieroglyphs
+
+- label: EgyptianText
+  version: '1.0'
+  license: OFL
+  url: https://github.com/microsoft/font-tools/releases/download/v1.0/EgyptianText-Regular.ttf
+  sha256: null
+  path: data/fonts/EgyptianText-Regular.ttf
+  extract: false
+  provenance: microsoft/font-tools — Egyptian Hieroglyph Format Controls block
+
+- label: BabelStonePseudographica
+  version: '2024-09-10'
+  license: OFL
+  url: https://www.babelstone.co.uk/Fonts/Download/BabelStonePseudographica.zip
+  sha256: null
+  path: data/fonts/BabelStonePseudographica.ttf
+  extract: true
+  extract_member: BabelStonePseudographica.ttf
+  provenance: BabelStone, partial Unicode 17 symbol coverage
+
+- label: Symbola
+  version: '13.0'
+  license: OFL
+  url: https://dn-works.com/wp-content/uploads/2020/ufas/Symbola.zip
+  sha256: null
+  path: data/fonts/Symbola.ttf
+  extract: true
+  extract_member: Symbola.ttf
+  provenance: dn-works.com, broad Unicode symbol coverage
+
+- label: FSung
+  version: '2024'
+  license: OFL
+  url: null
+  path: "~/Downloads/全宋體/FSung-*.ttf"
+  extract: false
+  provenance: Taiwan MOE 全宋體 — local-only, user-supplied. Covers CJK Unified Ideographs Extension J.

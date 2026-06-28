@@ -26,6 +26,7 @@ module Ucode
                "ucode/glyphs/real_fonts/font_coverage_report"
       autoload :FontLocator, "ucode/glyphs/real_fonts/font_locator"
       autoload :CoverageAuditor, "ucode/glyphs/real_fonts/coverage_auditor"
+      autoload :CmapCache, "ucode/glyphs/real_fonts/cmap_cache"
       autoload :Writer, "ucode/glyphs/real_fonts/writer"
     end
   end

@@ -1,0 +1,65 @@
+name: Release
+
+# Builds the gem on tag push (vX.Y.Z) and publishes to RubyGems.
+# Required secrets:
+#   RUBYGEMS_API_KEY — push-scoped key from https://rubygems.org/profile/edit
+#
+# Triggered by: pushing a v* tag (e.g. `git tag v0.1.2 && git push origin v0.1.2`)
+# Tag is created by a maintainer AFTER the release PR merges. NEVER
+# create tags inside a workflow — they must be human-authorized.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write  # for creating the GitHub Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+
+      - name: Verify version matches tag
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          GEM_VERSION=$(ruby -Ilib -rucode -e 'puts Ucode::VERSION')
+          if [ "$TAG" != "$GEM_VERSION" ]; then
+            echo "Tag ($TAG) does not match lib/ucode/version.rb ($GEM_VERSION)"
+            exit 1
+          fi
+          echo "Releasing ucode $GEM_VERSION"
+
+      - name: Build gem
+        run: bundle exec rake build
+
+      - name: Publish to RubyGems
+        env:
+          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+        run: |
+          mkdir -p ~/.gem
+          cat > ~/.gem/credentials <<EOF
+          ---
+          :rubygems_api_key: ${RUBYGEMS_API_KEY}
+          EOF
+          chmod 600 ~/.gem/credentials
+          gem push pkg/ucode-*.gem
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          # Extract the matching changelog entry as the release body
+          awk "/^## \[${VERSION}\]/{flag=1; next} /^## \[/{flag=0} flag" \
+            CHANGELOG.md > /tmp/release-notes.md
+          gh release create "v${VERSION}" \
+            --title "ucode ${VERSION}" \
+            --notes-file /tmp/release-notes.md \
+            pkg/ucode-*.gem

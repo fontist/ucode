@@ -18,5 +18,6 @@ module Ucode
     autoload :FontCoverageCommand, "ucode/commands/font_coverage"
     autoload :UniversalSet, "ucode/commands/universal_set"
     autoload :Audit, "ucode/commands/audit"
+    autoload :ReleaseCommand, "ucode/commands/release"
   end
 end

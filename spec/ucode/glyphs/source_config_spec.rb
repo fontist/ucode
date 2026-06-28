@@ -148,6 +148,97 @@ RSpec.describe Ucode::Glyphs::SourceConfig do
     end
   end
 
+  describe "default_sources fallback" do
+    it "returns default_sources when the block has empty sources" do
+      path = write_config(<<~YAML)
+        default_sources:
+          - kind: fontist
+            label: noto-sans
+            priority: 1
+            license: OFL
+        map:
+          Basic_Latin:
+            sources: []
+      YAML
+      sources = described_class.new(path: path).fonts_for("Basic_Latin")
+      expect(sources.map(&:label)).to eq(["noto-sans"])
+    end
+
+    it "returns default_sources when the block is absent from the map" do
+      path = write_config(<<~YAML)
+        default_sources:
+          - kind: fontist
+            label: noto-sans
+            priority: 1
+        map: {}
+      YAML
+      sources = described_class.new(path: path).fonts_for("Unknown_Block")
+      expect(sources.map(&:label)).to eq(["noto-sans"])
+    end
+
+    it "prefers block-specific sources over default_sources" do
+      path = write_config(<<~YAML)
+        default_sources:
+          - kind: fontist
+            label: noto-sans
+            priority: 1
+        map:
+          Sidetic:
+            sources:
+              - kind: fontist
+                label: lentariso
+                priority: 1
+      YAML
+      sources = described_class.new(path: path).fonts_for("Sidetic")
+      expect(sources.map(&:label)).to eq(["lentariso"])
+    end
+
+    it "returns empty when neither block nor default_sources has sources" do
+      path = write_config(<<~YAML)
+        map:
+          Basic_Latin:
+            sources: []
+      YAML
+      sources = described_class.new(path: path).fonts_for("Basic_Latin")
+      expect(sources).to eq([])
+    end
+
+    it "exposes default_sources as typed GlyphSource entries" do
+      path = write_config(<<~YAML)
+        default_sources:
+          - kind: fontist
+            label: noto-sans
+            priority: 5
+          - kind: fontist
+            label: noto-sans-cjk-jp
+            priority: 99
+        map: {}
+      YAML
+      map = described_class.new(path: path).map
+      expect(map.default_sources.map(&:label)).to eq(%w[noto-sans noto-sans-cjk-jp])
+      expect(map.default_sources.first).to be_a(Ucode::Models::GlyphSource)
+    end
+
+    it "configured_block_ids excludes blocks relying on default_sources" do
+      path = write_config(<<~YAML)
+        default_sources:
+          - kind: fontist
+            label: noto-sans
+            priority: 1
+        map:
+          Sidetic:
+            sources:
+              - kind: fontist
+                label: lentariso
+                priority: 1
+          Basic_Latin:
+            sources: []
+      YAML
+      map = described_class.new(path: path).map
+      expect(map.configured_block_ids).to eq(["Sidetic"])
+    end
+  end
+
   describe ".load" do
     it "returns the typed map directly" do
       path = write_config(<<~YAML)
@@ -172,16 +263,25 @@ RSpec.describe Ucode::Glyphs::SourceConfig do
   end
 
   describe "production config smoke spec", :no_mutation do
-    it "parses and exposes one entry per Unicode 17 block" do
+    it "parses and carries envelope metadata" do
       config = described_class.new
       skip "production config not present" unless config.exist?
 
       map = config.map
       expect(map.unicode_version).to eq("17.0.0")
-      expect(map.block_ids.size).to be >= 340
+      expect(map.ucode_version).to eq(Ucode::VERSION)
     end
 
-    it "covers every Unicode 17 new block with at least one Tier 1 source" do
+    it "carries a non-empty default_sources block" do
+      config = described_class.new
+      skip "production config not present" unless config.exist?
+
+      defaults = config.map.default_sources
+      expect(defaults).not_to be_empty
+      expect(defaults.first.label).to eq("noto-sans")
+    end
+
+    it "resolves every Unicode 17 new block to at least one Tier 1 source" do
       config = described_class.new
       skip "production config not present" unless config.exist?
 
@@ -209,11 +309,22 @@ RSpec.describe Ucode::Glyphs::SourceConfig do
       skip "production config not present" unless config.exist?
 
       map = config.map
-      %w[Egyptian_Hieroglyphs Egyptian_Hieroglyph_Format_Controls Egyptian_Hieroglyphs_Extended-A].each do |block_id|
+      %w[Egyptian_Hieroglyphs Egyptian_Hieroglyph_Format_Controls
+         Egyptian_Hieroglyphs_Extended-A Egyptian_Hieroglyphs_Extended-B].each do |block_id|
         sources = map.sources_for(block_id)
         expect(sources).not_to be_empty, "Egyptian block #{block_id} needs UniHieroglyphica or Egyptian-Text"
         expect(sources.map(&:label)).to include("UniHieroglyphica").or include("Egyptian-Text")
       end
+    end
+
+    it "falls back to default_sources for any block not in the map" do
+      config = described_class.new
+      skip "production config not present" unless config.exist?
+
+      map = config.map
+      # A block that's definitely not in the map (PUA, never curated)
+      sources = map.sources_for("Supplementary_Private_Use_Area-A")
+      expect(sources.map(&:label)).to eq(["noto-sans"])
     end
   end
 end

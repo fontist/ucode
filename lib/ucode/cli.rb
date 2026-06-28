@@ -535,6 +535,34 @@ module Ucode
       puts JSON.pretty_generate(result_to_h(result))
     end
 
+    # ─────────────── fontist-consumer ───────────────
+    desc "fontist-consumer", "Emit fontist.org-shaped Unicode data from ucode output"
+    long_desc <<~LONG
+      Translates ucode's canonical output tree into the three files
+      fontist.org consumes:
+
+        <target>/unicode-blocks.json
+        <target>/unicode-version.json
+        <target>/unicode/blocks/<slug>.json
+
+      fontist.org's scripts/fetch-data.sh fetches these into public/,
+      replacing the legacy npm run gen-unicode UCD-XML pipeline.
+    LONG
+    option :ucode_output, type: :string, default: "./output",
+                          desc: "ucode's output/ directory"
+    option :target, type: :string, default: "./output/fontist-consumer",
+                    desc: "Target directory for emitted files"
+    option :unicode_version, type: :string, default: nil,
+                             desc: "UCD version stamp (default: from manifest)"
+    def fontist_consumer
+      result = Commands::FontistConsumerCommand.new.call(
+        ucode_output_root: options[:ucode_output],
+        fontist_output_root: options[:target],
+        unicode_version: options[:unicode_version],
+      )
+      puts JSON.pretty_generate(result.to_h)
+    end
+
     private
 
     def result_to_h(result)

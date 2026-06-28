@@ -19,5 +19,6 @@ module Ucode
     autoload :UniversalSet, "ucode/commands/universal_set"
     autoload :Audit, "ucode/commands/audit"
     autoload :ReleaseCommand, "ucode/commands/release"
+    autoload :FontistConsumerCommand, "ucode/commands/fontist_consumer"
   end
 end

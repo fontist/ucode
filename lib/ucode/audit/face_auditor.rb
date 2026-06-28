@@ -23,11 +23,17 @@ module Ucode
       # @param font_index [Integer, nil] when set and the source is a
       #   collection (TTC/OTC/dfong), audit only that face index and
       #   return a single AuditReport. Ignored for single-face sources.
-      def initialize(font_path, options: {}, mode: :full, font_index: nil)
+      # @param reference [CoverageReference, nil] the baseline the
+      #   audit compares against. When nil, defaults to UCD-only
+      #   (TODO 25). Pass a {UniversalSetReference} to attach
+      #   per-codepoint provenance to missing-codepoint rows.
+      def initialize(font_path, options: {}, mode: :full, font_index: nil,
+                     reference: nil)
         @font_path = font_path.to_s
         @options = options
         @mode = mode
         @font_index = font_index
+        @reference = reference
       end
 
       # @return [Models::Audit::AuditReport, Array<Models::Audit::AuditReport>]
@@ -59,6 +65,7 @@ module Ucode
           font_index: font_index,
           num_fonts_in_source: num_fonts_in_source,
           options: @options,
+          reference: @reference,
         )
 
         fields = {}

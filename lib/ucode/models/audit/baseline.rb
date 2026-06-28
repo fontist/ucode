@@ -18,6 +18,11 @@ module Ucode
         attribute :fontisan_version, :string
         attribute :source, :string
         attribute :generated_at, :string
+        # Which CoverageReference produced the per-block counts.
+        # "ucd" for UcdOnlyReference (default), "universal-set" for
+        # UniversalSetReference (TODO 25). nil on legacy reports —
+        # consumers should treat nil as "ucd".
+        attribute :reference_kind, :string
 
         key_value do
           map "unicode_version",  to: :unicode_version
@@ -25,6 +30,7 @@ module Ucode
           map "fontisan_version", to: :fontisan_version
           map "source",           to: :source
           map "generated_at",     to: :generated_at
+          map "reference_kind",   to: :reference_kind
         end
       end
     end

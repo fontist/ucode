@@ -27,10 +27,14 @@ module Ucode
       # @param recursive [Boolean] walk into subdirectories
       # @param options [Hash] forwarded to {FaceAuditor} (ucd_version,
       #   all_codepoints, audit_brief, …). Library-only keys are stripped.
-      def initialize(root_path, recursive:, options:)
+      # @param reference [CoverageReference, nil] baseline forwarded to
+      #   every per-face {FaceAuditor} (TODO 25). When nil, each face
+      #   defaults to UCD-only.
+      def initialize(root_path, recursive:, options:, reference: nil)
         @root_path = Pathname.new(root_path)
         @recursive = recursive
         @options = options
+        @reference = reference
         @aggregator = LibraryAggregator.new
         @skipped = []
       end
@@ -73,7 +77,8 @@ module Ucode
       end
 
       def audit_one(path)
-        Array(FaceAuditor.new(path, options: audit_options, mode: audit_mode).call)
+        Array(FaceAuditor.new(path, options: audit_options, mode: audit_mode,
+                                    reference: @reference).call)
       rescue StandardError => e
         @skipped << "#{path}: #{e.message}"
         []

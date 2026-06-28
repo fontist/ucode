@@ -23,6 +23,7 @@ module Ucode
       autoload :PlaneSummary, "ucode/models/audit/plane_summary"
       autoload :Discrepancy, "ucode/models/audit/discrepancy"
       autoload :CodepointDetail, "ucode/models/audit/codepoint_detail"
+      autoload :CodepointProvenance, "ucode/models/audit/codepoint_provenance"
 
       # Ported from fontisan (namespace swap + minor renames)
       autoload :AuditReport, "ucode/models/audit/audit_report"

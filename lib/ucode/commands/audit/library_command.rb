@@ -30,11 +30,15 @@ module Ucode
         # @param brief [Boolean] cheap-extractor-only mode.
         # @param output_root [String, Pathname] parent of the audit root.
         # @param browse [Boolean] also write library + face HTML browsers.
+        # @param reference [Ucode::Audit::CoverageReference, nil] baseline
+        #   forwarded to every per-face audit (TODO 25).
         # @return [Result]
         def call(dir, output_root:, recursive: false, unicode_version: nil, verbose: false,
-                 with_glyphs: false, brief: false, browse: false)
+                 with_glyphs: false, brief: false, browse: false, reference: nil)
           options = library_options(unicode_version: unicode_version, brief: brief)
-          auditor = Ucode::Audit::LibraryAuditor.new(dir, recursive: recursive, options: options)
+          auditor = Ucode::Audit::LibraryAuditor.new(dir, recursive: recursive,
+                                                          options: options,
+                                                          reference: reference)
           summary = auditor.audit
 
           directory = Ucode::Audit::Emitter::FaceDirectory.new(

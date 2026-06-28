@@ -147,7 +147,7 @@ RSpec.describe Ucode::Repo::AggregateWriter do
       end
     end
 
-    it "writes index/labels.json as { cp_id → {name, gc, sc} }" do
+    it "writes index/labels.json as { cp_id → {name, gc, sc, cc, bc, mir?} }" do
       Dir.mktmpdir do |out|
         run_writer(out) do
           labels = read_json(File.join(out, "index", "labels.json"))
@@ -155,6 +155,8 @@ RSpec.describe Ucode::Repo::AggregateWriter do
             "name" => "LATIN CAPITAL LETTER A",
             "gc"   => "Lu",
             "sc"   => "Latn",
+            "cc"   => 0,
+            "bc"   => "L",
           })
         end
       end

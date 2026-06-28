@@ -416,6 +416,48 @@ module Ucode
           parallel_workers: options[:parallel] || Ucode.configuration.parallel_workers,
         )
         puts JSON.pretty_generate(result)
+      rescue Ucode::UniversalSetPreBuildError => e
+        warn "pre-build validation failed:"
+        warn JSON.pretty_generate(e.context)
+        exit 1
+      end
+
+      desc "pre-check [VERSION]", "Validate source config + fonts + coverage assertion before a build"
+      option :source_config, type: :string, default: nil,
+                             desc: "Path to a Tier 1 source config YAML"
+      def pre_check(version = nil)
+        report = Commands::UniversalSet::PreCheckCommand.new.call(
+          version,
+          source_config_path: options[:source_config],
+        )
+        puts JSON.pretty_generate(report.to_h)
+      rescue Ucode::UniversalSetPreBuildError => e
+        warn "pre-build validation failed:"
+        warn JSON.pretty_generate(e.context)
+        exit 1
+      end
+
+      desc "report [VERSION]", "Emit per-tier / per-block / gaps reports from an existing manifest"
+      option :from, type: :string, default: "./output/universal_glyph_set",
+                    desc: "Output directory holding manifest.json"
+      def report(version = nil)
+        result = Commands::UniversalSet::ReportCommand.new.call(
+          version,
+          output_root: options[:from],
+        )
+        puts JSON.pretty_generate(result)
+      end
+
+      desc "validate [OUTPUT_ROOT]", "Run post-build structural validation on a manifest + glyphs dir"
+      option :version, type: :string, default: nil,
+                       desc: "Unicode version (stamps the report; defaults to manifest)"
+      def validate(output_root = "./output/universal_glyph_set")
+        result = Commands::UniversalSet::ValidateCommand.new.call(
+          output_root,
+          version_intent: options[:version],
+        )
+        puts JSON.pretty_generate(result)
+        exit 1 unless result[:passed]
       end
     end
 

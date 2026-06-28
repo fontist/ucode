@@ -51,6 +51,8 @@ module Ucode
             verbose: kwargs.fetch(:verbose, false),
             with_glyphs: kwargs.fetch(:with_glyphs, false),
             emit_browser: kwargs.fetch(:browse, false),
+            universal_set_root: kwargs[:universal_set_root],
+            with_missing_glyph_pages: kwargs.fetch(:with_missing_glyph_pages, false),
           )
 
           label = sanitize(kwargs[:label] || report.postscript_name || "face-#{index}")

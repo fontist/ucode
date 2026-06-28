@@ -32,9 +32,15 @@ module Ucode
         # @param browse [Boolean] also write library + face HTML browsers.
         # @param reference [Ucode::Audit::CoverageReference, nil] baseline
         #   forwarded to every per-face audit (TODO 25).
+        # @param universal_set_root [String, Pathname, nil] forwarded to
+        #   {Emitter::FaceDirectory} for the face browser's
+        #   universal-set section (TODO 26).
+        # @param with_missing_glyph_pages [Boolean] emit per-block
+        #   standalone missing-glyph galleries per face (TODO 26).
         # @return [Result]
         def call(dir, output_root:, recursive: false, unicode_version: nil, verbose: false,
-                 with_glyphs: false, brief: false, browse: false, reference: nil)
+                 with_glyphs: false, brief: false, browse: false, reference: nil,
+                 universal_set_root: nil, with_missing_glyph_pages: false)
           options = library_options(unicode_version: unicode_version, brief: brief)
           auditor = Ucode::Audit::LibraryAuditor.new(dir, recursive: recursive,
                                                           options: options,
@@ -46,6 +52,8 @@ module Ucode
             verbose: verbose,
             with_glyphs: with_glyphs,
             emit_browser: browse,
+            universal_set_root: universal_set_root,
+            with_missing_glyph_pages: with_missing_glyph_pages,
           )
           directory.emit_library(summary: summary)
 

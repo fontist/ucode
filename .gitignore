@@ -15,3 +15,5 @@
 
 # Bundler local config
 /.bundle/config
+
+Gemfile.lock

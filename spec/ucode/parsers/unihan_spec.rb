@@ -110,20 +110,44 @@ RSpec.describe Ucode::Parsers::Unihan do
 
   describe "round-trip through UnihanEntry model after Coordinator-style merge" do
     it "preserves the merged fields through to_hash / from_hash" do
-      grouped = {}
+      entry = Ucode::Models::UnihanEntry.new
       described_class.each_in_dir(fixtures_dir) do |record|
-        grouped[record.cp] ||= {}
-        grouped[record.cp][record.field] = record.field_values
+        next unless record.cp == 0x9F9C
+
+        entry.add(record.category, record.field, record.field_values)
       end
 
-      turtle_cp = 0x9F9C
-      entry = Ucode::Models::UnihanEntry.new(fields: grouped[turtle_cp])
       restored = Ucode::Models::UnihanEntry.from_hash(
         Ucode::Models::UnihanEntry.to_hash(entry)
       )
       expect(restored).to eq(entry)
-      expect(restored.fields["kMandarin"]).to eq(%w[guī])
-      expect(restored.fields["kRSUnicode"]).to eq(%w[214.18 213.19])
+      expect(restored.all_fields["kMandarin"]).to eq(%w[guī])
+      expect(restored.all_fields["kRSUnicode"]).to eq(%w[214.18 213.19])
+      # Category bucketing: kMandarin is in readings, kRSUnicode in radical_stroke_counts
+      expect(restored.readings.map(&:name)).to include("kMandarin")
+      expect(restored.radical_stroke_counts.map(&:name)).to include("kRSUnicode")
+    end
+  end
+
+  describe "category assignment via each_in_dir" do
+    it "tags every record with its source file's category" do
+      records_with_cat = described_class.each_in_dir(fixtures_dir)
+        .select { |r| r.category && r.field == "kMandarin" }
+      expect(records_with_cat).not_to be_empty
+      records_with_cat.each do |r|
+        expect(r.category).to eq(:readings)
+      end
+    end
+
+    it "tags kRSUnicode records as radical_stroke_counts" do
+      records = described_class.each_record(
+        fixtures_dir.join("Unihan_RadicalStrokeCounts.txt"),
+        filename: "Unihan_RadicalStrokeCounts.txt"
+      ).to_a
+      expect(records).not_to be_empty
+      records.each do |r|
+        expect(r.category).to eq(:radical_stroke_counts)
+      end
     end
   end
 end

@@ -5,10 +5,10 @@ require "tmpdir"
 require "fileutils"
 require "json"
 
-RSpec.describe Ucode::Repo::FontistConsumerEmitter do
+RSpec.describe Ucode::Repo::BlockFeedEmitter do
   let(:workdir) { Pathname.new(Dir.mktmpdir("ucode-fontist-")) }
   let(:ucode_root) { workdir.join("ucode-output") }
-  let(:fontist_root) { workdir.join("fontist-consumer") }
+  let(:feed_root) { workdir.join("block-feed") }
   let(:two_block_tree) do
     {
       blocks: [
@@ -46,7 +46,7 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
       }
     end)
     blocks.each do |b|
-      write_json("blocks/#{b[:id]}.json",
+      write_json("blocks/#{b[:id]}/index.json",
                  "id" => b[:id], "name" => b.fetch(:display_name, b[:id].tr("_", " ")),
                  "range_first" => b[:first], "range_last" => b[:last],
                  "plane_number" => b.fetch(:plane, 0), "age" => b[:age],
@@ -56,7 +56,7 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
   end
 
   def read_emitted(rel)
-    path = fontist_root.join(rel)
+    path = feed_root.join(rel)
     path.exist? ? JSON.parse(path.read) : nil
   end
 
@@ -64,16 +64,16 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
     before { write_canonical_tree(**two_block_tree) }
 
     it "returns aggregate counts and paths" do
-      outcome = described_class.new(ucode_root, fontist_root).emit(ucd_version: "17.0.0")
+      outcome = described_class.new(ucode_root, feed_root).emit(ucd_version: "17.0.0")
 
       expect(outcome[:blocks_written]).to eq(2)
       expect(outcome[:codepoints_written]).to eq(6)
-      expect(outcome[:unicode_blocks_path]).to eq(fontist_root.join("unicode-blocks.json"))
-      expect(outcome[:unicode_version_path]).to eq(fontist_root.join("unicode-version.json"))
+      expect(outcome[:unicode_blocks_path]).to eq(feed_root.join("unicode-blocks.json"))
+      expect(outcome[:unicode_version_path]).to eq(feed_root.join("unicode-version.json"))
     end
 
     it "writes unicode-blocks.json with per-block summaries" do
-      described_class.new(ucode_root, fontist_root).emit(ucd_version: "17.0.0")
+      described_class.new(ucode_root, feed_root).emit(ucd_version: "17.0.0")
 
       expect(read_emitted("unicode-blocks.json")).to contain_exactly(
         { "start" => 0x41, "end" => 0x43, "name" => "Basic Latin",
@@ -84,7 +84,7 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
     end
 
     it "writes per-block chars with cp/n/c/s shape" do
-      described_class.new(ucode_root, fontist_root).emit(ucd_version: "17.0.0")
+      described_class.new(ucode_root, feed_root).emit(ucd_version: "17.0.0")
 
       basic_latin = read_emitted("unicode/blocks/basic-latin.json")
       expect(basic_latin["chars"].length).to eq(3)
@@ -98,7 +98,7 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
     end
 
     it "writes unicode-version.json with version, counts, generatedAt" do
-      described_class.new(ucode_root, fontist_root).emit(ucd_version: "17.0.0")
+      described_class.new(ucode_root, feed_root).emit(ucd_version: "17.0.0")
 
       version = read_emitted("unicode-version.json")
       expect(version["version"]).to eq("17.0.0")
@@ -120,10 +120,10 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
         labels: {},
       )
 
-      described_class.new(ucode_root, fontist_root).emit(ucd_version: "17.0.0")
+      described_class.new(ucode_root, feed_root).emit(ucd_version: "17.0.0")
 
-      expect(fontist_root.join("unicode", "blocks", "cjk-ext-a.json")).to exist
-      expect(fontist_root.join("unicode", "blocks", "currency-symbols.json")).to exist
+      expect(feed_root.join("unicode", "blocks", "cjk-ext-a.json")).to exist
+      expect(feed_root.join("unicode", "blocks", "currency-symbols.json")).to exist
     end
   end
 
@@ -137,7 +137,7 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
         labels: {},
       )
 
-      described_class.new(ucode_root, fontist_root).emit(ucd_version: "17.0.0")
+      described_class.new(ucode_root, feed_root).emit(ucd_version: "17.0.0")
       blocks = read_emitted("unicode-blocks.json")
       expect(blocks.first["name"]).to eq("Greek and Coptic")
     end
@@ -155,7 +155,7 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
         },
       )
 
-      described_class.new(ucode_root, fontist_root).emit(ucd_version: "17.0.0")
+      described_class.new(ucode_root, feed_root).emit(ucd_version: "17.0.0")
       chars = read_emitted("unicode/blocks/specials.json")["chars"]
       expect(chars).to contain_exactly(
         "cp" => 0xFFFD, "n" => "REPLACEMENT CHARACTER", "c" => "So",
@@ -171,7 +171,7 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
         labels: {},
       )
 
-      described_class.new(ucode_root, fontist_root).emit(ucd_version: "17.0.0")
+      described_class.new(ucode_root, feed_root).emit(ucd_version: "17.0.0")
       chars = read_emitted("unicode/blocks/basic-latin.json")["chars"]
       expect(chars.length).to eq(2)
       expect(chars.first).to eq("cp" => 0x41)
@@ -185,7 +185,7 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
         "id" => "Basic_Latin", "name" => "Basic_Latin",
         "first_cp" => 0x41, "last_cp" => 0x42, "plane_number" => 0
       }])
-      write_json("blocks/Basic_Latin.json",
+      write_json("blocks/Basic_Latin/index.json",
                  "id" => "Basic_Latin", "name" => "Basic_Latin",
                  "range_first" => 0x41, "range_last" => 0x42,
                  "plane_number" => 0,
@@ -193,7 +193,7 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
       write_json("index/labels.json",
                  "U+0041" => { "name" => "A", "gc" => "Lu", "sc" => "Latin" })
 
-      described_class.new(ucode_root, fontist_root).emit(ucd_version: "17.0.0")
+      described_class.new(ucode_root, feed_root).emit(ucd_version: "17.0.0")
       blocks = read_emitted("unicode-blocks.json")
       expect(blocks.first["unicode_version"]).to eq("1.1")
     end
@@ -202,9 +202,9 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
   describe "idempotency" do
     let(:emitter_paths) do
       [
-        fontist_root.join("unicode-blocks.json"),
-        fontist_root.join("unicode-version.json"),
-        fontist_root.join("unicode", "blocks", "basic-latin.json"),
+        feed_root.join("unicode-blocks.json"),
+        feed_root.join("unicode-version.json"),
+        feed_root.join("unicode", "blocks", "basic-latin.json"),
       ]
     end
 
@@ -219,14 +219,14 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
           "U+0042" => { "name" => "B", "gc" => "Lu", "sc" => "Latin" },
         },
       )
-      described_class.new(ucode_root, fontist_root).emit(ucd_version: "17.0.0")
+      described_class.new(ucode_root, feed_root).emit(ucd_version: "17.0.0")
     end
 
     it "re-running on the same input does not rewrite any file" do
       first_mtimes = emitter_paths.to_h { |p| [p, File.mtime(p)] }
 
       sleep 0.05
-      described_class.new(ucode_root, fontist_root).emit(ucd_version: "17.0.0")
+      described_class.new(ucode_root, feed_root).emit(ucd_version: "17.0.0")
 
       emitter_paths.each { |p| expect(File.mtime(p)).to eq(first_mtimes[p]) }
     end

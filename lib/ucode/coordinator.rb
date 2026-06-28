@@ -123,7 +123,18 @@ module Ucode
         standardized_variants: multi_cp_index_by_id(ucd_dir, "StandardizedVariants.txt",
                                                     Parsers::StandardizedVariants, :base_id),
         names_list: names_list_index(ucd_dir),
-        unihan: unihan_index(unihan_dir)
+        unihan: unihan_index(unihan_dir),
+        line_break: range_value_index(ucd_dir, "LineBreak.txt"),
+        east_asian_width: range_value_index(ucd_dir, "EastAsianWidth.txt"),
+        vertical_orientation: range_value_index(ucd_dir, "VerticalOrientation.txt"),
+        grapheme_break: range_value_index(ucd_dir, "auxiliary/GraphemeBreakProperty.txt"),
+        word_break: range_value_index(ucd_dir, "auxiliary/WordBreakProperty.txt"),
+        sentence_break: range_value_index(ucd_dir, "auxiliary/SentenceBreakProperty.txt"),
+        indic_positional: range_value_index(ucd_dir, "IndicPositionalCategory.txt"),
+        indic_syllabic: range_value_index(ucd_dir, "IndicSyllabicCategory.txt"),
+        hangul_syllable_type: range_value_index(ucd_dir, "HangulSyllableType.txt"),
+        emoji_properties: range_value_index(ucd_dir, "emoji/emoji-data.txt"),
+        extra_binary_properties: range_value_index(ucd_dir, "PropList.txt"),
       )
     end
 
@@ -134,6 +145,23 @@ module Ucode
       return [] unless path.exist?
 
       parser.each_record(path).to_a.sort_by(&:range_first)
+    end
+
+    # Builds a sorted array of (range_first, range_last, value) tuples for
+    # any UCD file using the standard `XXXX[..YYYY]; value` format. Used
+    # for the many extracted/auxiliary/root properties that share this
+    # shape: LineBreak, EastAsianWidth, VerticalOrientation, the three
+    # break-segmentation files, the two Indic category files,
+    # HangulSyllableType, emoji-data, PropList, etc.
+    #
+    # Tuple is `Parsers::ExtractedProperties::Tuple` — a Struct with
+    # `range_first`, `range_last`, `value` accessors, suitable for the
+    # coordinator's `find_in_range` bsearch.
+    def range_value_index(ucd_dir, filename)
+      path = Pathname.new(ucd_dir).join(filename)
+      return [] unless path.exist?
+
+      Parsers::ExtractedProperties.each_record(path).to_a.sort_by(&:range_first)
     end
 
     # Builds the sorted Script array and resolves each Script's ISO 15924
@@ -210,12 +238,11 @@ module Ucode
       dir = Pathname.new(unihan_dir)
       return {} unless dir.exist?
 
-      by_field = Hash.new { |h, k| h[k] = {} }
+      entries = Hash.new { |h, k| h[k] = Models::UnihanEntry.new }
       Parsers::Unihan.each_in_dir(dir) do |record|
-        by_field[record.cp][record.field] = record.field_values
+        entries[record.cp].add(record.category, record.field, record.field_values)
       end
-
-      by_field.transform_values { |fields| Models::UnihanEntry.new(fields: fields) }
+      entries
     end
 
     # ---- Per-codepoint enrichment --------------------------------------
@@ -235,6 +262,12 @@ module Ucode
       assign_standardized_variants(cp, indices)
       assign_unihan(cp, indices)
       assign_cjk_radical(cp, indices)
+      assign_display(cp, indices)
+      assign_break_segmentation(cp, indices)
+      assign_indic(cp, indices)
+      assign_hangul(cp, indices)
+      assign_emoji(cp, indices)
+      assign_extra_binary_properties(cp, indices)
     end
 
     def assign_script(cp, indices)
@@ -367,6 +400,106 @@ module Ucode
           source: "cjk_radicals"
         )
       end
+    end
+
+    # Display: East Asian Width, Line Break Class, Vertical Orientation.
+    # All three are range+value files, looked up via bsearch on sorted
+    # arrays of ExtractedProperties::Tuple.
+    def assign_display(cp, indices)
+      tuple = find_in_range(cp.cp, indices.line_break)
+      lb = tuple&.value
+      tuple = find_in_range(cp.cp, indices.east_asian_width)
+      eaw = tuple&.value
+      tuple = find_in_range(cp.cp, indices.vertical_orientation)
+      vo = tuple&.value
+      return if lb.nil? && eaw.nil? && vo.nil?
+
+      cp.display ||= Models::CodePoint::Display.new
+      cp.display.line_break_class = lb if lb
+      cp.display.east_asian_width = eaw if eaw
+      cp.display.vertical_orientation = vo if vo
+    end
+
+    # UAX #29 segmentation: Grapheme / Word / Sentence break class.
+    def assign_break_segmentation(cp, indices)
+      grapheme = find_in_range(cp.cp, indices.grapheme_break)&.value
+      word = find_in_range(cp.cp, indices.word_break)&.value
+      sentence = find_in_range(cp.cp, indices.sentence_break)&.value
+      return if grapheme.nil? && word.nil? && sentence.nil?
+
+      cp.break_segmentation ||= Models::CodePoint::BreakSegmentation.new
+      cp.break_segmentation.grapheme = grapheme if grapheme
+      cp.break_segmentation.word = word if word
+      cp.break_segmentation.sentence = sentence if sentence
+    end
+
+    def assign_indic(cp, indices)
+      positional = find_in_range(cp.cp, indices.indic_positional)&.value
+      syllabic = find_in_range(cp.cp, indices.indic_syllabic)&.value
+      return if positional.nil? && syllabic.nil?
+
+      cp.indic ||= Models::CodePoint::Indic.new
+      cp.indic.positional_category = positional if positional
+      cp.indic.syllabic_category = syllabic if syllabic
+    end
+
+    def assign_hangul(cp, indices)
+      tuple = find_in_range(cp.cp, indices.hangul_syllable_type)
+      return unless tuple
+
+      cp.hangul ||= Models::CodePoint::HangulSyllable.new
+      cp.hangul.type = tuple.value
+    end
+
+    # Emoji property bundle. Each Emoji_* property from emoji-data.txt
+    # flips the matching boolean on the Emoji sub-model.
+    def assign_emoji(cp, indices)
+      return unless find_in_range(cp.cp, indices.emoji_properties)
+
+      props = all_range_values(cp.cp, indices.emoji_properties)
+      return if props.empty?
+
+      cp.emoji ||= Models::CodePoint::Emoji.new
+      props.each do |prop|
+        case prop
+        when "Emoji"                              then cp.emoji.is_emoji = true
+        when "Emoji_Presentation"                 then cp.emoji.is_presentation_default = true
+        when "Emoji_Modifier"                     then cp.emoji.is_modifier = true
+        when "Emoji_Modifier_Base"                then cp.emoji.is_base = true
+        when "Emoji_Component"                    then cp.emoji.is_component = true
+        when "Extended_Pictographic"              then cp.emoji.is_extended_pictographic = true
+        end
+      end
+    end
+
+    # PropList.txt carries binary properties beyond what's in
+    # DerivedCoreProperties (White_Space, Hyphen, Variation_Selector,
+    # etc.). Merge into the same binary_properties list.
+    def assign_extra_binary_properties(cp, indices)
+      extras = all_range_values(cp.cp, indices.extra_binary_properties)
+      return if extras.empty?
+
+      cp.binary_properties.concat(extras)
+      cp.binary_properties.uniq!
+    end
+
+    # Returns every value whose range contains `cp` in a sorted tuple
+    # array. Most codepoint+property pairs match at most one range, but
+    # a codepoint can carry multiple binary properties from PropList or
+    # emoji-data, so we collect them all.
+    def all_range_values(cp, sorted_ranges)
+      return [] if sorted_ranges.nil? || sorted_ranges.empty?
+
+      values = []
+      sorted_ranges.each do |record|
+        next if cp < record.range_first
+        break if cp > record.range_last && record.range_first > cp
+
+        if cp >= record.range_first && cp <= record.range_last
+          values << record.value
+        end
+      end
+      values
     end
 
     # ---- Range lookup (bsearch) ----------------------------------------

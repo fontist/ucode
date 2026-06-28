@@ -77,12 +77,14 @@ RSpec.describe Ucode::Models::CodePoint do
   end
 
   it "round-trips an attached Unihan entry" do
+    unihan = Ucode::Models::UnihanEntry.new
+    unihan.add(:radical_stroke_counts, "kTotalStrokes", %w[1])
     cp = described_class.new(
       cp: 0x4E00,
       id: "U+4E00",
-      unihan: Ucode::Models::UnihanEntry.new(fields: { "kTotalStrokes" => %w[1] })
+      unihan: unihan
     )
     restored = described_class.from_hash(described_class.to_hash(cp))
-    expect(restored.unihan.fields["kTotalStrokes"]).to eq(%w[1])
+    expect(restored.unihan.all_fields["kTotalStrokes"]).to eq(%w[1])
   end
 end

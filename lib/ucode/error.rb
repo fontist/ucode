@@ -12,7 +12,10 @@ module Ucode
   #   Ucode::Error
   #   ├── Ucode::FetchError
   #   │   ├── Ucode::NetworkError
-  #   │   └── Ucode::ChecksumError
+  #   │   ├── Ucode::ChecksumError
+  #   │   │   └── Ucode::FontChecksumError
+  #   │   ├── Ucode::FontLicenseError
+  #   │   └── Ucode::FontExtractMemberMissingError
   #   ├── Ucode::ParseError
   #   │   ├── Ucode::MalformedLineError
   #   │   └── Ucode::UnknownPropertyError
@@ -55,6 +58,22 @@ module Ucode
 
   # Checksum or integrity failure.
   class ChecksumError < FetchError; end
+
+  # SHA256 of a downloaded specialist font does not match the value
+  # declared in `config/specialist_fonts.yml`. Distinct from
+  # {ChecksumError} so callers can rescue the font-pipeline failure
+  # without catching every generic checksum mismatch.
+  class FontChecksumError < ChecksumError; end
+
+  # A specialist font has a non-OFL license and the caller did not
+  # pass `--allow-proprietary`. Hard guard against pulling
+  # non-redistributable fonts into `data/fonts/`.
+  class FontLicenseError < FetchError; end
+
+  # A `extract: true` manifest entry's `extract_member` is missing
+  # from the downloaded zip. The zip was fetched correctly but does
+  # not contain what we expected.
+  class FontExtractMemberMissingError < FetchError; end
 
   # Parse-time failures.
   class ParseError < Error; end

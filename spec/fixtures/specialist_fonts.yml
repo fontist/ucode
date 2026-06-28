@@ -1,0 +1,29 @@
+---
+# Fixture manifest for SpecialistFontFetcher specs. Mirrors the
+# production shape of config/specialist_fonts.yml at minimal scale:
+# one OFL direct-download, one OFL zip-extract, one local-only entry.
+fonts:
+- label: FixtureDirect
+  version: '0.1'
+  license: OFL
+  url: https://fixtures.local/FixtureDirect.ttf
+  sha256: null
+  path: data/fixtures/FixtureDirect.ttf
+  extract: false
+  provenance: test fixture
+- label: FixtureZipped
+  version: '0.1'
+  license: OFL
+  url: https://fixtures.local/FixtureZipped.zip
+  sha256: null
+  path: data/fixtures/FixtureZipped.ttf
+  extract: true
+  extract_member: FixtureZipped.ttf
+  provenance: test fixture
+- label: FixtureLocal
+  version: '0.1'
+  license: OFL
+  url: null
+  path: "~/nonexistent-ucode-fixture-dir/FixtureLocal-*.ttf"
+  extract: false
+  provenance: test fixture

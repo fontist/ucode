@@ -46,6 +46,24 @@ module Ucode
           .fetch_charts(version, block_first_cps: cps, force: options[:force])
       end
 
+      desc "fonts", "Download specialist Tier 1 fonts (config/specialist_fonts.yml)"
+      option :manifest, type: :string,
+                        desc: "Override manifest path (default config/specialist_fonts.yml)"
+      option :label, type: :string, desc: "Fetch only this font by label"
+      option :allow_proprietary, type: :boolean, default: false,
+                                 desc: "Permit non-OFL licensed fonts"
+      option :dry_run, type: :boolean, default: false,
+                       desc: "Plan only; no network or disk writes"
+      def fonts
+        result = Commands::FetchCommand.new.fetch_fonts(
+          manifest_path: options[:manifest],
+          only_label: options[:label],
+          allow_proprietary: options[:allow_proprietary],
+          dry_run: options[:dry_run],
+        )
+        puts format_fonts_result(result)
+      end
+
       private
 
       def block_id_to_first_cp(id)
@@ -57,6 +75,11 @@ module Ucode
 
       def format_result(result)
         JSON.pretty_generate(result)
+      end
+
+      def format_fonts_result(result)
+        clean = result.merge(results: result[:results].map { |r| r.to_h.compact })
+        JSON.pretty_generate(clean)
       end
     end
 

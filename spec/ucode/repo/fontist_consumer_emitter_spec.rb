@@ -46,7 +46,7 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
       }
     end)
     blocks.each do |b|
-      write_json("blocks/#{b[:id]}.json",
+      write_json("blocks/#{b[:id]}/index.json",
                  "id" => b[:id], "name" => b.fetch(:display_name, b[:id].tr("_", " ")),
                  "range_first" => b[:first], "range_last" => b[:last],
                  "plane_number" => b.fetch(:plane, 0), "age" => b[:age],
@@ -185,7 +185,7 @@ RSpec.describe Ucode::Repo::FontistConsumerEmitter do
         "id" => "Basic_Latin", "name" => "Basic_Latin",
         "first_cp" => 0x41, "last_cp" => 0x42, "plane_number" => 0
       }])
-      write_json("blocks/Basic_Latin.json",
+      write_json("blocks/Basic_Latin/index.json",
                  "id" => "Basic_Latin", "name" => "Basic_Latin",
                  "range_first" => 0x41, "range_last" => 0x42,
                  "plane_number" => 0,

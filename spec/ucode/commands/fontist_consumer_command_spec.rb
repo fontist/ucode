@@ -29,7 +29,7 @@ RSpec.describe Ucode::Commands::FontistConsumerCommand do
       "first_cp" => 0x41, "last_cp" => 0x43,
       "plane_number" => 0, "age" => "1.1"
     }])
-    write_json("blocks/Basic_Latin.json",
+    write_json("blocks/Basic_Latin/index.json",
                "id" => "Basic_Latin", "name" => "Basic Latin",
                "range_first" => 0x41, "range_last" => 0x43,
                "plane_number" => 0, "age" => "1.1",
@@ -90,7 +90,7 @@ RSpec.describe Ucode::Commands::FontistConsumerCommand do
         "first_cp" => 0x41, "last_cp" => 0x41,
         "plane_number" => 0, "age" => "1.1"
       }])
-      write_json("blocks/Basic_Latin.json",
+      write_json("blocks/Basic_Latin/index.json",
                  "id" => "Basic_Latin", "name" => "Basic Latin",
                  "range_first" => 0x41, "range_last" => 0x41,
                  "plane_number" => 0, "age" => "1.1",
@@ -112,7 +112,7 @@ RSpec.describe Ucode::Commands::FontistConsumerCommand do
         "first_cp" => 0x41, "last_cp" => 0x41,
         "plane_number" => 0, "age" => "1.1"
       }])
-      write_json("blocks/Basic_Latin.json",
+      write_json("blocks/Basic_Latin/index.json",
                  "id" => "Basic_Latin", "name" => "Basic Latin",
                  "range_first" => 0x41, "range_last" => 0x41,
                  "plane_number" => 0, "age" => "1.1",

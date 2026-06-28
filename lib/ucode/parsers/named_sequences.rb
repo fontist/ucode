@@ -8,10 +8,10 @@ module Ucode
     # Parses `NamedSequences.txt` — named multi-codepoint sequences.
     #
     # Format (UAX #44):
-    #   cp1 cp2 cp3 ...; Name
+    #   Name; cp1 cp2 cp3 ...
     #
-    # The first field is a space-separated list of hex codepoints; the
-    # second is the human-readable name.
+    # The first field is the human-readable name; the second is a
+    # space-separated list of hex codepoints.
     class NamedSequences < Base
       class << self
         # Yields one NamedSequence per non-comment line. Returns a lazy
@@ -23,8 +23,8 @@ module Ucode
             fields = line.fields
             next if fields.length < 2
 
-            sequence_field = fields[0]
-            name = fields[1]
+            name = fields[0]
+            sequence_field = fields[1]
             next if name.nil? || name.empty?
 
             yield Models::NamedSequence.new(

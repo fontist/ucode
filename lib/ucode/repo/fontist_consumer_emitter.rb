@@ -71,7 +71,7 @@ module Ucode
 
       def emit_block(entry, labels)
         block_id = entry["id"]
-        block_file = load_json(ucode_path("blocks", "#{block_id}.json"))
+        block_file = load_json(ucode_path("blocks", block_id, "index.json"))
         chars = chars_for(block_file["codepoint_ids"] || [], labels)
         slug = block_slug(entry["name"])
 

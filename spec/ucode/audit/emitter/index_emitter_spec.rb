@@ -80,4 +80,54 @@ RSpec.describe Ucode::Audit::Emitter::IndexEmitter, type: :emitter_spec do
       expect(block).not_to include("covered_codepoints")
     end
   end
+
+  describe "universal_set section" do
+    let(:uset_root) { File.join(root, "universal_glyph_set") }
+
+    before do
+      FileUtils.mkdir_p(File.join(uset_root, "glyphs"))
+      File.write(File.join(uset_root, "manifest.json"), JSON.generate({
+        "unicode_version" => "17.0.0",
+        "ucode_version" => "0.2.0",
+        "entries" => [],
+      }))
+    end
+
+    it "is absent by default" do
+      emitter.emit(face_dir, report)
+      parsed = JSON.parse(File.read(face_dir.join("index.json")))
+      expect(parsed).not_to have_key("universal_set")
+    end
+
+    it "is absent when universal_set_root is given without face_dir" do
+      hash = emitter.build_index(report, universal_set_root: uset_root)
+      expect(hash).not_to have_key("universal_set")
+    end
+
+    it "is available=true with relative paths when both root + face_dir are present" do
+      hash = emitter.build_index(report,
+                                 universal_set_root: uset_root,
+                                 face_dir: face_dir.to_s)
+      expect(hash["universal_set"]["available"]).to be(true)
+      expect(hash["universal_set"]["manifest_path"])
+        .to eq("../../universal_glyph_set/manifest.json")
+      expect(hash["universal_set"]["glyphs_dir"])
+        .to eq("../../universal_glyph_set/glyphs/")
+    end
+
+    it "is available=false with reason when the root does not exist" do
+      hash = emitter.build_index(report,
+                                 universal_set_root: "/does/not/exist",
+                                 face_dir: face_dir.to_s)
+      expect(hash["universal_set"]["available"]).to be(false)
+      expect(hash["universal_set"]["reason"]).to include("not found")
+    end
+
+    it "writes the section to disk" do
+      emitter.emit(face_dir, report, universal_set_root: uset_root)
+      parsed = JSON.parse(File.read(face_dir.join("index.json")))
+      expect(parsed["universal_set"]["available"]).to be(true)
+      expect(parsed["universal_set"]["manifest_path"]).to eq("../../universal_glyph_set/manifest.json")
+    end
+  end
 end

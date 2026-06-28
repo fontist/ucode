@@ -181,7 +181,12 @@ code { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
   padding: 0.5rem;
   margin-top: 0.5rem;
   display: inline-block;
+  min-width: 120px;
+  min-height: 60px;
 }
+.glyph-preview svg { max-width: 240px; max-height: 120px; display: block; }
+.universal-set-preview { display: block; }
+.universal-set-preview .hint { margin: 0 0 0.5rem; }
 @media (prefers-color-scheme: dark) {
   .glyph-preview { background: #f0f0f0; }
 }

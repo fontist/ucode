@@ -72,6 +72,79 @@ RSpec.describe Ucode::Audit::Emitter::FaceDirectory, type: :emitter_spec do
     end
   end
 
+  describe "#emit_face with missing-glyph pages" do
+    let(:report_with_missing) do
+      build_audit_report(
+        covered_codepoints: [0x41],
+        blocks: [build_block_summary(
+          name: "Basic_Latin",
+          covered_codepoints: [0x41],
+          total_assigned: 128,
+          missing_count: 127,
+          coverage_percent: (1 / 128.0) * 100,
+          status: "PARTIAL",
+          missing_codepoints: (0x42..0x7F).to_a,
+        )],
+      )
+    end
+
+    let(:uset_root) { File.join(root, "universal_glyph_set") }
+
+    before do
+      FileUtils.mkdir_p(File.join(uset_root, "glyphs"))
+      File.write(File.join(uset_root, "manifest.json"), JSON.generate({
+        "unicode_version" => "17.0.0",
+        "ucode_version" => "0.2.0",
+        "entries" => [],
+      }))
+    end
+
+    it "emits missing/<BLOCK>.html when --with-missing-glyph-pages is set" do
+      emitter = described_class.new(
+        output_root: root,
+        emit_browser: true,
+        universal_set_root: uset_root,
+        with_missing_glyph_pages: true,
+      )
+      face_dir = emitter.emit_face(label: "MonaSans-Regular", report: report_with_missing)
+      expect(File.exist?(face_dir.join("missing", "Basic_Latin.html"))).to be(true)
+    end
+
+    it "skips missing pages when emit_browser is off" do
+      emitter = described_class.new(
+        output_root: root,
+        emit_browser: false,
+        universal_set_root: uset_root,
+        with_missing_glyph_pages: true,
+      )
+      face_dir = emitter.emit_face(label: "MonaSans-Regular", report: report_with_missing)
+      expect(File.exist?(face_dir.join("missing"))).to be(false)
+    end
+
+    it "skips blocks with no missing codepoints" do
+      no_missing_report = build_audit_report(
+        covered_codepoints: [0x41],
+        blocks: [build_block_summary(
+          name: "Basic_Latin",
+          covered_codepoints: [0x41],
+          total_assigned: 1,
+          missing_count: 0,
+          coverage_percent: 100.0,
+          status: "COMPLETE",
+          missing_codepoints: [],
+        )],
+      )
+      emitter = described_class.new(
+        output_root: root,
+        emit_browser: true,
+        universal_set_root: uset_root,
+        with_missing_glyph_pages: true,
+      )
+      face_dir = emitter.emit_face(label: "MonaSans-Regular", report: no_missing_report)
+      expect(File.exist?(face_dir.join("missing", "Basic_Latin.html"))).to be(false)
+    end
+  end
+
   describe "idempotency" do
     let(:emitter) { described_class.new(output_root: root, verbose: true) }
 

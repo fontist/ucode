@@ -266,6 +266,13 @@ module Ucode
                                        desc: "Path to universal-set manifest (or 'none'); " \
                                  "default: output/universal_glyph_set/manifest.json " \
                                  "if present, else UCD-only"
+      option :universal_set_root, type: :string, default: nil,
+                                  desc: "Path to universal-set build root (e.g. " \
+                                       "output/universal_glyph_set). Required for " \
+                                       "--with-missing-glyph-pages."
+      option :with_missing_glyph_pages, type: :boolean, default: false,
+                                        desc: "Emit per-block missing-glyph galleries " \
+                                              "(requires --browse + --universal-set-root)"
       def font(path)
         reference = Commands::Audit::ReferenceBuilder.build(
           flag: options[:reference_universal_set],
@@ -282,6 +289,8 @@ module Ucode
           browse: options[:browse],
           install: !options[:no_install],
           reference: reference,
+          universal_set_root: options[:universal_set_root],
+          with_missing_glyph_pages: options[:with_missing_glyph_pages],
         )
         puts JSON.pretty_generate(result_to_h(result))
       end
@@ -298,6 +307,10 @@ module Ucode
       option :browse,      type: :boolean, default: false
       option :reference_universal_set, type: :string, default: nil,
                                        desc: "Path to universal-set manifest (or 'none')"
+      option :universal_set_root, type: :string, default: nil,
+                                  desc: "Path to universal-set build root"
+      option :with_missing_glyph_pages, type: :boolean, default: false,
+                                        desc: "Emit per-block missing-glyph galleries"
       def collection(path)
         reference = Commands::Audit::ReferenceBuilder.build(
           flag: options[:reference_universal_set],
@@ -314,6 +327,8 @@ module Ucode
           output_root: options[:output],
           browse: options[:browse],
           reference: reference,
+          universal_set_root: options[:universal_set_root],
+          with_missing_glyph_pages: options[:with_missing_glyph_pages],
         )
         puts JSON.pretty_generate(result_to_h(result))
       end
@@ -329,6 +344,10 @@ module Ucode
                            desc: "Also write the library + face HTML browsers"
       option :reference_universal_set, type: :string, default: nil,
                                        desc: "Path to universal-set manifest (or 'none')"
+      option :universal_set_root, type: :string, default: nil,
+                                  desc: "Path to universal-set build root"
+      option :with_missing_glyph_pages, type: :boolean, default: false,
+                                        desc: "Emit per-block missing-glyph galleries"
       def library(dir)
         reference = Commands::Audit::ReferenceBuilder.build(
           flag: options[:reference_universal_set],
@@ -344,6 +363,8 @@ module Ucode
           output_root: options[:output],
           browse: options[:browse],
           reference: reference,
+          universal_set_root: options[:universal_set_root],
+          with_missing_glyph_pages: options[:with_missing_glyph_pages],
         )
         puts JSON.pretty_generate(result_to_h(result))
       end

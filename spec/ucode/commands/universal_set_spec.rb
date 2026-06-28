@@ -53,7 +53,7 @@ RSpec.describe Ucode::Commands::UniversalSet::BuildCommand do
     Dir.mktmpdir do |out|
       result = described_class.new.call(
         fixture_version, output_root: out, resolver: resolver,
-                         parallel_workers: 1,
+                         parallel_workers: 1, skip_pre_check: true,
       )
       expect(result[:version]).to eq(fixture_version)
       expect(result[:manifest_path]).to eq(Pathname.new(out).join("manifest.json"))
@@ -65,7 +65,7 @@ RSpec.describe Ucode::Commands::UniversalSet::BuildCommand do
     Dir.mktmpdir do |out|
       described_class.new.call(
         fixture_version, output_root: out, resolver: resolver,
-                         parallel_workers: 1,
+                         parallel_workers: 1, skip_pre_check: true,
       )
       glyphs_dir = Pathname.new(out).join("glyphs")
       expect(glyphs_dir.children.length).to be > 0
@@ -78,7 +78,7 @@ RSpec.describe Ucode::Commands::UniversalSet::BuildCommand do
     Dir.mktmpdir do |out|
       result = described_class.new.call(
         fixture_version, output_root: out, resolver: resolver,
-                         parallel_workers: 1,
+                         parallel_workers: 1, skip_pre_check: true,
       )
       manifest = JSON.parse(result[:manifest_path].read)
       expect(manifest["unicode_version"]).to eq(fixture_version)
@@ -94,7 +94,7 @@ RSpec.describe Ucode::Commands::UniversalSet::BuildCommand do
     Dir.mktmpdir do |out|
       described_class.new.call(
         fixture_version, output_root: out, resolver: resolver,
-                         parallel_workers: 1,
+                         parallel_workers: 1, skip_pre_check: true,
       )
       expect(Pathname.new(out).join("reports", "by_tier.json").exist?).to be(true)
       expect(Pathname.new(out).join("reports", "by_block.json").exist?).to be(true)
@@ -128,13 +128,18 @@ RSpec.describe Ucode::Commands::UniversalSet::BuildCommand do
       described_class.new.call(
         fixture_version, output_root: out, resolver: resolver,
                          block_filter: target_block,
-                         parallel_workers: 1,
+                         parallel_workers: 1, skip_pre_check: true,
       )
 
       manifest = JSON.parse(Pathname.new(out).join("manifest.json").read)
       by_block = JSON.parse(Pathname.new(out).join("reports", "by_block.json").read)
       expect(by_block.keys).to eq([target_block])
-      expect(manifest["totals"]["codepoints_assigned"]).to eq(by_block[target_block]["built"])
+      # All codepoints in the filtered block land under "assigned"; the
+      # per-tier counters sum to the same value.
+      tier_sum = by_block[target_block].values_at("tier-1", "pillar-1",
+                                                  "pillar-2", "pillar-3").sum
+      expect(tier_sum).to eq(by_block[target_block]["assigned"])
+      expect(manifest["totals"]["codepoints_assigned"]).to eq(by_block[target_block]["assigned"])
     end
   end
 end

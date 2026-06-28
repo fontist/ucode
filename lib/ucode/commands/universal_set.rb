@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "digest"
+require "json"
 require "pathname"
 
 require "ucode/cache"
@@ -14,24 +15,25 @@ require "ucode/version_resolver"
 
 module Ucode
   module Commands
-    # `ucode universal-set build` — materializes the universal glyph
-    # set (TODO 24). Drains the {Coordinator}'s codepoint stream
-    # through the 4-tier {Ucode::Glyphs::Resolver}, writes one SVG
-    # per codepoint under `<output>/glyphs/<U+XXXX>.svg`, and emits
-    # `manifest.json` + per-tier / per-block / gaps reports.
+    # `ucode universal-set` subcommands (TODOs 24 + 31):
+    #
+    # - `BuildCommand` — drain the codepoint stream through the
+    #   4-tier resolver and write glyphs + manifest. Runs
+    #   {PreBuildCheck} first; emits {CoverageReport} after.
+    # - `PreCheckCommand` — standalone pre-build validation
+    #   (config + fonts + coverage assertion).
+    # - `ReportCommand` — re-emit coverage reports from an
+    #   existing manifest. Useful for iterating on curation without
+    #   re-running the build.
+    # - `ValidateCommand` — post-build structural validation
+    #   (manifest parses, every entry has a glyph, totals reconcile,
+    #   provenance recorded).
     #
     # The set is the canonical reference for "what Unicode 17 looks
     # like" — every assigned codepoint has exactly one glyph, with
     # documented provenance. Audits (TODO 25) and the fontist.org
     # consumer (TODO 27) read the manifest to answer "is this
     # codepoint in the universal set?" without re-reading every SVG.
-    #
-    # == Pre-conditions
-    #
-    # Same as {CanonicalBuildCommand}: UCD + Unihan fetched, SQLite
-    # cache built, optional PDFs / Last Resort UFO cached for
-    # Pillars 1-3. Missing pre-conditions cause silent fallthrough to
-    # lower tiers; the manifest's `by_tier` totals surface what ran.
     module UniversalSet
       # `ucode universal-set build` action class. Pure Ruby — Thor
       # (in `lib/ucode/cli.rb`) is responsible only for argument
@@ -44,22 +46,31 @@ module Ucode
         #   the Tier 1 font config YAML; nil uses the default at
         #   `Ucode::Glyphs::SourceConfig::DEFAULT_PATH`.
         # @param resolver [Ucode::Glyphs::Resolver, nil] inject a
-        #   pre-built resolver (skips SourceBuilder); used by tests.
+        #   pre-built resolver (skips SourceBuilder + PreBuildCheck);
+        #   used by tests.
         # @param block_filter [String, nil] limit the build to one
         #   block (canonical underscore form). Useful for partial
         #   rebuilds when iterating on Tier 1 curation.
         # @param parallel_workers [Integer] forwarded to the Builder.
         #   Defaults to {Ucode::Configuration#parallel_workers}.
-        # @return [Hash] { version:, manifest_path:, totals:, by_tier: }
+        # @param skip_pre_check [Boolean] when true, skip the
+        #   {PreBuildCheck} step. Used by tests that inject a custom
+        #   resolver and don't have a real source config on disk.
+        # @return [Hash] { version:, manifest_path:, totals:,
+        #   by_tier:, coverage:, validation: }
         def call(version_intent, output_root:, source_config_path: nil,
                  resolver: nil, block_filter: nil,
-                 parallel_workers: default_workers)
+                 parallel_workers: default_workers, skip_pre_check: false)
           version = VersionResolver.resolve(version_intent)
           root = Pathname.new(output_root)
 
           config_path = source_config_path_or_default(source_config_path)
           sha = source_config_sha256(config_path)
-          resolved_resolver = resolver || build_resolver(version, config_path)
+          database = Database.open(version)
+
+          run_pre_check(config_path, database) unless skip_pre_check
+
+          resolved_resolver = resolver || build_resolver(version, config_path, database)
 
           builder = Glyphs::UniversalSet::Builder.new(
             output_root: root,
@@ -76,11 +87,17 @@ module Ucode
           manifest = Ucode::Models::UniversalSetManifest.from_hash(
             JSON.parse(manifest_path.read),
           )
+          coverage = Glyphs::UniversalSet::CoverageReport
+            .new(root, database: database).emit(manifest)
+          validation = Glyphs::UniversalSet::Validator
+            .new(root, unicode_version: version).validate
           {
             version: version,
             manifest_path: manifest_path,
             totals: manifest.totals.to_hash,
             by_tier: manifest.by_tier,
+            coverage: coverage,
+            validation: validation,
           }
         end
 
@@ -102,8 +119,14 @@ module Ucode
           Digest::SHA256.file(path).hexdigest
         end
 
-        def build_resolver(version, config_path)
-          database = Database.open(version)
+        def run_pre_check(config_path, database)
+          Glyphs::UniversalSet::PreBuildCheck.new(
+            source_config_path: config_path,
+            database: database,
+          ).call
+        end
+
+        def build_resolver(_version, config_path, database)
           config = Glyphs::SourceConfig.new(path: config_path)
           builder = Glyphs::SourceBuilder.new(config: config, database: database)
           Glyphs::Resolver.new(sources: builder.tier1_sources(install: false))
@@ -113,6 +136,74 @@ module Ucode
           ucd_dir = Cache.ucd_dir(version)
           unihan_dir = Cache.unihan_dir(version)
           Coordinator.new.each_codepoint(ucd_dir: ucd_dir, unihan_dir: unihan_dir)
+        end
+      end
+
+      # `ucode universal-set pre-check` — standalone pre-build
+      # validation. Runs the three TODO 31 §Pre-build validation
+      # checks (config loads, fonts present, coverage assertion runs)
+      # without starting the 4-hour build.
+      class PreCheckCommand
+        # @param version_intent [nil, :default, :latest, String]
+        # @param source_config_path [String, Pathname, nil]
+        # @param cmaps [#covers?] injectable; defaults to
+        #   RealFonts::CmapCache.
+        # @param font_locator [#locate] injectable; defaults to a
+        #   fresh FontLocator.
+        # @return [Ucode::Glyphs::UniversalSet::PreBuildReport]
+        # @raise [Ucode::UniversalSetPreBuildError] when missing_fonts
+        #   is non-empty or the config fails to load.
+        def call(version_intent, source_config_path: nil, cmaps: nil,
+                 font_locator: nil)
+          version = VersionResolver.resolve(version_intent)
+          database = Database.open(version)
+          config_path = source_config_path || Glyphs::SourceConfig::DEFAULT_PATH
+
+          kwargs = { source_config_path: config_path, database: database }
+          kwargs[:cmaps] = cmaps if cmaps
+          kwargs[:font_locator] = font_locator if font_locator
+          Glyphs::UniversalSet::PreBuildCheck.new(**kwargs).call
+        end
+      end
+
+      # `ucode universal-set report` — re-emit coverage reports from
+      # an existing manifest. Useful when iterating on the manifest
+      # shape (or regenerating reports after a model change) without
+      # re-running the build.
+      class ReportCommand
+        # @param version_intent [nil, :default, :latest, String]
+        # @param output_root [String, Pathname] directory holding
+        #   `manifest.json`.
+        # @return [Hash] the {CoverageReport#emit} payload.
+        def call(version_intent, output_root:)
+          version = VersionResolver.resolve(version_intent)
+          root = Pathname.new(output_root)
+          manifest_path = root.join("manifest.json")
+          raise Ucode::Error, "manifest not found at #{manifest_path}" unless manifest_path.exist?
+
+          manifest = Ucode::Models::UniversalSetManifest.from_hash(
+            JSON.parse(manifest_path.read),
+          )
+          database = Database.open(version)
+          Glyphs::UniversalSet::CoverageReport.new(root, database: database)
+            .emit(manifest)
+        end
+      end
+
+      # `ucode universal-set validate` — post-build structural
+      # validation. Reads `manifest.json` + `glyphs/` and runs the
+      # four checks (manifest_loadable, glyph_files_present,
+      # totals_reconcile, provenance_complete).
+      class ValidateCommand
+        # @param output_root [String, Pathname]
+        # @param version_intent [nil, :default, :latest, String]
+        #   used only to stamp the report's unicode_version when the
+        #   manifest's recorded value is missing.
+        # @return [Hash] the {Validator#validate} payload.
+        def call(output_root, version_intent: nil)
+          version = version_intent && VersionResolver.resolve(version_intent)
+          Glyphs::UniversalSet::Validator
+            .new(output_root, unicode_version: version).validate
         end
       end
     end

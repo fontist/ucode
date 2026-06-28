@@ -13,6 +13,7 @@ module Ucode
       attribute :range_first, :integer
       attribute :range_last, :integer
       attribute :plane_number, :integer
+      attribute :age, :string
       attribute :codepoint_ids, :string, collection: true, default: -> { [] }
 
       key_value do
@@ -21,6 +22,7 @@ module Ucode
         map "range_first", to: :range_first
         map "range_last", to: :range_last
         map "plane_number", to: :plane_number
+        map "age", to: :age
         map "codepoint_ids", to: :codepoint_ids
       end
 

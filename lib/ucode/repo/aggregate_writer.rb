@@ -79,6 +79,7 @@ module Ucode
       def initialize(output_root)
         @output_root = Pathname.new(output_root)
         @block_codepoint_ids = Hash.new { |h, k| h[k] = [] }
+        @block_ages = Hash.new { |h, k| h[k] = nil }
         @script_codepoint_ids = Hash.new { |h, k| h[k] = [] }
         @names_index = {}
         @labels_index = {}
@@ -94,6 +95,7 @@ module Ucode
         return if cp.block_id.nil?
 
         @block_codepoint_ids[cp.block_id] << cp.id
+        track_block_age(cp)
         if cp.script_code
           @script_codepoint_ids[cp.script_code] << cp.id
         end
@@ -140,6 +142,26 @@ module Ucode
         label.reject { |_, v| v.nil? }
       end
 
+      # Per-block `age` is the earliest DerivedAge of any codepoint in
+      # the block, compared as a Gem::Version. Stored as the original
+      # string (e.g. "1.1", "17.0.0"). nil when no codepoint in the
+      # block has an age (rare — only happens for entirely-reserved
+      # blocks, which the parser excludes anyway).
+      def track_block_age(cp)
+        return if cp.age.nil? || cp.age.empty?
+
+        current = @block_ages[cp.block_id]
+        @block_ages[cp.block_id] = if current.nil?
+                                     cp.age
+                                   else
+                                     min_age(current, cp.age)
+                                   end
+      end
+
+      def min_age(a, b)
+        Gem::Version.new(a) < Gem::Version.new(b) ? a : b
+      end
+
       # ---- Plane files -------------------------------------------------
 
       def write_planes(blocks)
@@ -176,6 +198,7 @@ module Ucode
 
       def write_blocks(blocks)
         count = blocks.sum do |block|
+          block.age = @block_ages[block.id]
           path = Paths.block_metadata_path(@output_root, block.id)
           write_atomic(path, block_payload(block)) ? 1 : 0
         end
@@ -191,6 +214,7 @@ module Ucode
             "first_cp"     => block.range_first,
             "last_cp"      => block.range_last,
             "plane_number" => block.plane_number,
+            "age"          => @block_ages[block.id],
           }
         end
         write_atomic(path, to_pretty_json(summary)) ? 1 : 0
@@ -203,6 +227,7 @@ module Ucode
           "range_first"    => block.range_first,
           "range_last"     => block.range_last,
           "plane_number"   => block.plane_number,
+          "age"            => @block_ages[block.id],
           "codepoint_ids"  => (@block_codepoint_ids[block.id] || []),
         )
       end

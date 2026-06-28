@@ -46,9 +46,21 @@ first; these TODOs reference sections of it.
 - [20 — Canonical 4-tier resolver](20-canonical-resolver-4-tier.md)
 - [21 — Canonical Unicode 17 dataset build](21-canonical-unicode17-build.md)
 
+### Universal glyph set + UC17 curation
+
+- [23 — Universal glyph set: Tier 1 source map](23-universal-glyph-set-source-map.md)
+- [24 — Universal glyph set build](24-universal-glyph-set-build.md)
+- [25 — Font audit against universal set](25-font-audit-against-universal-set.md)
+- [26 — Missing glyph reporter (drill-down view)](26-missing-glyph-reporter.md)
+- [27 — fontist.org consumer integration](27-fontist-org-consumer-integration.md)
+- [29 — Universal glyph set: full Unicode 17 curation (Part 1)](29-universal-set-curation-uc17.md)
+- [30 — Tier 1 font acquisition: specialist fonts](30-tier1-font-acquisition.md)
+- [31 — Universal set production build + coverage validation](31-universal-set-production-build.md)
+
 ### Sequencing
 
 - [22 — Implementation order](22-implementation-order.md)
+- [28 — Implementation order update (TODOs 23-31)](28-implementation-order-update.md)
 
 ## Conventions
 

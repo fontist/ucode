@@ -2,11 +2,12 @@
 
 ## Goal
 
-Update the canonical implementation order to include TODOs 23-27
+Update the canonical implementation order to include TODOs 23-31
 (universal glyph set, font audit against universal set, missing glyph
-reporter, fontist.org consumer integration). This file replaces
-TODO.new/22 as the authoritative sequencing reference for the new
-work; TODO 22 continues to govern TODOs 01-21.
+reporter, fontist.org consumer integration, full Unicode 17 curation,
+specialist font acquisition, production build + validation). This
+file replaces TODO.new/22 as the authoritative sequencing reference
+for the new work; TODO 22 continues to govern TODOs 01-21.
 
 ## Sequencing principles (carried from TODO 22)
 
@@ -37,7 +38,13 @@ work; TODO 22 continues to govern TODOs 01-21.
                                         │
 **24 universal-glyph-set-build** ────────┤
                                         │
-**25 font-audit-against-universal-set** ─┤
+**25 font-audit-against-universal-set** ─┤  (shipped — PR #34)
+                                        │
+**29 universal-set-curation-uc17** ──────┤  (fills TODO 23's YAML)
+                                        │
+**30 tier1-font-acquisition** ───────────┤  (downloads specialist fonts)
+                                        │
+**31 universal-set-production-build** ───┤  (executes TODO 24 end-to-end)
                                         │
 **26 missing-glyph-reporter** ───────────┤
                                         │
@@ -87,6 +94,26 @@ Dependencies:
 Output: per-font audits carry provenance; missing-glyph galleries
 ship alongside.
 
+Status: TODO 25 shipped as PR #34.
+
+### Phase 4b — UC17 curation + production build (TODOs 29-31) **new**
+
+Fill the source config with concrete Tier 1 font recommendations for
+all ~340 Unicode 17 blocks (TODO 29). Acquire specialist fonts not in
+fontist's index (TODO 30). Execute the universal-set build end-to-end
+and validate coverage (TODO 31).
+
+Dependencies:
+- TODO 23 must be merged (source map mechanism — already shipped).
+- TODO 24 must be merged (build pipeline — already shipped).
+- TODO 05 baseline audit (font investigation analysis, encoded into
+  TODO 29).
+
+Output: populated `config/unicode17_universal_glyph_set.yml`,
+`data/fonts/<specialist>.ttf`, complete
+`output/universal_glyph_set/` artifact with 100% Tier 1 coverage
+outside documented residual gaps.
+
 ### Phase 5 — fontist.org consumer (TODO 27) **new**
 
 Wire fontist.org to consume the new audit JSON + universal-set
@@ -97,6 +124,8 @@ Dependencies:
 - TODO 24 universal-set shipped.
 - TODO 25 audit JSON shape stable.
 - TODO 26 missing-glyph galleries available.
+- TODO 31 production build validates (universal-set is complete and
+  auditable).
 
 Output: fontist.org renders new audit data; legacy feed becomes
 backup-only.
@@ -153,3 +182,6 @@ consumers detect drift via that field.
 - Font audit against universal set: `TODO.new/25-font-audit-against-universal-set.md`
 - Missing glyph reporter: `TODO.new/26-missing-glyph-reporter.md`
 - fontist.org consumer integration: `TODO.new/27-fontist-org-consumer-integration.md`
+- UC17 curation (Part 1): `TODO.new/29-universal-set-curation-uc17.md`
+- Tier 1 font acquisition: `TODO.new/30-tier1-font-acquisition.md`
+- Production build + validation: `TODO.new/31-universal-set-production-build.md`

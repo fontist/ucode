@@ -239,7 +239,15 @@ module Ucode
                            desc: "Also write the self-contained HTML browser"
       option :no_install,  type: :boolean, default: false,
                            desc: "Don't auto-install missing fonts via fontist"
+      option :reference_universal_set, type: :string, default: nil,
+                                       desc: "Path to universal-set manifest (or 'none'); " \
+                                 "default: output/universal_glyph_set/manifest.json " \
+                                 "if present, else UCD-only"
       def font(path)
+        reference = Commands::Audit::ReferenceBuilder.build(
+          flag: options[:reference_universal_set],
+          version: options[:unicode_version],
+        )
         result = Commands::Audit::FontCommand.new.call(
           path,
           label: options[:label],
@@ -250,6 +258,7 @@ module Ucode
           output_root: options[:output],
           browse: options[:browse],
           install: !options[:no_install],
+          reference: reference,
         )
         puts JSON.pretty_generate(result_to_h(result))
       end
@@ -264,7 +273,13 @@ module Ucode
       option :with_glyphs, type: :boolean, default: false
       option :brief,       type: :boolean, default: false
       option :browse,      type: :boolean, default: false
+      option :reference_universal_set, type: :string, default: nil,
+                                       desc: "Path to universal-set manifest (or 'none')"
       def collection(path)
+        reference = Commands::Audit::ReferenceBuilder.build(
+          flag: options[:reference_universal_set],
+          version: options[:unicode_version],
+        )
         result = Commands::Audit::CollectionCommand.new.call(
           path,
           font_index: options[:font_index],
@@ -275,6 +290,7 @@ module Ucode
           brief: options[:brief],
           output_root: options[:output],
           browse: options[:browse],
+          reference: reference,
         )
         puts JSON.pretty_generate(result_to_h(result))
       end
@@ -288,7 +304,13 @@ module Ucode
       option :brief,       type: :boolean, default: false
       option :browse,      type: :boolean, default: false,
                            desc: "Also write the library + face HTML browsers"
+      option :reference_universal_set, type: :string, default: nil,
+                                       desc: "Path to universal-set manifest (or 'none')"
       def library(dir)
+        reference = Commands::Audit::ReferenceBuilder.build(
+          flag: options[:reference_universal_set],
+          version: options[:unicode_version],
+        )
         result = Commands::Audit::LibraryCommand.new.call(
           dir,
           recursive: options[:recursive],
@@ -298,6 +320,7 @@ module Ucode
           brief: options[:brief],
           output_root: options[:output],
           browse: options[:browse],
+          reference: reference,
         )
         puts JSON.pretty_generate(result_to_h(result))
       end

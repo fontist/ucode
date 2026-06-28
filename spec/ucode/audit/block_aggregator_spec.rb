@@ -121,4 +121,73 @@ RSpec.describe Ucode::Audit::BlockAggregator do
       expect(summaries.first.name).to eq("Basic_Latin")
     end
   end
+
+  describe "backwards compatibility: raw Database argument" do
+    it "wraps a Database in a UcdOnlyReference at construction time" do
+      summaries = described_class.new(fixture_database).call([0x41])
+      expect(summaries.first.name).to eq("Basic_Latin")
+      # UCD-only path leaves provenance empty.
+      expect(summaries.first.missing_codepoint_provenance).to eq([])
+    end
+  end
+
+  describe "with a UniversalSetReference" do
+    let(:manifest_entries) do
+      [0x09, 0x0A, 0x28, 0x41, 0x42, 0x61].map do |cp|
+        Ucode::Models::UniversalSetEntry.new(
+          codepoint: cp,
+          id: format("U+%04X", cp),
+          tier: "tier-1",
+          source: "noto-sans",
+          svg_sha256: "deadbeef",
+          svg_size_bytes: 100,
+        )
+      end
+    end
+
+    let(:manifest) do
+      Ucode::Models::UniversalSetManifest.new(
+        unicode_version: fixture_version,
+        ucode_version: Ucode::VERSION,
+        source_config_sha256: "abc",
+        entries: manifest_entries,
+      )
+    end
+
+    let(:reference) do
+      Ucode::Audit::UniversalSetReference.new(
+        manifest: manifest, database: fixture_database,
+      )
+    end
+
+    let(:aggregator) { described_class.new(reference) }
+
+    it "still groups by block and computes coverage counts" do
+      summary = aggregator.call([0x41, 0x42]).first
+      expect(summary.name).to eq("Basic_Latin")
+      expect(summary.covered_count).to eq(2)
+      expect(summary.missing_count).to eq(4)
+    end
+
+    it "attaches per-codepoint provenance for the missing set" do
+      summary = aggregator.call([0x41, 0x42]).first
+      provenance = summary.missing_codepoint_provenance
+      expect(provenance.length).to eq(4)
+      sample = provenance.first
+      expect(sample.codepoint).to be_a(Integer)
+      expect(sample.tier).to eq("tier-1")
+      expect(sample.source).to eq("noto-sans")
+    end
+
+    it "matches missing_codepoints one-to-one with provenance rows" do
+      summary = aggregator.call([0x41, 0x42]).first
+      expect(summary.missing_codepoint_provenance.map(&:codepoint))
+        .to eq(summary.missing_codepoints)
+    end
+
+    it "leaves provenance empty when the block is fully covered" do
+      summary = aggregator.call([0x09, 0x0A, 0x28, 0x41, 0x42, 0x61]).first
+      expect(summary.missing_codepoint_provenance).to eq([])
+    end
+  end
 end

@@ -24,6 +24,15 @@ module Ucode
     autoload :PlaneAggregator, "ucode/audit/plane_aggregator"
     autoload :DiscrepancyDetector, "ucode/audit/discrepancy_detector"
 
+    # CoverageReference hierarchy (TODO 25): pluggable baseline that
+    # the audit pipeline compares a font's cmap against. The default
+    # is UCD-only; supply a UniversalSetReference when a universal
+    # glyph set manifest is on disk so per-codepoint provenance is
+    # attached to every missing-codepoint row.
+    autoload :CoverageReference, "ucode/audit/coverage_reference"
+    autoload :UcdOnlyReference, "ucode/audit/ucd_only_reference"
+    autoload :UniversalSetReference, "ucode/audit/universal_set_reference"
+
     # Per-face orchestrator (TODO 11) — shared by LibraryAuditor and
     # the future CLI AuditCommand.
     autoload :FaceAuditor, "ucode/audit/face_auditor"

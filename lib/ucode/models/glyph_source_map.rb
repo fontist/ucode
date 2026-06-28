@@ -23,6 +23,11 @@ module Ucode
     #   unicode_version: "17.0.0"
     #   ucode_version: "0.2.0"
     #   generated_at: "2026-06-28T00:00:00Z"
+    #   default_sources:                 # applies when a block's sources are absent/empty
+    #     - kind: fontist
+    #       label: noto-sans
+    #       priority: 1
+    #       license: OFL
     #   map:
     #     Basic_Latin:
     #       sources:
@@ -33,8 +38,9 @@ module Ucode
     #       sources: []
     #
     # An entry with `sources: []` (or omitted) is valid: it declares
-    # "no Tier 1 font for this block; resolver falls through to
-    # Pillars 1-3".
+    # "no block-specific Tier 1 font; fall back to `default_sources`,
+    # then to Pillars 1-3". The fallback chain is implemented in
+    # {#sources_for}; the raw map is left untouched.
     #
     # The hash is stored as a raw `:hash` attribute (lutaml-model
     # collection semantics don't pair cleanly with a hash-keyed wire
@@ -44,31 +50,40 @@ module Ucode
       attribute :unicode_version, :string
       attribute :ucode_version, :string
       attribute :generated_at, :string
+      attribute :default_sources_raw, :hash, collection: true, default: -> { [] }
       attribute :block_sources, :hash, default: -> { {} }
 
       key_value do
         map "unicode_version", to: :unicode_version
         map "ucode_version", to: :ucode_version
         map "generated_at", to: :generated_at
+        map "default_sources", to: :default_sources_raw
         map "map", to: :block_sources
       end
 
       # @param block_id [String] verbatim block id (underscore form)
       # @return [Array<GlyphSource>] sources for the block, in
-      #   priority order (ascending); empty when the block isn't in
-      #   the map or has no sources configured.
+      #   priority order (ascending). Falls through block-specific →
+      #   `default_sources` → empty.
       def sources_for(block_id)
         raw = block_sources[block_id]
-        return [] if raw.nil?
+        list = extract_sources_list(raw)
+        list = default_sources_list if list.empty?
+        list.map { |h| GlyphSource.from_hash(h.transform_keys(&:to_s)) }
+          .sort_by(&:priority)
+      end
 
-        raw_list = extract_sources_list(raw)
-        raw_list.map { |h| GlyphSource.from_hash(h.transform_keys(&:to_s)) }
+      # @return [Array<GlyphSource>] the top-level default sources,
+      #   typed and priority-sorted. Empty when not declared.
+      def default_sources
+        default_sources_list
+          .map { |h| GlyphSource.from_hash(h.transform_keys(&:to_s)) }
           .sort_by(&:priority)
       end
 
       # @param block_id [String]
       # @return [Boolean] true if the block has any entry in the map
-      #   (even with empty sources).
+      #   (even with empty sources). Does not consider `default_sources`.
       def has_block?(block_id)
         block_sources.key?(block_id)
       end
@@ -79,7 +94,9 @@ module Ucode
         block_sources.keys
       end
 
-      # @return [Array<String>] block_ids with at least one source.
+      # @return [Array<String>] block_ids whose own `sources:` list has
+      #   at least one entry. Blocks relying on `default_sources` are
+      #   excluded — they have no block-specific policy.
       def configured_block_ids
         block_sources.each_with_object([]) do |(block_id, raw), acc|
           acc << block_id if any_sources?(raw)
@@ -109,6 +126,12 @@ module Ucode
         return raw.any? if raw.is_a?(Array)
 
         raw.is_a?(Hash) && Array(raw["sources"] || raw[:sources]).any?
+      end
+
+      # `default_sources` on the wire is a list of source hashes. Older
+      # configs may omit it; treat absence as an empty list.
+      def default_sources_list
+        Array(default_sources_raw)
       end
     end
   end

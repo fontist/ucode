@@ -27,6 +27,13 @@ module Ucode
     # - Empty `map:` section → same as missing file.
     # - Malformed YAML → raises (the curator must fix the file).
     class SourceConfig
+      # Sub-constants for curation review (TODO 29). The class itself
+      # remains the loader; these are the development-time walkers +
+      # typed results that consume the loaded map.
+      autoload :CoverageAssertion,
+               "ucode/glyphs/source_config/coverage_assertion"
+      autoload :GapReport, "ucode/glyphs/source_config/gap_report"
+
       # Default location of the curated Tier 1 font map. Public so the
       # canonical build + universal set commands can reference it when
       # no override is supplied. Keeping it on the class (not an

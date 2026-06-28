@@ -535,29 +535,31 @@ module Ucode
       puts JSON.pretty_generate(result_to_h(result))
     end
 
-    # ─────────────── fontist-consumer ───────────────
-    desc "fontist-consumer", "Emit fontist.org-shaped Unicode data from ucode output"
+    # ─────────────── block-feed ───────────────
+    desc "block-feed", "Emit per-block Unicode data feed from ucode output"
     long_desc <<~LONG
-      Translates ucode's canonical output tree into the three files
-      fontist.org consumes:
+      Translates ucode's canonical output tree into a compact per-block
+      Unicode data feed:
 
         <target>/unicode-blocks.json
         <target>/unicode-version.json
         <target>/unicode/blocks/<slug>.json
 
-      fontist.org's scripts/fetch-data.sh fetches these into public/,
-      replacing the legacy npm run gen-unicode UCD-XML pipeline.
+      Each per-block file contains the codepoints in that block with
+      their compact metadata (name, general category, script, combining
+      class, bidi class, mirrored flag). Block slugs are derived from
+      the block name via the standard slug algorithm.
     LONG
     option :ucode_output, type: :string, default: "./output",
                           desc: "ucode's output/ directory"
-    option :target, type: :string, default: "./output/fontist-consumer",
+    option :target, type: :string, default: "./output/block-feed",
                     desc: "Target directory for emitted files"
     option :unicode_version, type: :string, default: nil,
                              desc: "UCD version stamp (default: from manifest)"
-    def fontist_consumer
-      result = Commands::FontistConsumerCommand.new.call(
+    def block_feed
+      result = Commands::BlockFeedCommand.new.call(
         ucode_output_root: options[:ucode_output],
-        fontist_output_root: options[:target],
+        block_feed_output_root: options[:target],
         unicode_version: options[:unicode_version],
       )
       puts JSON.pretty_generate(result.to_h)

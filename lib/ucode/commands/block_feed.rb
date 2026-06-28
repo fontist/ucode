@@ -7,8 +7,8 @@ require "ucode/version_resolver"
 
 module Ucode
   module Commands
-    # `ucode fontist-consumer` — emit fontist.org-shaped Unicode data
-    # from ucode's canonical output tree (TODO 27 consumer-side rewiring).
+    # `ucode block-feed` — emit a compact per-block Unicode data feed
+    # from ucode's canonical output tree.
     #
     # Reads ucode's `output/` and produces three artifacts at the target
     # directory:
@@ -17,35 +17,35 @@ module Ucode
     #   <target>/unicode-version.json
     #   <target>/unicode/blocks/<slug>.json
     #
-    # fontist.org's `scripts/fetch-data.sh` fetches these into `public/`
-    # at build time, replacing the legacy `npm run gen-unicode` UCD-XML
-    # pipeline. ucode becomes the single source of truth for Unicode
-    # block/character data.
-    class FontistConsumerCommand
-      Result = Struct.new(:ucode_output_root, :fontist_output_root,
+    # Each per-block file contains the codepoints in that block with
+    # their compact Unicode metadata (name, general category, script,
+    # combining class, bidi class, mirrored flag). Block slugs are
+    # derived from the block name via the standard slug algorithm.
+    class BlockFeedCommand
+      Result = Struct.new(:ucode_output_root, :block_feed_output_root,
                           :unicode_version, :blocks_written,
                           :codepoints_written, :unicode_blocks_path,
                           :unicode_version_path, keyword_init: true)
 
       # @param ucode_output_root [String, Pathname] ucode's `output/`
-      #   (must contain blocks/index.json, blocks/<ID>.json,
+      #   (must contain blocks/index.json, blocks/<ID>/index.json,
       #   index/labels.json).
-      # @param fontist_output_root [String, Pathname] target directory.
+      # @param block_feed_output_root [String, Pathname] target directory.
       # @param unicode_version [String, nil] UCD version to stamp on
       #   unicode-version.json. Defaults to the version recorded in
       #   ucode's manifest.json.
       # @return [Result]
-      def call(ucode_output_root:, fontist_output_root:, unicode_version: nil)
+      def call(ucode_output_root:, block_feed_output_root:, unicode_version: nil)
         ucode_root = Pathname.new(ucode_output_root)
-        fontist_root = Pathname.new(fontist_output_root)
+        feed_root = Pathname.new(block_feed_output_root)
         version = unicode_version || manifest_version(ucode_root)
 
-        emitter = Repo::FontistConsumerEmitter.new(ucode_root, fontist_root)
+        emitter = Repo::BlockFeedEmitter.new(ucode_root, feed_root)
         outcome = emitter.emit(ucd_version: version)
 
         Result.new(
           ucode_output_root: ucode_root.to_s,
-          fontist_output_root: fontist_root.to_s,
+          block_feed_output_root: feed_root.to_s,
           unicode_version: version,
           blocks_written: outcome[:blocks_written],
           codepoints_written: outcome[:codepoints_written],

@@ -39,14 +39,21 @@ module Ucode
       # @param options [Hash{Symbol=>Object}] audit options (ucd_version,
       #   all_codepoints, with_glyphs, etc.).
       # @param renderer [Object, nil] glyph renderer for --with-glyphs mode.
+      # @param reference [CoverageReference, nil] the baseline the
+      #   audit compares the font's cmap against. When nil, defaults
+      #   to a {UcdOnlyReference} built from the resolved baseline
+      #   database (TODO 25). Passing a {UniversalSetReference}
+      #   attaches per-codepoint provenance to every missing-codepoint
+      #   row.
       def initialize(font:, font_path:, font_index:, num_fonts_in_source:,
-                     options:, renderer: nil)
+                     options:, renderer: nil, reference: nil)
         @font = font
         @font_path = font_path
         @font_index = font_index
         @num_fonts_in_source = num_fonts_in_source
         @options = options
         @renderer = renderer
+        @reference_override = reference
       end
 
       # Codepoints the font's cmap actually maps. Memoized.
@@ -61,6 +68,18 @@ module Ucode
       # @return [Baseline]
       def baseline
         @baseline ||= resolve_baseline
+      end
+
+      # The {CoverageReference} the audit compares against. Defaults
+      # to a {UcdOnlyReference} built from the resolved baseline
+      # database. When the caller supplied a reference at construction
+      # (typically a {UniversalSetReference}), that one is used
+      # verbatim. Memoized.
+      #
+      # @return [CoverageReference, nil] nil when the baseline itself
+      #   couldn't be resolved (database missing).
+      def reference
+        @reference ||= @reference_override || build_default_reference
       end
 
       # Detected source format string ("ttf", "otf", "ttc", ...). Memoized.
@@ -131,6 +150,13 @@ module Ucode
           source: "ucode SQLite index (blocks + scripts tables)",
           generated_at: Time.now.utc.iso8601,
         )
+      end
+
+      def build_default_reference
+        database = baseline.database
+        return nil if database.nil?
+
+        UcdOnlyReference.new(database: database)
       end
     end
   end

@@ -43,7 +43,8 @@ module Ucode
           options = build_options(kwargs)
           report = Ucode::Audit::FaceAuditor.new(font_path.to_s, options: options,
                                                                  mode: mode_from(kwargs),
-                                                                 font_index: index).call
+                                                                 font_index: index,
+                                                                 reference: kwargs[:reference]).call
 
           directory = Ucode::Audit::Emitter::FaceDirectory.new(
             output_root: output_root,

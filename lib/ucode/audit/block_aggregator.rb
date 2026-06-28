@@ -3,55 +3,72 @@
 module Ucode
   module Audit
     # Produces one {Models::Audit::BlockSummary} per touched Unicode block
-    # for a font's cmap codepoint set, compared against a ucode UCD
-    # baseline.
+    # for a font's cmap codepoint set, compared against a
+    # {CoverageReference}.
     #
-    # Pure transformation: takes the resolved baseline Database + the
-    # font's codepoint list, returns BlockSummary[]. No I/O beyond the
-    # database lookups, no mutation of inputs.
+    # Pure transformation: takes a reference + the font's codepoint list,
+    # returns BlockSummary[]. No I/O beyond the reference's lookups, no
+    # mutation of inputs.
     #
-    # The "assigned" set for a block is derived from the Database's
-    # ranges-with-that-name. The Database stores coalesced runs of
-    # consecutive assigned codepoints grouped by block name, so the
-    # union of those ranges IS the assigned set for that block.
+    # The "assigned" set for a block comes from
+    # `reference.entries_for_block(name)`. For a {UcdOnlyReference}
+    # that's every codepoint in the block's UCD ranges. For a
+    # {UniversalSetReference} it's every codepoint the universal glyph
+    # set built a glyph for in that block — each entry carries tier +
+    # source provenance that gets attached to the missing-codepoint
+    # list (TODO 25).
     class BlockAggregator
-      # @param database [Ucode::Database, nil] resolved baseline. When
-      #   nil, #call returns an empty array — caller should treat that
-      #   as "no UCD baseline available" and surface a warning.
-      def initialize(database)
-        @database = database
+      # @param reference [CoverageReference, Ucode::Database, nil]
+      #   pluggable baseline. For backwards compatibility a raw
+      #   Ucode::Database is still accepted and wrapped in a
+      #   {UcdOnlyReference} at construction time. When nil, #call
+      #   returns an empty array.
+      def initialize(reference)
+        @reference = coerce_reference(reference)
       end
 
       # @param codepoints [Enumerable<Integer>]
       # @return [Array<Models::Audit::BlockSummary>] sorted by first_cp
       def call(codepoints)
-        return [] if @database.nil? || codepoints.empty?
+        return [] if @reference.nil? || codepoints.empty?
 
         grouped = group_by_block(codepoints)
-        grouped.map { |name, covered| build_summary(name, covered) }
+        grouped.filter_map { |name, covered| build_summary(name, covered) }
           .sort_by(&:first_cp)
       end
 
       private
 
+      def coerce_reference(input)
+        return nil if input.nil?
+        return input if input.is_a?(CoverageReference)
+
+        UcdOnlyReference.new(database: input)
+      end
+
       def group_by_block(codepoints)
         codepoints.each_with_object(Hash.new { |h, k| h[k] = [] }) do |cp, acc|
-          name = @database.lookup_block(cp)
+          name = block_name_for(cp)
           acc[name] << cp if name
         end
       end
 
+      def block_name_for(codepoint)
+        @reference.block_name_for(codepoint)
+      end
+
       def build_summary(name, covered_cps)
-        ranges = @database.block_ranges_by_name(name)
-        # ranges is non-empty here: the name came from lookup_block,
-        # which only returns names present in the blocks table.
-        first_cp = ranges.map(&:first_cp).min
-        last_cp = ranges.map(&:last_cp).max
-        assigned_set = expand_assigned(ranges)
+        entries = @reference.entries_for_block(name)
+        return nil if entries.empty?
+
+        first_cp = entries.first.codepoint
+        last_cp = entries.last.codepoint
+        assigned_set = entries.to_set(&:codepoint)
         covered_set = covered_cps.to_set & assigned_set
         missing_set = assigned_set - covered_set
+        missing_sorted = missing_set.sort
 
-        Models::Audit::BlockSummary.new(
+        kwargs = {
           name: name,
           first_cp: first_cp,
           last_cp: last_cp,
@@ -65,14 +82,25 @@ module Ucode
             covered_count: covered_set.size,
             total_assigned: assigned_set.size,
           ),
-          missing_codepoints: missing_set.sort,
+          missing_codepoints: missing_sorted,
           covered_codepoints: covered_set.sort,
-        )
+        }
+
+        provenance = @reference.provenance_for(missing_sorted)
+        kwargs[:missing_codepoint_provenance] = provenance_rows(missing_sorted, provenance) if provenance
+
+        Models::Audit::BlockSummary.new(**kwargs)
       end
 
-      def expand_assigned(ranges)
-        ranges.each_with_object(Set.new) do |r, acc|
-          (r.first_cp..r.last_cp).each { |cp| acc << cp }
+      def provenance_rows(codepoints, rows)
+        return [] if rows.nil? || rows.empty?
+
+        codepoints.zip(rows).map do |cp, row|
+          Models::Audit::CodepointProvenance.new(
+            codepoint: cp,
+            tier: row[:tier],
+            source: row[:source],
+          )
         end
       end
 

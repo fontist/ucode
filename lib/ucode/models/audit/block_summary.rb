@@ -30,6 +30,12 @@ module Ucode
         attribute :status, :string
         attribute :missing_codepoints, :integer, collection: true, default: -> { [] }
         attribute :covered_codepoints, :integer, collection: true, default: -> { [] }
+        # Per-codepoint provenance for the missing set. Populated only
+        # when the audit ran against a UniversalSetReference (TODO 25).
+        # Empty for UCD-only audits — the field serializes as [] and
+        # consumers treat that as "no provenance available".
+        attribute :missing_codepoint_provenance, CodepointProvenance,
+                  collection: true, default: -> { [] }
 
         key_value do
           map "name",               to: :name
@@ -44,6 +50,7 @@ module Ucode
           map "status",             to: :status
           map "missing_codepoints", to: :missing_codepoints
           map "covered_codepoints", to: :covered_codepoints
+          map "missing_codepoint_provenance", to: :missing_codepoint_provenance
         end
 
         # Derive the canonical status string for a block given its

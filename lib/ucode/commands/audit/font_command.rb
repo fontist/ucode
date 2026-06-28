@@ -45,13 +45,16 @@ module Ucode
         #   audit root is `<output_root>/font_audit`.
         # @param browse [Boolean] also write the HTML browsers.
         # @param install [Boolean] allow fontist install on miss.
+        # @param reference [Ucode::Audit::CoverageReference, nil] the
+        #   baseline to compare against (TODO 25). When nil, defaults
+        #   to UCD-only inside {FaceAuditor}.
         # @return [Result]
         def call(spec, output_root:, label: nil, unicode_version: nil, verbose: false,
                  with_glyphs: false, brief: false, browse: false,
-                 install: true)
+                 install: true, reference: nil)
           located = locate(spec, install: install)
           reports = Array(audit_faces(located.path, unicode_version: unicode_version,
-                                                    brief: brief))
+                                                    brief: brief, reference: reference))
 
           face_label = label || derived_face_label(reports.first, located)
           sanitized = sanitize(face_label)
@@ -82,10 +85,11 @@ module Ucode
           Ucode::Glyphs::RealFonts::FontLocator.new.locate(spec, install: install)
         end
 
-        def audit_faces(path, unicode_version:, brief:)
+        def audit_faces(path, unicode_version:, brief:, reference: nil)
           options = audit_options(unicode_version: unicode_version, brief: brief)
           mode = brief ? :brief : :full
-          Ucode::Audit::FaceAuditor.new(path, options: options, mode: mode).call
+          Ucode::Audit::FaceAuditor.new(path, options: options, mode: mode,
+                                              reference: reference).call
         end
 
         def audit_options(unicode_version:, brief:)

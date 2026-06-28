@@ -51,14 +51,26 @@ module Ucode
         # @param emit_browser [Boolean] also write the self-contained
         #   HTML browsers — `<face_dir>/index.html` per face and
         #   `<library_root>/index.html` for library mode. Default false.
+        # @param universal_set_root [String, Pathname, nil] root of a
+        #   co-located universal-set build. When present and
+        #   `emit_browser:` is true, the face browser advertises glyph
+        #   paths in its overview JSON so missing-codepoint chips can
+        #   render the universal-set glyph at runtime.
+        # @param with_missing_glyph_pages [Boolean] emit one standalone
+        #   `<face_dir>/missing/<BLOCK>.html` per touched block with
+        #   missing codepoints. Requires `emit_browser:` and a reachable
+        #   `universal_set_root:` (silently no-ops otherwise).
         def initialize(output_root:, verbose: false, with_glyphs: false,
                        glyph_resolver: GlyphEmitter::DEFAULT_RESOLVER,
-                       database: nil, emit_browser: false)
+                       database: nil, emit_browser: false,
+                       universal_set_root: nil, with_missing_glyph_pages: false)
           @output_root = output_root
           @verbose = verbose
           @with_glyphs = with_glyphs
           @emit_browser = emit_browser
           @database = database
+          @universal_set_root = universal_set_root
+          @with_missing_glyph_pages = with_missing_glyph_pages
           @index_emitter = IndexEmitter.new
           @block_emitter = BlockEmitter.new
           @plane_emitter = PlaneEmitter.new
@@ -119,14 +131,19 @@ module Ucode
         private
 
         def emit_face_under(face_dir, report)
-          @index_emitter.emit(face_dir, report)
+          @index_emitter.emit(face_dir, report, universal_set_root: @universal_set_root)
           report.blocks.each { |b| @block_emitter.emit(face_dir, b) }
           report.plane_summaries.each { |p| @plane_emitter.emit(face_dir, p) }
           report.scripts.each { |s| @script_emitter.emit(face_dir, s) }
           emit_codepoints(face_dir, report) if @verbose
           emit_glyphs(face_dir, report)     if @with_glyphs
-          emit_face_browser(face_dir, report) if @emit_browser
+          emit_browsers(face_dir, report)   if @emit_browser
           face_dir
+        end
+
+        def emit_browsers(face_dir, report)
+          emit_face_browser(face_dir, report)
+          emit_missing_glyph_pages(face_dir, report) if @with_missing_glyph_pages
         end
 
         def emit_face_browser(face_dir, report)
@@ -134,7 +151,22 @@ module Ucode
             report: report,
             verbose: @verbose,
             with_glyphs: @with_glyphs,
+            universal_set_root: @universal_set_root,
+            face_dir: face_dir,
           ).write(face_dir)
+        end
+
+        def emit_missing_glyph_pages(face_dir, report)
+          panel = Ucode::Audit::Browser::GlyphPanel.new(universal_set_root: @universal_set_root)
+          report.blocks.each do |block|
+            next if block.missing_codepoints.empty?
+
+            Ucode::Audit::Browser::MissingGlyphPage.new(
+              block_name: block.name,
+              missing_codepoints: block.missing_codepoints,
+              glyph_panel: panel,
+            ).write(face_dir)
+          end
         end
 
         def emit_library_browser(summary)

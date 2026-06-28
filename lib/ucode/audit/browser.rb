@@ -22,9 +22,11 @@ module Ucode
       TEMPLATE_DIR = Pathname.new(__dir__).join("browser/templates")
       private_constant :TEMPLATE_DIR
 
-      autoload :Template,    "ucode/audit/browser/template"
-      autoload :FacePage,    "ucode/audit/browser/face_page"
-      autoload :LibraryPage, "ucode/audit/browser/library_page"
+      autoload :Template,         "ucode/audit/browser/template"
+      autoload :FacePage,         "ucode/audit/browser/face_page"
+      autoload :LibraryPage,      "ucode/audit/browser/library_page"
+      autoload :GlyphPanel,       "ucode/audit/browser/glyph_panel"
+      autoload :MissingGlyphPage, "ucode/audit/browser/missing_glyph_page"
     end
   end
 end

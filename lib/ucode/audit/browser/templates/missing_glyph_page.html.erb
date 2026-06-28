@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= block_name %> — missing glyphs — ucode audit</title>
+  <style>
+<%= _css %>
+  </style>
+</head>
+<body data-universal-set-available="<%= universal_set_available %>">
+  <header class="page-header">
+    <h1><%= block_name %></h1>
+    <p class="tagline">
+      <%= total_count %> missing codepoint<%= total_count == 1 ? "" : "s" %>
+      <% if overflow_count.positive? %>
+        — showing first <%= visible_count %>
+      <% end %>
+      <% unless universal_set_available %>
+        — universal-set glyphs unavailable
+      <% end %>
+    </p>
+  </header>
+
+  <main>
+    <% if panels.empty? %>
+      <p class="hint">No missing codepoints in this block.</p>
+    <% else %>
+      <ul class="glyph-grid">
+        <% panels.each do |panel| %>
+          <li class="glyph-cell" data-codepoint="<%= panel["codepoint"] %>">
+            <div class="glyph-thumb">
+              <% if panel["svg"] %>
+                <%= panel["svg"] %>
+              <% else %>
+                <span class="glyph-na">n/a</span>
+              <% end %>
+            </div>
+            <div class="glyph-meta">
+              <span class="cp-id"><%= panel["id"] %></span>
+              <% if panel["source"] %>
+                <span class="source"><%= panel["source"] %></span>
+              <% end %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+      <% if overflow_count.positive? %>
+        <p class="overflow">+<%= overflow_count %> more codepoints not shown — see the face browser for the full list.</p>
+      <% end %>
+    <% end %>
+  </main>
+
+  <script>
+<%= _js %>
+  </script>
+</body>
+</html>

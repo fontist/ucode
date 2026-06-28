@@ -29,9 +29,14 @@ module Ucode
 
         # @param face_dir [String, Pathname]
         # @param report [Models::Audit::AuditReport]
+        # @param universal_set_root [String, Pathname, nil] when both
+        #   this and `face_dir` are present and the root exists on
+        #   disk, the index embeds a `universal_set` section with
+        #   relative paths to the manifest + glyphs dir. nil otherwise.
         # @return [Boolean] true if the file was written, false if skipped
-        def emit(face_dir, report)
-          payload = to_pretty_json(build_index(report))
+        def emit(face_dir, report, universal_set_root: nil)
+          payload = to_pretty_json(build_index(report, universal_set_root: universal_set_root,
+                                                       face_dir: face_dir))
           write_atomic(Paths.index_under(face_dir), payload)
         end
 
@@ -40,8 +45,11 @@ module Ucode
         # same shape when inlining overview data into its template.
         #
         # @param report [Models::Audit::AuditReport]
+        # @param universal_set_root [String, Pathname, nil]
+        # @param face_dir [String, Pathname, nil] required when
+        #   `universal_set_root` is supplied (relative path resolution).
         # @return [Hash]
-        def build_index(report)
+        def build_index(report, universal_set_root: nil, face_dir: nil)
           {
             "generated_at" => report.generated_at,
             "ucode_version" => report.ucode_version,
@@ -52,6 +60,7 @@ module Ucode
             "plane_summaries" => report.plane_summaries.map(&:to_hash),
             "block_summaries" => block_summaries(report),
             "script_summaries" => report.scripts.map(&:to_hash),
+            "universal_set" => universal_set_section(universal_set_root, face_dir),
           }.compact
         end
 
@@ -109,6 +118,30 @@ module Ucode
 
         def assigned_total(report)
           report.blocks.sum(&:total_assigned)
+        end
+
+        def universal_set_section(root, face_dir)
+          return nil if root.nil? || face_dir.nil?
+
+          root_path = Pathname.new(root)
+          unless root_path.directory?
+            return {
+              "available" => false,
+              "reason" => "universal_set_root not found: #{root}",
+            }
+          end
+
+          {
+            "available" => true,
+            "manifest_path" => relative_path(face_dir, root_path.join("manifest.json")),
+            "glyphs_dir" => "#{relative_path(face_dir, root_path.join('glyphs'))}/",
+          }
+        end
+
+        def relative_path(from_dir, to_path)
+          to_path.expand_path.relative_path_from(Pathname.new(from_dir).expand_path).to_s
+        rescue ArgumentError
+          to_path.to_s
         end
       end
     end

@@ -43,8 +43,17 @@ module Ucode
         #   advertises per-block codepoint detail chunks
         # @param with_glyphs [Boolean] when true, the rendered page
         #   advertises that `glyphs/U+XXXX.svg` chunks exist
+        # @param universal_set_root [String, Pathname, nil] when both
+        #   this and `face_dir:` are present and the root exists, the
+        #   inlined overview JSON carries a `universal_set` section
+        #   with relative paths. The face browser JS uses these to
+        #   fetch universal-set glyphs for missing-codepoint chips.
+        # @param face_dir [String, Pathname, nil] destination face
+        #   directory. Required when `universal_set_root:` is set and
+        #   the caller wants relative paths resolved; otherwise
+        #   optional. `write(face_dir)` overrides this.
         def initialize(report: nil, overview_json: nil, verbose: false,
-                       with_glyphs: false)
+                       with_glyphs: false, universal_set_root: nil, face_dir: nil)
           raise ArgumentError, "pass exactly one of report: / overview_json:" \
             unless report.nil? ^ overview_json.nil?
 
@@ -52,13 +61,16 @@ module Ucode
           @overview_json = overview_json
           @verbose = verbose
           @with_glyphs = with_glyphs
+          @universal_set_root = universal_set_root
+          @face_dir = face_dir
         end
 
         # Write the rendered page to `<face_dir>/index.html`.
         # @param face_dir [String, Pathname]
         # @return [Boolean] true if written, false if skipped
         def write(face_dir)
-          write_atomic(Pathname.new(face_dir).join("index.html"), render)
+          @face_dir = Pathname.new(face_dir)
+          write_atomic(@face_dir.join("index.html"), render)
         end
 
         # Render the page as a string. Useful in tests.
@@ -69,14 +81,31 @@ module Ucode
             page_title: page_title,
             verbose: @verbose,
             with_glyphs: @with_glyphs,
+            universal_set: universal_set_section,
           )
         end
 
         private
 
+        def overview_hash
+          return @overview_hash if @overview_hash
+          return JSON.parse(@overview_json) if @overview_json
+
+          @overview_hash = Ucode::Audit::Emitter::IndexEmitter.new.build_index(
+            @report,
+            universal_set_root: @face_dir ? @universal_set_root : nil,
+            face_dir: @face_dir,
+          )
+        end
+
         def overview_json
-          @overview_json ||=
-            JSON.generate(Ucode::Audit::Emitter::IndexEmitter.new.build_index(@report))
+          return @overview_json if @overview_json
+
+          JSON.generate(overview_hash)
+        end
+
+        def universal_set_section
+          overview_hash["universal_set"] || { "available" => false }
         end
 
         def page_title

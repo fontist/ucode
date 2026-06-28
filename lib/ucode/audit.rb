@@ -50,5 +50,9 @@ module Ucode
 
     # Standalone HTML browsers for Mode 2 output (TODOs 14+15).
     autoload :Browser, "ucode/audit/browser"
+
+    # Release-tree assembler (TODO 27) — fontist.org-consumable
+    # artifact that composes per-formula audits + the universal set.
+    autoload :Release, "ucode/audit/release"
   end
 end

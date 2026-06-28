@@ -46,6 +46,14 @@ module Ucode
       autoload :DuplicateGroup, "ucode/models/audit/duplicate_group"
       autoload :LibrarySummary, "ucode/models/audit/library_summary"
       autoload :AuditDiff, "ucode/models/audit/audit_diff"
+
+      # Release-tree models (TODO 27) — fontist.org-consumable
+      # artifact manifest. ReleaseManifest is the top-level shape;
+      # the others are nested entries.
+      autoload :ReleaseManifest,     "ucode/models/audit/release_manifest"
+      autoload :ReleaseFormulaEntry, "ucode/models/audit/release_formula"
+      autoload :ReleaseFaceEntry,    "ucode/models/audit/release_face"
+      autoload :ReleaseUniversalSet, "ucode/models/audit/release_universal_set"
     end
   end
 end

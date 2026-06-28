@@ -1,0 +1,134 @@
+# ucode block-feed output schema
+#
+# This is the canonical shape of ucode's `block-feed` output — a compact
+# per-block Unicode data feed derived from ucode's canonical output tree.
+#
+# ucode emits three files under the target directory:
+#
+#   unicode-blocks.json
+#   unicode-version.json
+#   unicode/blocks/<slug>.json
+#
+# Block slugs are derived from the Unicode block display name via the
+# standard slug algorithm:
+#
+#   name.downcase.gsub(/[^a-z0-9]+/, "-").gsub(/^-|-$/, "")
+#
+# Field names are short (cp, n, c, s, cc, bc, mir) because the per-block
+# files inline every codepoint — byte size matters at the long tail
+# (CJK Unified Ideographs alone is 20,992 chars in one file).
+#
+# This schema describes Unicode data only. It is not specific to any
+# consumer; any tooling that wants a compact per-block view of Unicode
+# can consume it.
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: UcodeBlockFeed
+description: Canonical shape of ucode's compact per-block Unicode data feed
+
+definitions:
+
+  codepoint:
+    description: A single Unicode codepoint's compact metadata.
+    type: object
+    additionalProperties: false
+    required: [cp]
+    properties:
+      cp:
+        type: integer
+        minimum: 0
+        maximum: 0x10FFFF
+        description: The Unicode scalar value (integer form of U+XXXX).
+      n:
+        type: string
+        minLength: 1
+        description: Codepoint name (e.g. "LATIN CAPITAL LETTER A"). Omitted when empty.
+      c:
+        type: string
+        minLength: 1
+        pattern: '^[A-Z][a-z]$'
+        description: General category short code (Lu, Ll, Mn, So, ...).
+      s:
+        type: string
+        minLength: 2
+        description: Script code (Latn, Grek, Hani, Zyyy, ...). 4-letter ISO 15924.
+      cc:
+        type: integer
+        minimum: 0
+        maximum: 255
+        description: Canonical combining class. Always present (0 for non-marks).
+      bc:
+        type: string
+        minLength: 1
+        description: Bidi class short code (L, R, AL, AN, NSM, BN, ...).
+      mir:
+        type: boolean
+        description: Bidi mirrored flag. Omitted when false.
+
+  block_summary:
+    description: One entry per Unicode block in unicode-blocks.json.
+    type: object
+    additionalProperties: false
+    required: [start, end, name, unicode_version]
+    properties:
+      start:
+        type: integer
+        minimum: 0
+        maximum: 0x10FFFF
+        description: First codepoint in the block (inclusive).
+      end:
+        type: integer
+        minimum: 0
+        maximum: 0x10FFFF
+        description: Last codepoint in the block (inclusive).
+      name:
+        type: string
+        minLength: 1
+        description: Unicode block display name (e.g. "Basic Latin", "Greek and Coptic").
+      unicode_version:
+        type: string
+        pattern: '^\d+\.\d+\.\d+$'
+        description: Earliest Unicode version of any codepoint in the block (e.g. "1.1", "17.0.0").
+
+type: object
+properties:
+
+  unicode-blocks.json:
+    type: array
+    description: Top-level index of all Unicode blocks (~346 entries for Unicode 17).
+    items:
+      $ref: '#/definitions/block_summary'
+
+  unicode-version.json:
+    type: object
+    additionalProperties: false
+    required: [version, blockCount, charCount, generatedAt]
+    properties:
+      version:
+        type: string
+        pattern: '^\d+\.\d+\.\d+$'
+        description: UCD version (e.g. "17.0.0").
+      blockCount:
+        type: integer
+        minimum: 1
+        description: Total number of blocks (must match length of unicode-blocks.json).
+      charCount:
+        type: integer
+        minimum: 1
+        description: Total assigned codepoints across all blocks.
+      generatedAt:
+        type: string
+        format: date-time
+        description: ISO 8601 timestamp of the emitter run.
+
+  unicode/blocks/<slug>.json:
+    type: object
+    additionalProperties: false
+    required: [chars]
+    properties:
+      chars:
+        type: array
+        minItems: 0
+        description: Codepoints in this block, ordered by cp ascending.
+        items:
+          $ref: '#/definitions/codepoint'

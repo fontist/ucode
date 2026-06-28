@@ -21,6 +21,6 @@ module Ucode
     autoload :BuildReportAccumulator, "ucode/repo/build_report_accumulator"
     autoload :BuildReportWriter, "ucode/repo/build_report_writer"
     autoload :BuildValidator, "ucode/repo/build_validator"
-    autoload :FontistConsumerEmitter, "ucode/repo/fontist_consumer_emitter"
+    autoload :BlockFeedEmitter, "ucode/repo/block_feed_emitter"
   end
 end

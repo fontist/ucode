@@ -130,8 +130,13 @@ RSpec.describe Ucode::Coordinator do
 
     it "attaches Unihan readings via UnihanEntry" do
       expect(cp.unihan).not_to be_nil
-      expect(cp.unihan.fields["kMandarin"]).to eq(%w[yī])
-      expect(cp.unihan.fields["kRSUnicode"]).to eq(%w[1.0 3.1])
+      expect(cp.unihan.all_fields["kMandarin"]).to eq(%w[yī])
+      expect(cp.unihan.all_fields["kRSUnicode"]).to eq(%w[1.0 3.1])
+    end
+
+    it "buckets Unihan fields into the right category" do
+      expect(cp.unihan.readings.map(&:name)).to include("kMandarin")
+      expect(cp.unihan.radical_stroke_counts.map(&:name)).to include("kRSUnicode")
     end
 
     it "synthesizes the per-codepoint CJK name from the range marker" do

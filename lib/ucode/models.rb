@@ -31,6 +31,7 @@ module Ucode
     autoload :Script, "ucode/models/script"
     autoload :CodePoint, "ucode/models/codepoint"
     autoload :UnihanEntry, "ucode/models/unihan_entry"
+    autoload :UnihanField, "ucode/models/unihan_field"
     autoload :NamesListEntry, "ucode/models/names_list_entry"
     autoload :NameAlias, "ucode/models/name_alias"
     autoload :NamedSequence, "ucode/models/named_sequence"

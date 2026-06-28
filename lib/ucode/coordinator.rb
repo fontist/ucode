@@ -238,12 +238,11 @@ module Ucode
       dir = Pathname.new(unihan_dir)
       return {} unless dir.exist?
 
-      by_field = Hash.new { |h, k| h[k] = {} }
+      entries = Hash.new { |h, k| h[k] = Models::UnihanEntry.new }
       Parsers::Unihan.each_in_dir(dir) do |record|
-        by_field[record.cp][record.field] = record.field_values
+        entries[record.cp].add(record.category, record.field, record.field_values)
       end
-
-      by_field.transform_values { |fields| Models::UnihanEntry.new(fields: fields) }
+      entries
     end
 
     # ---- Per-codepoint enrichment --------------------------------------

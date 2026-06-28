@@ -37,12 +37,32 @@ module Ucode
         Unihan_OtherMappings.txt
       ].freeze
 
+      # Filename → category symbol. The parser tags every Record
+      # with the category derived from its source file, so consumers
+      # (Coordinator → UnihanEntry) don't need to know the mapping.
+      # Unicode does not reorganize files across versions, so this
+      # mapping is stable without per-field hardcoding.
+      FILE_TO_CATEGORY = {
+        "Unihan_DictionaryIndices.txt" => :dictionary_indices,
+        "Unihan_DictionaryLikeData.txt" => :dictionary_like_data,
+        "Unihan_IRGSources.txt" => :irg_sources,
+        "Unihan_NumericValues.txt" => :numeric_values,
+        "Unihan_RadicalStrokeCounts.txt" => :radical_stroke_counts,
+        "Unihan_Readings.txt" => :readings,
+        "Unihan_Variants.txt" => :variants,
+        "Unihan_OtherMappings.txt" => :other_mappings,
+      }.freeze
+
       # Stream record: one Unihan line. Internal pipeline data — a Struct
       # avoids lutaml-model ceremony for transient values. The final
       # `UnihanEntry` model carries the merged, persisted shape. The
       # member is `field_values` (not `values`) to avoid overriding
       # `Struct#values` (the array of all member values).
-      Record = Struct.new(:cp, :field, :field_values, keyword_init: true) do
+      #
+      # `category` is the symbol UnihanEntry uses to bucket the field
+      # into its category attribute (readings / variants / etc.). Set
+      # by `each_in_dir` from the source filename via FILE_TO_CATEGORY.
+      Record = Struct.new(:cp, :field, :field_values, :category, keyword_init: true) do
         def cp_id
           format("U+%04X", cp)
         end
@@ -50,25 +70,16 @@ module Ucode
 
       class << self
         # Yields one Record per non-comment line in a single Unihan file.
-        # Returns a lazy Enumerator when no block is given.
-        def each_record(path)
-          return enum_for(:each_record, path) unless block_given?
+        # The caller must pass the source filename so the Record carries
+        # its category. Returns a lazy Enumerator when no block is given.
+        def each_record(path, filename: nil)
+          return enum_for(:each_record, path, filename: filename) unless block_given?
 
           path_str = path.to_s
-          lineno = 0
+          category = FILE_TO_CATEGORY.fetch(filename || File.basename(path_str), nil)
 
-          File.foreach(path_str) do |raw|
-            lineno += 1
-            line = raw.chomp
-            next if line.empty? || line.start_with?("#")
-
-            begin
-              yield parse_line(line)
-            rescue MalformedLineError => e
-              e.context[:file] ||= path_str
-              e.context[:line] ||= lineno
-              raise
-            end
+          each_line_with_lineno(path_str) do |line, lineno|
+            yield tagged_record(line, category, path_str, lineno)
           end
 
           nil
@@ -76,7 +87,8 @@ module Ucode
 
         # Iterates every known Unihan file in `dir`, yielding one Record
         # per data line across all files. Missing files are silently
-        # skipped (incremental runs, partial downloads).
+        # skipped (incremental runs, partial downloads). Each Record
+        # carries its category so callers don't need to re-derive it.
         def each_in_dir(dir)
           return enum_for(:each_in_dir, dir) unless block_given?
 
@@ -85,13 +97,32 @@ module Ucode
             path = dir_path.join(filename)
             next unless path.exist?
 
-            each_record(path) { |record| yield record }
+            each_record(path, filename: filename) { |record| yield record }
           end
 
           nil
         end
 
         private
+
+        def each_line_with_lineno(path_str)
+          lineno = 0
+          File.foreach(path_str) do |raw|
+            lineno += 1
+            line = raw.chomp
+            next if line.empty? || line.start_with?("#")
+
+            yield line, lineno
+          end
+        end
+
+        def tagged_record(line, category, path_str, lineno)
+          parse_line(line).tap { |r| r.category = category }
+        rescue MalformedLineError => e
+          e.context[:file] ||= path_str
+          e.context[:line] ||= lineno
+          raise
+        end
 
         # Parses one TAB-separated Unihan data line into a Record. The
         # `split("\t", 3)` limit preserves any tabs inside the value

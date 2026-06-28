@@ -85,7 +85,7 @@ module Ucode
         # @param report [Models::Audit::AuditReport]
         # @return [Pathname] the per-face directory written
         def emit_face(label:, report:)
-          emit_face_under(Paths.face_dir(@output_root, label), report)
+          emit_face_at(Paths.face_dir(@output_root, label), report)
         end
 
         # @param source_label [String] sanitized collection label
@@ -120,7 +120,7 @@ module Ucode
           face_label = format("%<idx>02d-%<label>s",
                               idx: face_index,
                               label: sanitize(report.postscript_name))
-          emit_face_under(
+          emit_face_at(
             Paths.collection_face_dir(@output_root, source_label, face_index,
                                       sanitize(report.postscript_name)),
             report,
@@ -128,9 +128,17 @@ module Ucode
           face_label
         end
 
-        private
-
-        def emit_face_under(face_dir, report)
+        # Write one face's full chunk tree under an explicit face_dir.
+        #
+        # Public entry point for callers that compute their own face_dir
+        # (e.g. {Ucode::Audit::Release::Emitter} builds the release tree
+        # at `<release_root>/audit/<slug>/<face>/`). Callers that want
+        # the default library-mode layout should use {#emit_face}.
+        #
+        # @param face_dir [String, Pathname] explicit per-face directory
+        # @param report [Models::Audit::AuditReport]
+        # @return [Pathname] the face directory written
+        def emit_face_at(face_dir, report)
           @index_emitter.emit(face_dir, report, universal_set_root: @universal_set_root)
           report.blocks.each { |b| @block_emitter.emit(face_dir, b) }
           report.plane_summaries.each { |p| @plane_emitter.emit(face_dir, p) }
@@ -140,6 +148,8 @@ module Ucode
           emit_browsers(face_dir, report)   if @emit_browser
           face_dir
         end
+
+        private
 
         def emit_browsers(face_dir, report)
           emit_face_browser(face_dir, report)

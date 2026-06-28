@@ -27,9 +27,22 @@ module Ucode
         GLYPHS_DIR        = "glyphs"
         MISSING_DIR       = "missing"
         FONT_AUDIT_ROOT   = "font_audit"
+        # Release-tree layout (TODO 27). The release tree is the
+        # fontist.org-consumable artifact assembled from one or more
+        # per-formula library audits plus the universal-set reference.
+        # Lives at `<output_root>/font_audit_release/`.
+        RELEASE_ROOT_DIR          = "font_audit_release"
+        RELEASE_AUDIT_DIR         = "audit"
+        RELEASE_LIBRARY_INDEX     = "library.json"
+        RELEASE_MANIFEST          = "manifest.json"
+        RELEASE_UNIVERSAL_SET_DIR = "universal_glyph_set"
+        RELEASE_MANIFEST_ENTRY    = "manifest.json"
         private_constant :INDEX_FILENAME, :HTML_FILENAME, :BLOCKS_DIR,
                          :PLANES_DIR, :SCRIPTS_DIR, :CODEPOINTS_DIR,
-                         :GLYPHS_DIR, :MISSING_DIR, :FONT_AUDIT_ROOT
+                         :GLYPHS_DIR, :MISSING_DIR, :FONT_AUDIT_ROOT,
+                         :RELEASE_ROOT_DIR, :RELEASE_AUDIT_DIR,
+                         :RELEASE_LIBRARY_INDEX, :RELEASE_MANIFEST,
+                         :RELEASE_UNIVERSAL_SET_DIR, :RELEASE_MANIFEST_ENTRY
 
         module_function
 
@@ -217,6 +230,81 @@ module Ucode
         # @return [Pathname]
         def missing_glyph_page_under(face_dir, block_name)
           missing_dir_under(face_dir).join("#{block_name}.html")
+        end
+
+        # ---- Release-tree paths (TODO 27) -----------------------------
+        # The release tree is the fontist.org-consumable artifact. It
+        # composes per-formula audit subtrees (each laid out per the
+        # `<output_root>/font_audit/<label>/` convention) under an
+        # outer `<release_root>/audit/<slug>/` root, plus the universal
+        # glyph set, library-level index, and release manifest.
+        #
+        # The release root lives at `<output_root>/font_audit_release/`
+        # so a single tarball of `font_audit_release/` is self-contained.
+
+        # `<output_root>/font_audit_release/`.
+        # @param output_root [String, Pathname] parent of the release root
+        # @return [Pathname]
+        def release_root(output_root)
+          Pathname(output_root).join(RELEASE_ROOT_DIR)
+        end
+
+        # `<release_root>/audit/` — top-level audit subtree.
+        # @param release_root [String, Pathname]
+        # @return [Pathname]
+        def release_audit_root(release_root)
+          Pathname(release_root).join(RELEASE_AUDIT_DIR)
+        end
+
+        # `<release_root>/audit/<slug>/` — one formula's audit subtree.
+        # Per-face directories live under here. The slug is a
+        # caller-sanitized formula identifier (fontist formula slug).
+        # @param release_root [String, Pathname]
+        # @param slug [String] sanitized formula slug
+        # @return [Pathname]
+        def release_formula_dir(release_root, slug)
+          release_audit_root(release_root).join(slug)
+        end
+
+        # `<release_root>/audit/<slug>/<face_label>/` — one face.
+        # @param release_root [String, Pathname]
+        # @param slug [String] sanitized formula slug
+        # @param face_label [String] sanitized face label
+        # @return [Pathname]
+        def release_face_dir(release_root, slug, face_label)
+          release_formula_dir(release_root, slug).join(face_label)
+        end
+
+        # `<release_root>/library.json` — release-level library index
+        # aggregating every formula + face card.
+        # @param release_root [String, Pathname]
+        # @return [Pathname]
+        def release_library_index_path(release_root)
+          Pathname(release_root).join(RELEASE_LIBRARY_INDEX)
+        end
+
+        # `<release_root>/manifest.json` — release manifest (versions,
+        # sha256s, totals).
+        # @param release_root [String, Pathname]
+        # @return [Pathname]
+        def release_manifest_path(release_root)
+          Pathname(release_root).join(RELEASE_MANIFEST)
+        end
+
+        # `<release_root>/universal_glyph_set/` — the universal-set
+        # reference directory (built separately by TODO 24 and copied
+        # or symlinked into the release tree by the CI collector).
+        # @param release_root [String, Pathname]
+        # @return [Pathname]
+        def release_universal_set_root(release_root)
+          Pathname(release_root).join(RELEASE_UNIVERSAL_SET_DIR)
+        end
+
+        # `<release_root>/universal_glyph_set/manifest.json`.
+        # @param release_root [String, Pathname]
+        # @return [Pathname]
+        def release_universal_set_manifest_path(release_root)
+          release_universal_set_root(release_root).join(RELEASE_MANIFEST_ENTRY)
         end
       end
     end

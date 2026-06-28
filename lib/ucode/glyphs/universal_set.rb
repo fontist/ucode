@@ -37,6 +37,9 @@ module Ucode
       autoload :ManifestAccumulator, "ucode/glyphs/universal_set/manifest_accumulator"
       autoload :ManifestWriter, "ucode/glyphs/universal_set/manifest_writer"
       autoload :Idempotency, "ucode/glyphs/universal_set/idempotency"
+      autoload :PreBuildCheck, "ucode/glyphs/universal_set/pre_build_check"
+      autoload :Validator, "ucode/glyphs/universal_set/validator"
+      autoload :CoverageReport, "ucode/glyphs/universal_set/coverage_report"
     end
   end
 end

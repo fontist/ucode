@@ -27,7 +27,8 @@ module Ucode
   #       ├── Ucode::PdfRenderError
   #       ├── Ucode::GridDetectionError
   #       ├── Ucode::LastResortMissingError
-  #       └── Ucode::EmbeddedFontsMissingError
+  #       ├── Ucode::EmbeddedFontsMissingError
+  #       └── Ucode::UniversalSetPreBuildError
   class Error < StandardError
     attr_reader :context
 
@@ -112,4 +113,12 @@ module Ucode
   # The Code Charts PDF (per-block or monolith) cannot be located, or
   # `mutool` is not installed on the PATH.
   class EmbeddedFontsMissingError < GlyphError; end
+
+  # Pre-build validation failed for a universal-set build. The
+  # context carries the failing checks so the CLI can render a
+  # useful diagnostic without re-running them. Distinct from
+  # {EmbeddedFontsMissingError} because pre-build covers more than
+  # just PDFs: source config schema, font file presence, coverage
+  # assertion.
+  class UniversalSetPreBuildError < GlyphError; end
 end

@@ -484,5 +484,65 @@ module Ucode
 
     desc "universal-set", "Build and inspect the universal glyph set reference"
     subcommand "universal-set", UniversalSetCmd
+
+    # ─────────────── release ───────────────
+    desc "release", "Assemble the fontist.org release tree from per-formula audits"
+    long_desc <<~LONG
+      Walks a directory of per-formula font subdirectories and produces
+      the fontist.org-consumable release tree at
+      `<output>/font_audit_release/`. The release tree contains:
+
+        audit/<slug>/<postscript_name>/  — per-face audit subtrees
+        universal_glyph_set/             — pre-staged universal set
+        library.json                     — formula + face card index
+        manifest.json                    — versions, sha256s, totals
+
+      The universal-set directory is NOT copied by this command; the
+      CI collector is expected to pre-stage it under
+      `<output>/font_audit_release/universal_glyph_set/`.
+    LONG
+    option :from, type: :string, required: true,
+                  desc: "Directory of per-formula font subdirectories"
+    option :output, type: :string, default: "./output",
+                    desc: "Parent of the release root"
+    option :universal_set, type: :string, default: nil,
+                           desc: "Path to the universal_glyph_set directory " \
+                                 "(default: <release_root>/universal_glyph_set)"
+    option :unicode_version, type: :string, default: nil
+    option :brief, type: :boolean, default: false
+    option :browse, type: :boolean, default: true,
+                    desc: "Also write per-face HTML browsers + missing-glyph pages"
+    option :source_config_sha256, type: :string, default: nil,
+                                  desc: "sha256 of the Tier 1 source-config YAML"
+    option :reference_universal_set, type: :string, default: nil,
+                                     desc: "Path to universal-set manifest (or 'none') " \
+                                           "for the per-face coverage reference"
+    def release
+      reference = Commands::Audit::ReferenceBuilder.build(
+        flag: options[:reference_universal_set],
+        version: options[:unicode_version],
+      )
+      result = Commands::ReleaseCommand.new.call(
+        from: options[:from],
+        output_root: options[:output],
+        universal_set_root: options[:universal_set],
+        unicode_version: options[:unicode_version],
+        brief: options[:brief],
+        browse: options[:browse],
+        source_config_sha256: options[:source_config_sha256],
+        reference: reference,
+      )
+      puts JSON.pretty_generate(result_to_h(result))
+    end
+
+    private
+
+    def result_to_h(result)
+      return { error: result.error } if result.error
+
+      result.to_h.compact.transform_values do |v|
+        v.is_a?(Struct) ? v.to_h : v
+      end
+    end
   end
 end

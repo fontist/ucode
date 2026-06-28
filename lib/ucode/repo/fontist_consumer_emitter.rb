@@ -16,7 +16,7 @@ module Ucode
     #     [{ start, end, name, unicode_version }, ...]
     #
     #   public/unicode/blocks/<slug>.json
-    #     { chars: [{ cp, n, c, s }, ...] }
+    #     { chars: [{ cp, n, c, s, cc?, bc?, mir? }, ...] }
     #
     #   public/unicode-version.json
     #     { version, blockCount, charCount, generatedAt }
@@ -97,6 +97,9 @@ module Ucode
             "n" => label["name"],
             "c" => label["gc"],
             "s" => label["sc"],
+            "cc" => label["cc"],
+            "bc" => label["bc"],
+            "mir" => label["mir"],
           }.reject { |_, v| v.nil? || v == "" }
         end
       end

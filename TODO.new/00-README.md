@@ -57,10 +57,28 @@ first; these TODOs reference sections of it.
 - [30 — Tier 1 font acquisition: specialist fonts](30-tier1-font-acquisition.md)
 - [31 — Universal set production build + coverage validation](31-universal-set-production-build.md)
 
+### Full UC17 coverage + per-font audit (Part 1 close + Part 2)
+
+- [32 — Universal glyph set: full UC17 coverage matrix (Part 1 master)](32-uc17-coverage-matrix.md)
+- [33 — Specialist font acquisition refresh](33-specialist-font-acquisition-refresh.md)
+- [34 — Pillar 2 ContentStreamCorrelator (generalize correlate-v4)](34-pillar2-content-stream-correlator.md)
+- [35 — Universal set production run + glyph provenance (Part 1 close)](35-universal-set-production-run.md)
+- [36 — Per-font coverage audit against universal set (Part 2 master)](36-per-font-coverage-audit.md)
+- [37 — Coverage highlight reporter (missing-glyph visualizer)](37-coverage-highlight-reporter.md)
+- [38 — fontist.org glyph consumer + provenance display](38-fontist-org-glyph-consumer.md)
+
+### Pipeline wiring (archive integration)
+
+- [40 — fontist-archive-private bin/build uses ucode audit](40-archive-private-uses-ucode-audit.md)
+- [41 — ucode Unicode artifacts → fontist-archive-public bridge](41-ucode-unicode-archive-bridge.md)
+- [30 — Tier 1 font acquisition: specialist fonts](30-tier1-font-acquisition.md)
+- [31 — Universal set production build + coverage validation](31-universal-set-production-build.md)
+
 ### Sequencing
 
 - [22 — Implementation order](22-implementation-order.md)
 - [28 — Implementation order update (TODOs 23-31)](28-implementation-order-update.md)
+- [39 — Implementation order update (TODOs 32-38)](39-implementation-order-update-32-38.md)
 
 ## Conventions
 

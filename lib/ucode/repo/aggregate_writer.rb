@@ -17,7 +17,7 @@ module Ucode
     #   output/blocks/index.json              (block index)
     #   output/scripts/<code>.json
     #   output/index/names.json               (cp_id → name)
-    #   output/index/labels.json              (cp_id → {name, gc, sc})
+    #   output/index/labels.json              (cp_id → {name, gc, sc, cc, bc, mir})
     #   output/index/codepoint_to_block.json  (cp_id → block_id)
     #   output/relationships/*.json           (per-property tables)
     #   output/enums.json                     (property aliases + value aliases)
@@ -138,7 +138,14 @@ module Ucode
       # ---- Per-codepoint accumulator helpers ---------------------------
 
       def build_label(cp)
-        label = { "name" => cp.name, "gc" => cp.general_category, "sc" => cp.script_code }
+        label = {
+          "name" => cp.name,
+          "gc" => cp.general_category,
+          "sc" => cp.script_code,
+          "cc" => cp.combining_class,
+          "bc" => cp.bidi&.bidi_class,
+          "mir" => cp.bidi&.is_mirrored ? true : nil,
+        }
         label.reject { |_, v| v.nil? }
       end
 

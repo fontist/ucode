@@ -8,40 +8,46 @@ require "ucode/repo/atomic_writes"
 
 module Ucode
   module Repo
-    # Emits the fontist.org-shaped Unicode data feed from ucode's
-    # canonical output tree. fontist.org's `src/lib/unicode/data/loader.ts`
-    # consumes three files at build time:
+    # Emits a flat, per-block Unicode data feed from ucode's canonical
+    # output tree. The feed is a denormalized shape: each block file
+    # inlines all its codepoints (no joins needed at read time).
     #
-    #   public/unicode-blocks.json
+    # Three files are emitted under `output_root`:
+    #
+    #   unicode-blocks.json
     #     [{ start, end, name, unicode_version }, ...]
     #
-    #   public/unicode/blocks/<slug>.json
-    #     { chars: [{ cp, n, c, s }, ...] }
+    #   unicode/blocks/<slug>.json
+    #     { chars: [{ cp, n, c, s, cc?, bc?, mir? }, ...] }
     #
-    #   public/unicode-version.json
+    #   unicode-version.json
     #     { version, blockCount, charCount, generatedAt }
     #
     # This emitter reads ucode's canonical output (blocks/index.json,
-    # blocks/<ID>.json, index/labels.json) and translates shapes.
-    # ucode stays canonical; the adapter is one-way.
+    # blocks/<ID>/index.json, index/labels.json) and translates shapes.
+    # ucode stays canonical; the feed is one-way derived.
     #
-    # Block slug algorithm matches fontist.org's `blockSlug()` in
-    # `src/lib/unicode/constants.ts`:
+    # Block slug algorithm (matches common practice; no consumer
+    # assumptions baked in):
     #
-    #   name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+    #   name.downcase.gsub(/[^a-z0-9]+/, "-").gsub(/^-|-$/, "")
     #
-    # Block display name replaces ucode's verbatim underscores (e.g.
-    # "Basic_Latin") with the spaces fontist.org expects ("Basic Latin").
-    class FontistConsumerEmitter
+    # Block display name uses Unicode's verbatim spacing (e.g.
+    # "Basic Latin", "Greek and Coptic") from ucode's canonical name.
+    #
+    # The shape of this feed is documented in
+    # schema/block-feed.output.schema.yml — that YAML is the canonical
+    # contract for any consumer of the feed.
+    class BlockFeedEmitter
       include AtomicWrites
 
       # @param ucode_output_root [String, Pathname] ucode's `output/`
-      # @param fontist_output_root [String, Pathname] target directory;
+      # @param output_root [String, Pathname] target directory;
       #   `unicode-blocks.json`, `unicode-version.json`, and `unicode/`
       #   are written here.
-      def initialize(ucode_output_root, fontist_output_root)
+      def initialize(ucode_output_root, output_root)
         @ucode_root = Pathname.new(ucode_output_root)
-        @fontist_root = Pathname.new(fontist_output_root)
+        @output_root = Pathname.new(output_root)
       end
 
       # @param ucd_version [String] e.g. "17.0.0"
@@ -61,8 +67,8 @@ module Ucode
         {
           blocks_written: per_block.length,
           codepoints_written: per_block.sum { |b| b[:char_count] },
-          unicode_blocks_path: @fontist_root.join("unicode-blocks.json"),
-          unicode_version_path: @fontist_root.join("unicode-version.json"),
+          unicode_blocks_path: @output_root.join("unicode-blocks.json"),
+          unicode_version_path: @output_root.join("unicode-version.json"),
           version: version_payload,
         }
       end
@@ -71,7 +77,7 @@ module Ucode
 
       def emit_block(entry, labels)
         block_id = entry["id"]
-        block_file = load_json(ucode_path("blocks", "#{block_id}.json"))
+        block_file = load_json(ucode_path("blocks", block_id, "index.json"))
         chars = chars_for(block_file["codepoint_ids"] || [], labels)
         slug = block_slug(entry["name"])
 
@@ -97,17 +103,20 @@ module Ucode
             "n" => label["name"],
             "c" => label["gc"],
             "s" => label["sc"],
+            "cc" => label["cc"],
+            "bc" => label["bc"],
+            "mir" => label["mir"],
           }.reject { |_, v| v.nil? || v == "" }
         end
       end
 
       def write_block_file(slug, chars)
-        path = @fontist_root.join("unicode", "blocks", "#{slug}.json")
+        path = @output_root.join("unicode", "blocks", "#{slug}.json")
         write_atomic(path, to_pretty_json("chars" => chars))
       end
 
       def write_unicode_blocks(per_block)
-        path = @fontist_root.join("unicode-blocks.json")
+        path = @output_root.join("unicode-blocks.json")
         summaries = per_block.map { |b| b[:summary] }
         write_atomic(path, to_pretty_json(summaries))
       end
@@ -119,7 +128,7 @@ module Ucode
           "charCount" => per_block.sum { |b| b[:char_count] },
           "generatedAt" => Time.now.utc.iso8601,
         }
-        path = @fontist_root.join("unicode-version.json")
+        path = @output_root.join("unicode-version.json")
         write_atomic(path, to_pretty_json(payload))
         payload
       end

@@ -5,10 +5,10 @@ require "tmpdir"
 require "fileutils"
 require "json"
 
-RSpec.describe Ucode::Commands::FontistConsumerCommand do
+RSpec.describe Ucode::Commands::BlockFeedCommand do
   let(:workdir) { Pathname.new(Dir.mktmpdir("ucode-fontist-cmd-")) }
   let(:ucode_root) { workdir.join("ucode-output") }
-  let(:fontist_root) { workdir.join("fontist-consumer") }
+  let(:feed_root) { workdir.join("block-feed") }
 
   before { ucode_root.mkpath }
   after { FileUtils.remove_entry(workdir) if workdir.exist? }
@@ -29,7 +29,7 @@ RSpec.describe Ucode::Commands::FontistConsumerCommand do
       "first_cp" => 0x41, "last_cp" => 0x43,
       "plane_number" => 0, "age" => "1.1"
     }])
-    write_json("blocks/Basic_Latin.json",
+    write_json("blocks/Basic_Latin/index.json",
                "id" => "Basic_Latin", "name" => "Basic Latin",
                "range_first" => 0x41, "range_last" => 0x43,
                "plane_number" => 0, "age" => "1.1",
@@ -46,16 +46,16 @@ RSpec.describe Ucode::Commands::FontistConsumerCommand do
 
       result = described_class.new.call(
         ucode_output_root: ucode_root.to_s,
-        fontist_output_root: fontist_root.to_s,
+        block_feed_output_root: feed_root.to_s,
       )
 
       expect(result.blocks_written).to eq(1)
       expect(result.codepoints_written).to eq(3)
       expect(result.unicode_version).to eq("17.0.0")
-      expect(result.unicode_blocks_path).to eq(fontist_root.join("unicode-blocks.json"))
+      expect(result.unicode_blocks_path).to eq(feed_root.join("unicode-blocks.json"))
       expect(result.unicode_blocks_path).to exist
       expect(result.unicode_version_path).to exist
-      expect(fontist_root.join("unicode", "blocks", "basic-latin.json")).to exist
+      expect(feed_root.join("unicode", "blocks", "basic-latin.json")).to exist
     end
 
     it "derives ucd_version from manifest.json when not supplied" do
@@ -63,7 +63,7 @@ RSpec.describe Ucode::Commands::FontistConsumerCommand do
 
       result = described_class.new.call(
         ucode_output_root: ucode_root.to_s,
-        fontist_output_root: fontist_root.to_s,
+        block_feed_output_root: feed_root.to_s,
       )
 
       expect(result.unicode_version).to eq("16.0.0")
@@ -76,7 +76,7 @@ RSpec.describe Ucode::Commands::FontistConsumerCommand do
 
       result = described_class.new.call(
         ucode_output_root: ucode_root.to_s,
-        fontist_output_root: fontist_root.to_s,
+        block_feed_output_root: feed_root.to_s,
         unicode_version: "17.0.0",
       )
 
@@ -90,7 +90,7 @@ RSpec.describe Ucode::Commands::FontistConsumerCommand do
         "first_cp" => 0x41, "last_cp" => 0x41,
         "plane_number" => 0, "age" => "1.1"
       }])
-      write_json("blocks/Basic_Latin.json",
+      write_json("blocks/Basic_Latin/index.json",
                  "id" => "Basic_Latin", "name" => "Basic Latin",
                  "range_first" => 0x41, "range_last" => 0x41,
                  "plane_number" => 0, "age" => "1.1",
@@ -100,7 +100,7 @@ RSpec.describe Ucode::Commands::FontistConsumerCommand do
 
       result = described_class.new.call(
         ucode_output_root: ucode_root.to_s,
-        fontist_output_root: fontist_root.to_s,
+        block_feed_output_root: feed_root.to_s,
       )
       expect(result.unicode_version).to eq(Ucode::VersionResolver.resolve(nil))
     end
@@ -112,7 +112,7 @@ RSpec.describe Ucode::Commands::FontistConsumerCommand do
         "first_cp" => 0x41, "last_cp" => 0x41,
         "plane_number" => 0, "age" => "1.1"
       }])
-      write_json("blocks/Basic_Latin.json",
+      write_json("blocks/Basic_Latin/index.json",
                  "id" => "Basic_Latin", "name" => "Basic Latin",
                  "range_first" => 0x41, "range_last" => 0x41,
                  "plane_number" => 0, "age" => "1.1",
@@ -122,7 +122,7 @@ RSpec.describe Ucode::Commands::FontistConsumerCommand do
 
       result = described_class.new.call(
         ucode_output_root: ucode_root.to_s,
-        fontist_output_root: fontist_root.to_s,
+        block_feed_output_root: feed_root.to_s,
       )
       expect(result.unicode_version).to eq(Ucode::VersionResolver.resolve(nil))
     end

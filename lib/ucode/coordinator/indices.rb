@@ -28,6 +28,17 @@ module Ucode
       :standardized_variants,
       :names_list,
       :unihan,
+      :line_break,
+      :east_asian_width,
+      :vertical_orientation,
+      :grapheme_break,
+      :word_break,
+      :sentence_break,
+      :indic_positional,
+      :indic_syllabic,
+      :hangul_syllable_type,
+      :emoji_properties,
+      :extra_binary_properties,
       keyword_init: true,
     )
   end

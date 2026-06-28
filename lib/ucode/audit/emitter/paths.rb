@@ -2,8 +2,6 @@
 
 require "pathname"
 
-require "ucode/repo/atomic_writes"
-
 module Ucode
   module Audit
     module Emitter
@@ -13,7 +11,7 @@ module Ucode
       # Distinct from {Ucode::Repo::Paths} (Mode 1 canonical UCD dataset):
       # Mode 2 output lives under `output/font_audit/<label>/` and carries
       # a different chunk layout (planes/, blocks/, scripts/, codepoints/,
-      # glyphs/, plus collection-face subdirs).
+      # glyphs/, missing/, plus collection-face subdirs).
       #
       # All methods are pure: no I/O, no global state. Returns Pathname
       # instances so callers can compose further. Block names are passed
@@ -27,10 +25,11 @@ module Ucode
         SCRIPTS_DIR       = "scripts"
         CODEPOINTS_DIR    = "codepoints"
         GLYPHS_DIR        = "glyphs"
+        MISSING_DIR       = "missing"
         FONT_AUDIT_ROOT   = "font_audit"
         private_constant :INDEX_FILENAME, :HTML_FILENAME, :BLOCKS_DIR,
                          :PLANES_DIR, :SCRIPTS_DIR, :CODEPOINTS_DIR,
-                         :GLYPHS_DIR, :FONT_AUDIT_ROOT
+                         :GLYPHS_DIR, :MISSING_DIR, :FONT_AUDIT_ROOT
 
         module_function
 
@@ -114,6 +113,26 @@ module Ucode
           face_dir(output_root, label).join(GLYPHS_DIR, "#{cp_id}.svg")
         end
 
+        # `output/font_audit/<label>/missing/` — per-block missing-glyph
+        # gallery directory (TODO 26). Each touched block with missing
+        # codepoints gets one `<BLOCK>.html` plus a paginated
+        # `<BLOCK>.json` companion for large blocks.
+        # @param output_root [String, Pathname]
+        # @param label [String]
+        # @return [Pathname]
+        def missing_dir(output_root, label)
+          face_dir(output_root, label).join(MISSING_DIR)
+        end
+
+        # `output/font_audit/<label>/missing/<BLOCK>.html`.
+        # @param output_root [String, Pathname]
+        # @param label [String]
+        # @param block_name [String]
+        # @return [Pathname]
+        def missing_glyph_page_path(output_root, label, block_name)
+          missing_dir(output_root, label).join("#{block_name}.html")
+        end
+
         # Collection-face subdirectory: `00-<face>/`, `01-<face>/`, ...
         # The 2-digit zero-padded prefix preserves source order and
         # disambiguates faces that share a PostScript name.
@@ -185,6 +204,19 @@ module Ucode
         # @return [Pathname]
         def glyph_under(face_dir, cp_id)
           Pathname(face_dir).join(GLYPHS_DIR, "#{cp_id}.svg")
+        end
+
+        # @param face_dir [String, Pathname]
+        # @return [Pathname]
+        def missing_dir_under(face_dir)
+          Pathname(face_dir).join(MISSING_DIR)
+        end
+
+        # @param face_dir [String, Pathname]
+        # @param block_name [String]
+        # @return [Pathname]
+        def missing_glyph_page_under(face_dir, block_name)
+          missing_dir_under(face_dir).join("#{block_name}.html")
         end
       end
     end

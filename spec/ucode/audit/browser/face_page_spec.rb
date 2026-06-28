@@ -70,6 +70,61 @@ RSpec.describe Ucode::Audit::Browser::FacePage, type: :emitter_spec do
     end
   end
 
+  describe "with universal_set_root" do
+    let(:universal_set_root) { Pathname.new(root).join("universal_glyph_set") }
+
+    before do
+      universal_set_root.join("glyphs").mkpath
+      universal_set_root.join("manifest.json").write(JSON.generate({
+        "unicode_version" => "17.0.0",
+        "ucode_version" => "0.2.0",
+        "entries" => [],
+      }))
+    end
+
+    it "inlines a universal_set section with relative paths" do
+      face_dir_path = File.join(root, "MonaSans-Regular")
+      FileUtils.mkdir_p(face_dir_path)
+      page = described_class.new(report: report,
+                                 universal_set_root: universal_set_root,
+                                 face_dir: face_dir_path)
+      html = page.render
+      match = html.match(%r{<script type="application/json" id="audit-overview">(.*?)</script>}m)
+      payload = JSON.parse(match[1])
+      expect(payload["universal_set"]["available"]).to be(true)
+      expect(payload["universal_set"]["manifest_path"]).to eq("../universal_glyph_set/manifest.json")
+      expect(payload["universal_set"]["glyphs_dir"]).to eq("../universal_glyph_set/glyphs/")
+    end
+
+    it "exposes the universal-set availability in body data attributes" do
+      face_dir_path = File.join(root, "MonaSans-Regular")
+      FileUtils.mkdir_p(face_dir_path)
+      page = described_class.new(report: report,
+                                 universal_set_root: universal_set_root,
+                                 face_dir: face_dir_path)
+      html = page.render
+      expect(html).to include('data-universal-set-available="true"')
+      expect(html).to include('data-universal-set-glyphs-dir="../universal_glyph_set/glyphs/"')
+    end
+
+    it "falls back to available=false when face_dir is not provided" do
+      page = described_class.new(report: report,
+                                 universal_set_root: universal_set_root)
+      html = page.render
+      expect(html).to include('data-universal-set-available="false"')
+    end
+
+    it "falls back to available=false when the root does not exist" do
+      face_dir_path = File.join(root, "MonaSans-Regular")
+      FileUtils.mkdir_p(face_dir_path)
+      page = described_class.new(report: report,
+                                 universal_set_root: "/does/not/exist",
+                                 face_dir: face_dir_path)
+      html = page.render
+      expect(html).to include('data-universal-set-available="false"')
+    end
+  end
+
   describe "#write" do
     it "writes <face_dir>/index.html atomically" do
       face_dir = File.join(root, "MonaSans-Regular")

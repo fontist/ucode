@@ -48,10 +48,16 @@ module Ucode
         # @param reference [Ucode::Audit::CoverageReference, nil] the
         #   baseline to compare against (TODO 25). When nil, defaults
         #   to UCD-only inside {FaceAuditor}.
+        # @param universal_set_root [String, Pathname, nil] forwarded
+        #   to {Emitter::FaceDirectory} for the face browser's
+        #   universal-set section (TODO 26).
+        # @param with_missing_glyph_pages [Boolean] forward per-block
+        #   standalone missing-glyph galleries (TODO 26).
         # @return [Result]
         def call(spec, output_root:, label: nil, unicode_version: nil, verbose: false,
                  with_glyphs: false, brief: false, browse: false,
-                 install: true, reference: nil)
+                 install: true, reference: nil,
+                 universal_set_root: nil, with_missing_glyph_pages: false)
           located = locate(spec, install: install)
           reports = Array(audit_faces(located.path, unicode_version: unicode_version,
                                                     brief: brief, reference: reference))
@@ -64,6 +70,8 @@ module Ucode
             verbose: verbose,
             with_glyphs: with_glyphs,
             emit_browser: browse,
+            universal_set_root: universal_set_root,
+            with_missing_glyph_pages: with_missing_glyph_pages,
           )
 
           face_outcomes, top_dir =

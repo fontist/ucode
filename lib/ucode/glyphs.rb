@@ -20,6 +20,7 @@ module Ucode
     autoload :CellExtractor, "ucode/glyphs/cell_extractor"
     autoload :MonolithPageMap, "ucode/glyphs/monolith_page_map"
     autoload :Writer, "ucode/glyphs/writer"
+    autoload :Pipeline, "ucode/glyphs/pipeline"
     autoload :LastResort, "ucode/glyphs/last_resort"
     autoload :EmbeddedFonts, "ucode/glyphs/embedded_fonts"
     autoload :RealFonts, "ucode/glyphs/real_fonts"

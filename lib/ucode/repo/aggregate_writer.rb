@@ -59,19 +59,10 @@ module Ucode
       }.freeze
       private_constant :PLANE_TABLE
 
-      # Coordinator::Indices fields paired with the file slug used
-      # under `output/relationships/`. Each field is a Hash<Integer,
-      # Record> or Hash<Integer, Array<Record>>.
-      RELATIONSHIP_SOURCES = {
-        special_casing:        "special_casing",
-        case_folding:          "case_folding",
-        bidi_mirroring:        "bidi_mirroring",
-        bidi_brackets:         "bidi_brackets",
-        cjk_radicals:          "cjk_radicals",
-        standardized_variants: "standardized_variants",
-        name_aliases:          "name_aliases",
-      }.freeze
-      private_constant :RELATIONSHIP_SOURCES
+      # The relationship tables the Repo writes are enumerated by
+      # `Coordinator::Indices#each_relationship` (see Candidate 1 of
+      # the 2026-06-29 architecture review) — the Repo never names a
+      # Struct field directly.
 
       attr_reader :codepoint_count
 
@@ -279,8 +270,7 @@ module Ucode
       # ---- Relationships ----------------------------------------------
 
       def write_relationships(indices)
-        RELATIONSHIP_SOURCES.sum do |field, slug|
-          records = indices.public_send(field)
+        indices.each_relationship.sum do |slug, records|
           write_relationship_file(slug, records)
         end
       end

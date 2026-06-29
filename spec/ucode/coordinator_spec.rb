@@ -245,4 +245,34 @@ RSpec.describe Ucode::Coordinator do
       )
     end
   end
+
+  describe "Indices#each_relationship" do
+    it "yields slug + records pairs for every relationship field" do
+      indices = Ucode::Coordinator::Indices.new(
+        special_casing: { 0x41 => "x" },
+        case_folding: { 0x41 => "y" },
+        bidi_mirroring: {},
+        bidi_brackets: {},
+        cjk_radicals: {},
+        standardized_variants: {},
+        name_aliases: {},
+      )
+
+      pairs = indices.each_relationship.to_a
+      expect(pairs).to eq([
+        ["special_casing",        { 0x41 => "x" }],
+        ["case_folding",          { 0x41 => "y" }],
+        ["bidi_mirroring",        {}],
+        ["bidi_brackets",         {}],
+        ["cjk_radicals",          {}],
+        ["standardized_variants", {}],
+        ["name_aliases",          {}],
+      ])
+    end
+
+    it "returns an Enumerator when called without a block" do
+      indices = Ucode::Coordinator::Indices.new
+      expect(indices.each_relationship).to be_an(Enumerator)
+    end
+  end
 end

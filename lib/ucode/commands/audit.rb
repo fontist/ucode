@@ -14,7 +14,6 @@ module Ucode
       autoload :LibraryCommand,    "ucode/commands/audit/library_command"
       autoload :CompareCommand,    "ucode/commands/audit/compare_command"
       autoload :BrowserCommand,    "ucode/commands/audit/browser_command"
-      autoload :ReferenceBuilder,  "ucode/commands/audit/reference_builder"
     end
   end
 end

@@ -274,7 +274,7 @@ module Ucode
                                         desc: "Emit per-block missing-glyph galleries " \
                                               "(requires --browse + --universal-set-root)"
       def font(path)
-        reference = Commands::Audit::ReferenceBuilder.build(
+        reference = Ucode::Audit::ReferenceFactory.build_from_cli(
           flag: options[:reference_universal_set],
           version: options[:unicode_version],
         )
@@ -312,7 +312,7 @@ module Ucode
       option :with_missing_glyph_pages, type: :boolean, default: false,
                                         desc: "Emit per-block missing-glyph galleries"
       def collection(path)
-        reference = Commands::Audit::ReferenceBuilder.build(
+        reference = Ucode::Audit::ReferenceFactory.build_from_cli(
           flag: options[:reference_universal_set],
           version: options[:unicode_version],
         )
@@ -349,7 +349,7 @@ module Ucode
       option :with_missing_glyph_pages, type: :boolean, default: false,
                                         desc: "Emit per-block missing-glyph galleries"
       def library(dir)
-        reference = Commands::Audit::ReferenceBuilder.build(
+        reference = Ucode::Audit::ReferenceFactory.build_from_cli(
           flag: options[:reference_universal_set],
           version: options[:unicode_version],
         )
@@ -518,7 +518,7 @@ module Ucode
                                      desc: "Path to universal-set manifest (or 'none') " \
                                            "for the per-face coverage reference"
     def release
-      reference = Commands::Audit::ReferenceBuilder.build(
+      reference = Ucode::Audit::ReferenceFactory.build_from_cli(
         flag: options[:reference_universal_set],
         version: options[:unicode_version],
       )

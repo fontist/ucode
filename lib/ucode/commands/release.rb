@@ -7,7 +7,6 @@ require "ucode/audit"
 require "ucode/audit/library_auditor"
 require "ucode/audit/release"
 require "ucode/audit/emitter/paths"
-require "ucode/commands/audit/reference_builder"
 
 module Ucode
   module Commands

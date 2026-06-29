@@ -32,6 +32,7 @@ module Ucode
     autoload :CoverageReference, "ucode/audit/coverage_reference"
     autoload :UcdOnlyReference, "ucode/audit/ucd_only_reference"
     autoload :UniversalSetReference, "ucode/audit/universal_set_reference"
+    autoload :ReferenceFactory, "ucode/audit/reference_factory"
 
     # Per-face orchestrator (TODO 11) — shared by LibraryAuditor and
     # the future CLI AuditCommand.

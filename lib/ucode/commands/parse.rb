@@ -6,19 +6,21 @@ require "ucode/cache"
 require "ucode/coordinator"
 require "ucode/parsers"
 require "ucode/repo"
-require "ucode/version_resolver"
 
 module Ucode
   module Commands
     # `ucode parse` — streams the Coordinator output into the on-disk
     # JSON tree at `output/`. Single pass: enrich + write per-cp JSON +
     # accumulate aggregates + final flush.
+    #
+    # Takes a resolved version string; CLI callers resolve via
+    # {VersionResolver.resolve} once and thread it through. See
+    # Candidate 4 of the 2026-06-29 architecture review.
     class ParseCommand
-      # @param version_intent [nil, :default, :latest, String]
+      # @param version [String] resolved UCD version
       # @param output_root [String, Pathname]
       # @return [Hash] { version:, codepoint_count: }
-      def call(version_intent, output_root:)
-        version = VersionResolver.resolve(version_intent)
+      def call(version, output_root:)
         root = Pathname.new(output_root)
         ucd_dir = Cache.ucd_dir(version)
         unihan_dir = Cache.unihan_dir(version)

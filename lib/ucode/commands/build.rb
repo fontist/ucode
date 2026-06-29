@@ -11,6 +11,10 @@ module Ucode
     # parse → (optional) glyphs → (optional) site. Resumable: each step
     # is idempotent and safe to re-run.
     #
+    # Resolves the version intent once at the top and threads the
+    # resolved string through every sub-command. See Candidate 4 of the
+    # 2026-06-29 architecture review.
+    #
     # **Glyph step is opt-in as of v0.1** because the SVG cell extractor
     # is still experimental. Pass `include_glyphs: true` to enable it;
     # otherwise the glyphs step is recorded as skipped.

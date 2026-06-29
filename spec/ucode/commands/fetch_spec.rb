@@ -43,14 +43,12 @@ RSpec.describe Ucode::Commands::FetchCommand do
       cmd.fetch_ucd(version, force: true)
     end
 
-    it "resolves :latest via VersionResolver" do
-      expect(Ucode::VersionResolver).to receive(:resolve).with(:latest)
-        .and_return(version)
+    it "accepts the already-resolved version string (resolution lives in the CLI)" do
       expect(Ucode::Fetch::UcdZip).to receive(:call)
         .with(version, force: false)
         .and_return(Pathname.new("/tmp/ucd"))
 
-      cmd.fetch_ucd(:latest)
+      cmd.fetch_ucd(version)
     end
   end
 

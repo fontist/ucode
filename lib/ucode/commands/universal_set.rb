@@ -39,7 +39,7 @@ module Ucode
       # (in `lib/ucode/cli.rb`) is responsible only for argument
       # parsing and dispatch.
       class BuildCommand
-        # @param version_intent [nil, :default, :latest, String]
+        # @param version [String] resolved UCD version
         # @param output_root [String, Pathname] directory that will
         #   hold `manifest.json`, `glyphs/`, `reports/`.
         # @param source_config_path [String, Pathname, nil] override
@@ -58,10 +58,9 @@ module Ucode
         #   resolver and don't have a real source config on disk.
         # @return [Hash] { version:, manifest_path:, totals:,
         #   by_tier:, coverage:, validation: }
-        def call(version_intent, output_root:, source_config_path: nil,
+        def call(version, output_root:, source_config_path: nil,
                  resolver: nil, block_filter: nil,
                  parallel_workers: default_workers, skip_pre_check: false)
-          version = VersionResolver.resolve(version_intent)
           root = Pathname.new(output_root)
 
           config_path = source_config_path_or_default(source_config_path)
@@ -144,7 +143,7 @@ module Ucode
       # checks (config loads, fonts present, coverage assertion runs)
       # without starting the 4-hour build.
       class PreCheckCommand
-        # @param version_intent [nil, :default, :latest, String]
+        # @param version [String] resolved UCD version
         # @param source_config_path [String, Pathname, nil]
         # @param cmaps [#covers?] injectable; defaults to
         #   RealFonts::CmapCache.
@@ -153,9 +152,8 @@ module Ucode
         # @return [Ucode::Glyphs::UniversalSet::PreBuildReport]
         # @raise [Ucode::UniversalSetPreBuildError] when missing_fonts
         #   is non-empty or the config fails to load.
-        def call(version_intent, source_config_path: nil, cmaps: nil,
+        def call(version, source_config_path: nil, cmaps: nil,
                  font_locator: nil)
-          version = VersionResolver.resolve(version_intent)
           database = Database.open(version)
           config_path = source_config_path || Glyphs::SourceConfig::DEFAULT_PATH
 
@@ -171,12 +169,11 @@ module Ucode
       # shape (or regenerating reports after a model change) without
       # re-running the build.
       class ReportCommand
-        # @param version_intent [nil, :default, :latest, String]
+        # @param version [String] resolved UCD version
         # @param output_root [String, Pathname] directory holding
         #   `manifest.json`.
         # @return [Hash] the {CoverageReport#emit} payload.
-        def call(version_intent, output_root:)
-          version = VersionResolver.resolve(version_intent)
+        def call(version, output_root:)
           root = Pathname.new(output_root)
           manifest_path = root.join("manifest.json")
           raise Ucode::Error, "manifest not found at #{manifest_path}" unless manifest_path.exist?
@@ -196,12 +193,11 @@ module Ucode
       # totals_reconcile, provenance_complete).
       class ValidateCommand
         # @param output_root [String, Pathname]
-        # @param version_intent [nil, :default, :latest, String]
-        #   used only to stamp the report's unicode_version when the
-        #   manifest's recorded value is missing.
+        # @param version [String, nil] resolved UCD version, used only
+        #   to stamp the report's unicode_version when the manifest's
+        #   recorded value is missing.
         # @return [Hash] the {Validator#validate} payload.
-        def call(output_root, version_intent: nil)
-          version = version_intent && VersionResolver.resolve(version_intent)
+        def call(output_root, version: nil)
           Glyphs::UniversalSet::Validator
             .new(output_root, unicode_version: version).validate
         end

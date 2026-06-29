@@ -5,7 +5,7 @@ require "pathname"
 require "ucode/cache"
 require "ucode/fetch"
 require "ucode/glyphs/source_config"
-require "ucode/version_resolver"
+require "ucode/parsers"
 
 module Ucode
   module Commands
@@ -13,40 +13,38 @@ module Ucode
     # per-version cache, plus the specialist Tier 1 fonts referenced by
     # the curated source config.
     #
-    # Thin shell over `Ucode::Fetch::*`. The command layer's job is to
-    # resolve the version intent and format the result; the fetcher does
-    # the network I/O.
+    # Thin shell over `Ucode::Fetch::*`. The command takes a resolved
+    # version string; CLI callers resolve via {VersionResolver.resolve}
+    # once and thread it through. See Candidate 4 of the 2026-06-29
+    # architecture review.
     class FetchCommand
       DEFAULT_SPECIALIST_FONTS_MANIFEST =
         Ucode::Glyphs::SourceConfig::DEFAULT_PATH.dirname.join("specialist_fonts.yml")
       private_constant :DEFAULT_SPECIALIST_FONTS_MANIFEST
 
-      # @param version_intent [nil, :default, :latest, String]
+      # @param version [String] resolved UCD version
       # @param force [Boolean]
       # @return [Hash] { version:, ucd_dir: }
-      def fetch_ucd(version_intent, force: false)
-        version = VersionResolver.resolve(version_intent)
+      def fetch_ucd(version, force: false)
         Cache.ensure_version_dir!(version)
         path = Fetch::UcdZip.call(version, force: force)
         { version: version, ucd_dir: path }
       end
 
-      # @param version_intent [nil, :default, :latest, String]
+      # @param version [String] resolved UCD version
       # @param force [Boolean]
       # @return [Hash] { version:, unihan_dir: }
-      def fetch_unihan(version_intent, force: false)
-        version = VersionResolver.resolve(version_intent)
+      def fetch_unihan(version, force: false)
         Cache.ensure_version_dir!(version)
         path = Fetch::UnihanZip.call(version, force: force)
         { version: version, unihan_dir: path }
       end
 
-      # @param version_intent [nil, :default, :latest, String]
+      # @param version [String] resolved UCD version
       # @param block_first_cps [Array<Integer>, nil] nil = all known blocks
       # @param force [Boolean]
       # @return [Hash] { version:, downloaded: }
-      def fetch_charts(version_intent, block_first_cps: nil, force: false)
-        version = VersionResolver.resolve(version_intent)
+      def fetch_charts(version, block_first_cps: nil, force: false)
         Cache.ensure_version_dir!(version)
 
         cps = block_first_cps || default_block_first_cps(version)

@@ -39,7 +39,7 @@ module Ucode
     # Missing pre-conditions cause silent fallthrough to lower tiers;
     # the build report's `by_tier` totals surface what ran.
     class CanonicalBuildCommand
-      # @param version_intent [nil, :default, :latest, String]
+      # @param version [String] resolved UCD version
       # @param output_root [String, Pathname]
       # @param source_config_path [String, Pathname, nil] override the
       #   Tier 1 font config YAML; nil uses the default
@@ -54,9 +54,8 @@ module Ucode
       #   true. nil skips the block_coverage check.
       # @return [Hash] { version:, codepoint_count:, report_path:,
       #   validation_report_path:, validation_passed: }
-      def call(version_intent, output_root:, source_config_path: nil,
+      def call(version, output_root:, source_config_path: nil,
                resolver: nil, validate: true, baseline: nil)
-        version = VersionResolver.resolve(version_intent)
         root = Pathname.new(output_root)
 
         resolved_resolver = resolver || build_resolver(version, source_config_path)

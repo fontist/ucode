@@ -3,15 +3,14 @@
 require "pathname"
 
 require "ucode/glyphs"
-require "ucode/version_resolver"
 
 module Ucode
   module Commands
     # `ucode glyphs` — extract per-codepoint SVGs from Code Charts PDFs.
     # Thin Thor-facing wrapper around {Ucode::Glyphs::Pipeline}:
-    # resolution + opt-in gate + experimental warning live here; the
-    # pipeline assembly (block loading, fetcher, per-block specs) lives
-    # in {Ucode::Glyphs::Pipeline}.
+    # opt-in gate + experimental warning live here; the pipeline
+    # assembly (block loading, fetcher, per-block specs) lives in
+    # {Ucode::Glyphs::Pipeline}.
     #
     # **Status (v0.1): EXPERIMENTAL.** The cell-extraction pipeline
     # currently includes cell-border decorations alongside the actual
@@ -21,6 +20,10 @@ module Ucode
     # pipeline can be iterated on without churning the CLI surface, but
     # callers MUST opt in via `include_glyphs: true` (CLI: `--include-glyphs`)
     # and will receive a printed warning. Tracked for v0.2.
+    #
+    # Takes a resolved version string; CLI callers resolve via
+    # {VersionResolver.resolve} once and thread it through. See
+    # Candidate 4 of the 2026-06-29 architecture review.
     class GlyphsCommand
       ExperimentalWarning = "ucode glyphs is experimental in v0.1: " \
                             "extracted SVGs include cell-border decorations " \
@@ -35,7 +38,7 @@ module Ucode
         end
       end
 
-      # @param version_intent [nil, :default, :latest, String]
+      # @param version [String] resolved UCD version
       # @param output_root [String, Pathname]
       # @param block_filter [Array<String>, nil] block ids to limit to;
       #   nil = every block
@@ -49,18 +52,18 @@ module Ucode
       #   written here exactly once before work begins.
       # @return [Hash] aggregated Writer tally + version, or a `skipped`
       #   payload when opt-in is false.
-      def call(version_intent, output_root:,
-               block_filter: nil, force: false, monolith_path: nil,
+      def call(version, output_root:,
+               block_filter: nil, force: false,
+               monolith_path: Glyphs::Pipeline::DEFAULT_MONOLITH_PATH,
                include_glyphs: false, warn: nil)
-        return skipped(version_intent) unless include_glyphs
+        return skipped(version) unless include_glyphs
 
         warn&.puts(ExperimentalWarning)
-        version = VersionResolver.resolve(version_intent)
 
         pipeline = Glyphs::Pipeline.new(
           version: version,
           block_filter: block_filter,
-          monolith_path: monolith_path || Glyphs::Pipeline::DEFAULT_MONOLITH_PATH,
+          monolith_path: monolith_path,
         )
         specs = pipeline.build_specs(force: force)
 
@@ -78,12 +81,7 @@ module Ucode
         Ucode.configuration.parallel_workers
       end
 
-      def skipped(version_intent)
-        version = begin
-          VersionResolver.resolve(version_intent)
-        rescue UnknownVersionError
-          version_intent
-        end
+      def skipped(version)
         {
           version: version,
           skipped: true,

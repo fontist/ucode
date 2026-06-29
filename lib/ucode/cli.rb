@@ -3,6 +3,7 @@
 require "thor"
 
 require "ucode/commands"
+require "ucode/version_resolver"
 
 module Ucode
   # Top-level CLI entry.
@@ -10,6 +11,12 @@ module Ucode
   # **Thin Thor**: every method delegates to a `Commands::*Command`
   # class and only formats the result. The Command classes are pure
   # and testable in-process — Thor never holds business logic.
+  #
+  # **Version resolution lives here** — each top-level command resolves
+  # the user-supplied intent (nil / :default / :latest / explicit string)
+  # exactly once via `VersionResolver.resolve` and threads the resolved
+  # string into the dispatched Command. Sub-commands never re-resolve.
+  # See Candidate 4 of the 2026-06-29 architecture review.
   class Cli < Thor
     package_name "ucode"
 
@@ -28,13 +35,17 @@ module Ucode
       desc "ucd [VERSION]", "Download UCD.zip"
       option :force, type: :boolean, default: false, desc: "Re-download even if cached"
       def ucd(version = nil)
-        puts format_result Commands::FetchCommand.new.fetch_ucd(version, force: options[:force])
+        puts format_result Commands::FetchCommand.new.fetch_ucd(
+          VersionResolver.resolve(version), force: options[:force],
+        )
       end
 
       desc "unihan [VERSION]", "Download Unihan.zip"
       option :force, type: :boolean, default: false
       def unihan(version = nil)
-        puts format_result Commands::FetchCommand.new.fetch_unihan(version, force: options[:force])
+        puts format_result Commands::FetchCommand.new.fetch_unihan(
+          VersionResolver.resolve(version), force: options[:force],
+        )
       end
 
       desc "charts [VERSION]", "Download per-block Code Charts PDFs"
@@ -43,7 +54,8 @@ module Ucode
       def charts(version = nil)
         cps = options[:block]&.map { |id| block_id_to_first_cp(id) }&.compact
         puts format_result Commands::FetchCommand.new
-          .fetch_charts(version, block_first_cps: cps, force: options[:force])
+          .fetch_charts(VersionResolver.resolve(version),
+                        block_first_cps: cps, force: options[:force])
       end
 
       desc "fonts", "Download specialist Tier 1 fonts (config/specialist_fonts.yml)"
@@ -90,7 +102,9 @@ module Ucode
     desc "parse [VERSION]", "Stream UCD → output/"
     option :to, type: :string, default: "./output", desc: "Output directory"
     def parse(version = nil)
-      result = Commands::ParseCommand.new.call(version, output_root: options[:to])
+      result = Commands::ParseCommand.new.call(
+        VersionResolver.resolve(version), output_root: options[:to],
+      )
       puts JSON.pretty_generate(result)
     end
 
@@ -111,7 +125,7 @@ module Ucode
                             desc: "Opt into the experimental v0.1 pipeline"
     def glyphs(version = nil)
       result = Commands::GlyphsCommand.new.call(
-        version,
+        VersionResolver.resolve(version),
         output_root: options[:to],
         block_filter: options[:block],
         force: options[:force],
@@ -150,7 +164,9 @@ module Ucode
       def block(codepoint)
         cp = parse_cp(codepoint)
         with_db_handling do
-          result = Commands::LookupCommand.new.lookup_block(options[:version], codepoint: cp)
+          result = Commands::LookupCommand.new.lookup_block(
+            VersionResolver.resolve(options[:version]), codepoint: cp,
+          )
           puts "#{format("U+%04X", cp)} → #{result.block || "(unassigned)"}"
         end
       end
@@ -160,7 +176,9 @@ module Ucode
       def script(codepoint)
         cp = parse_cp(codepoint)
         with_db_handling do
-          result = Commands::LookupCommand.new.lookup_script(options[:version], codepoint: cp)
+          result = Commands::LookupCommand.new.lookup_script(
+            VersionResolver.resolve(options[:version]), codepoint: cp,
+          )
           puts "#{format("U+%04X", cp)} → #{result.script || "(none)"}"
         end
       end
@@ -172,7 +190,8 @@ module Ucode
         cp = parse_cp(codepoint)
         with_db_handling do
           result = Commands::LookupCommand.new
-            .lookup_char(options[:version], codepoint: cp, output_root: options[:from])
+            .lookup_char(VersionResolver.resolve(options[:version]),
+                         codepoint: cp, output_root: options[:from])
           puts "#{format("U+%04X", cp)} block=#{result.block_id} glyph=#{result.glyph_path}"
         end
       end
@@ -430,7 +449,7 @@ module Ucode
                         desc: "Worker pool size (default: Ucode.configuration.parallel_workers)"
       def build(version = nil)
         result = Commands::UniversalSet::BuildCommand.new.call(
-          version,
+          VersionResolver.resolve(version),
           output_root: options[:to],
           source_config_path: options[:source_config],
           block_filter: options[:block],
@@ -448,7 +467,7 @@ module Ucode
                              desc: "Path to a Tier 1 source config YAML"
       def pre_check(version = nil)
         report = Commands::UniversalSet::PreCheckCommand.new.call(
-          version,
+          VersionResolver.resolve(version),
           source_config_path: options[:source_config],
         )
         puts JSON.pretty_generate(report.to_h)
@@ -463,7 +482,7 @@ module Ucode
                     desc: "Output directory holding manifest.json"
       def report(version = nil)
         result = Commands::UniversalSet::ReportCommand.new.call(
-          version,
+          VersionResolver.resolve(version),
           output_root: options[:from],
         )
         puts JSON.pretty_generate(result)
@@ -475,7 +494,7 @@ module Ucode
       def validate(output_root = "./output/universal_glyph_set")
         result = Commands::UniversalSet::ValidateCommand.new.call(
           output_root,
-          version_intent: options[:version],
+          version: options[:version] && VersionResolver.resolve(options[:version]),
         )
         puts JSON.pretty_generate(result)
         exit 1 unless result[:passed]

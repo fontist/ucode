@@ -32,8 +32,9 @@ RSpec.describe Ucode::Glyphs::Pipeline do
       # Pre-stage the fixture PDF into the cache so the pipeline
       # doesn't depend on network access. The pipeline's PdfFetcher
       # checks the cache before downloading.
-      fixture_pdf = Pathname.new(__dir__).join("..", "..", "fixtures",
-                                              "pdfs", "basic_latin.pdf")
+      fixture_pdf = Pathname.new(__dir__).join("..", "..",
+                                               "fixtures", "pdfs",
+                                               "basic_latin.pdf")
       if fixture_pdf.exist?
         pdfs_dir = Ucode::Cache.pdfs_dir(fixture_version)
         pdfs_dir.mkpath

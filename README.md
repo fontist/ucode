@@ -2,14 +2,16 @@
 
 `ucode` is a Ruby toolkit for the Unicode Character Database (UCD). It turns the
 official UCD text files into a structured, browsable dataset: one JSON document
-per assigned codepoint, plus a Vitepress site for navigation.
+per assigned codepoint, plus a Vitepress site for navigation. It also extracts
+per-codepoint SVG glyphs from the Unicode Code Charts PDFs and audits font
+coverage against the Unicode baseline.
 
-> **Status (v0.1).** The JSON dataset, lookup index, and Vitepress site are
-> production-ready. **SVG glyph extraction from the Code Charts PDFs is
-> experimental and deferred to v0.2** — see
-> [Glyph extraction (experimental)](#glyph-extraction-experimental) below.
+> **Status (v0.2.1).** The JSON dataset, lookup index, Vitepress site, and
+> 4-tier glyph extraction pipeline are production-ready. The `ucode code-chart`
+> subcommand extracts standalone SVGs + provenance sidecars from per-block
+> Code Charts PDFs. Font coverage auditing (`ucode audit`) is production-ready.
 
-## What you get (v0.1)
+## What you get (v0.2)
 
 - **Per-codepoint JSON** at `output/blocks/<BLOCK>/<U+XXXX>/index.json` with
   full UCD properties, the human-curated relationships from `NamesList.txt`
@@ -21,6 +23,14 @@ per assigned codepoint, plus a Vitepress site for navigation.
   relationships, named sequences, manifest.
 - **SQLite lookup index** for fast codepoint → block/script/char queries.
 - **Vitepress site** at `site/` for browsing Plane → Block → Character.
+- **4-tier glyph extraction** — per-codepoint `glyph.svg` sourced from real
+  fonts (Tier 1), PDF-embedded fonts (Pillars 1+2), or Last Resort UFO
+  (Pillar 3).
+- **Per-block Code Chart extraction** — `ucode code-chart extract` produces
+  standalone SVG + provenance JSON for every codepoint in a block.
+- **Font coverage audit** — `ucode audit` compares a font's cmap against the
+  Unicode baseline and reports per-block coverage, missing codepoints, and
+  optional HTML browsers.
 
 ## Install
 
@@ -31,7 +41,7 @@ gem install ucode
 Or in a Gemfile:
 
 ```ruby
-gem "ucode", "~> 0.1"
+gem "ucode", "~> 0.2"
 ```
 
 ## Quick start
@@ -107,7 +117,39 @@ Then:
 cd site && npm install && npm run dev
 ```
 
-## Glyph extraction (experimental in v0.1; concrete plan for v0.2)
+## Code Chart extraction
+
+Extract per-codepoint SVG glyphs from a Unicode Code Charts PDF, with
+provenance sidecar JSON:
+
+```sh
+# Download the Code Charts PDF for a block
+ucode code-chart fetch --block Sidetic
+
+# Extract every codepoint as SVG + provenance JSON
+ucode code-chart extract --block Sidetic --to /tmp/sidetic/
+
+# List cached Code Charts PDFs
+ucode code-chart list
+```
+
+Output layout:
+
+```
+/tmp/sidetic/Sidetic/
+  U+10920.svg      # vector glyph outline
+  U+10920.json     # provenance: source PDF, sha256, version, timestamp
+  U+10921.svg
+  U+10921.json
+  ...
+```
+
+The extractor uses the existing 4-tier glyph sourcing pipeline (Tier 1 →
+Pillar 1 → Pillar 2 → Pillar 3). No new extraction logic — the
+`ucode code-chart` subcommand is a thin CLI wrapper over `Ucode::CodeChart::Writer`,
+which orchestrates `Ucode::Glyphs::Resolver` for each codepoint.
+
+## Glyph extraction (4-tier pipeline)
 
 The `ucode glyphs` command and the `--include-glyphs` flag on `ucode build`
 are **opt-in and experimental in v0.1**. They emit per-codepoint `glyph.svg`
@@ -436,29 +478,33 @@ from the dataset.
 
 ## Architecture
 
-Five concerns, each isolated:
+Seven concerns, each isolated:
 
 1. **`Ucode::Models`** — `lutaml-model` classes for every UCD aggregate.
 2. **`Ucode::Parsers`** — one streaming parser per UCD text file.
 3. **`Ucode::Coordinator`** — single-pass enrichment that merges indices
    into each `CodePoint` as it streams.
-4. **`Ucode::Repo`** — atomic, idempotent writers for the output tree.
-5. **`Ucode::Glyphs`** — vector glyph extraction from Code Charts PDFs
-   (experimental in v0.1).
-6. **`Ucode::Site`** — Vitepress scaffold + config/page generator.
+4. **`Ucode::Repo`** — atomic, idempotent writers for the output tree
+   (per-concern writers under `Repo::Writers::*`).
+5. **`Ucode::Glyphs`** — 4-tier vector glyph extraction from Code Charts PDFs
+   (RealFonts, EmbeddedFonts, LastResort + Resolver).
+6. **`Ucode::CodeChart`** — per-block SVG extraction + provenance sidecar
+   for the "Code Chart donor" use case.
+7. **`Ucode::Site`** — Vitepress scaffold + config/page generator.
 
 CLI is thin Thor dispatch over `Ucode::Commands::*`. Each command class
-is a pure, in-process testable unit.
+is a pure, in-process testable unit. Version resolution happens once
+per CLI invocation and threads through to all sub-commands.
 
-See `CLAUDE.md` for the full architecture notes. See
-`docs/FONTISAN_MIGRATION.md` for the fontisan integration plan.
+See `docs/architecture.md` for the canonical architecture reference and
+`docs/adr/` for Architecture Decision Records.
 
 ## Authoritative source
 
-ucode parses the **UCD text files** (per UAX #44). The
-`ucd.all.flat.xml` shipped with the repo is reference-only — it omits
-the human-curated relationship data in `NamesList.txt` and has partial
-Unihan coverage. We never parse it.
+ucode parses the **UCD text files** (`UnicodeData.txt`, `NamesList.txt`,
+`Blocks.txt`, etc.) per UAX #44. Never uses the flat XML dump — the text
+files carry the human-curated relationship data that makes this project
+valuable.
 
 ## License
 

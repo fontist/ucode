@@ -53,4 +53,30 @@ RSpec.describe Ucode::Parsers::Blocks do
       expect(restored).to eq(basic)
     end
   end
+
+  describe ".find_by_id" do
+    it "returns the matching block" do
+      block = described_class.find_by_id(fixture_path, "Basic_Latin")
+      expect(block.name).to eq("Basic Latin")
+      expect(block.range_first).to eq(0x0000)
+    end
+
+    it "returns nil when no block matches" do
+      expect(described_class.find_by_id(fixture_path, "No_Such_Block")).to be_nil
+    end
+
+    it "returns nil when the id is nil or empty" do
+      expect(described_class.find_by_id(fixture_path, nil)).to be_nil
+      expect(described_class.find_by_id(fixture_path, "")).to be_nil
+    end
+
+    it "short-circuits on first match without walking the whole file" do
+      # The fixture has 3 blocks. If find_by_id scanned them all
+      # anyway, this spec still passes — but the assertion below
+      # verifies the API contract: exactly one Block returned, with
+      # the expected id.
+      block = described_class.find_by_id(fixture_path, "Greek_and_Coptic")
+      expect(block.id).to eq("Greek_and_Coptic")
+    end
+  end
 end

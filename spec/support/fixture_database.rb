@@ -26,8 +26,8 @@ RSpec.shared_context "with fixture ucd database" do
       original = Ucode.configuration.cache_root
       Ucode.configuration.cache_root = Pathname.new(cache_root)
       Ucode::Cache.ensure_version_dir!(fixture_version)
-      FileUtils.rm_rf(Ucode::Cache.ucd_dir(fixture_version))
-      FileUtils.rm_rf(Ucode::Cache.unihan_dir(fixture_version))
+      safe_remove(Ucode::Cache.ucd_dir(fixture_version))
+      safe_remove(Ucode::Cache.unihan_dir(fixture_version))
       FileUtils.cp_r(fixture_ucd_dir, Ucode::Cache.ucd_dir(fixture_version))
       FileUtils.cp_r(fixture_unihan_dir, Ucode::Cache.unihan_dir(fixture_version))
       Ucode::DbBuilder.build(fixture_version)

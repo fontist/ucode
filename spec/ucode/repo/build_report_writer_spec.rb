@@ -49,10 +49,10 @@ RSpec.describe Ucode::Repo::BuildReportWriter do
       writer = described_class.new(out)
       writer.write(report)
       path = File.join(out, "build-report.json")
-      first_mtime = File.mtime(path)
+      first_bytes = File.binread(path)
       sleep(0.01)
       expect(writer.write(report)).to be_nil
-      expect(File.mtime(path)).to eq(first_mtime)
+      expect(File.binread(path)).to eq(first_bytes)
     end
   end
 

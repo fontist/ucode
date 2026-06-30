@@ -8,7 +8,7 @@ require "json"
 RSpec.describe Ucode::Audit::Browser::GlyphPanel, type: :emitter_spec do
   let(:root) { Pathname.new(Dir.mktmpdir("ucode-glyph-panel")) }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   def write_universal_set(entries:, glyphs:)
     root.join("manifest.json").write(JSON.generate({

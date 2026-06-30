@@ -31,7 +31,7 @@ RSpec.describe Ucode::Glyphs::SourceBuilder do
   let(:config) { Ucode::Glyphs::SourceConfig.new(path: config_path) }
   let(:builder) { described_class.new(config: config, database: fixture_database) }
 
-  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
+  after { safe_remove(tmpdir) if tmpdir.exist? }
 
   describe "#tier1_sources" do
     it "builds one Tier1RealFont per configured source for known blocks" do

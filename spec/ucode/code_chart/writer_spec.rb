@@ -60,7 +60,7 @@ RSpec.describe Ucode::CodeChart::Writer do
     skip "fixture PDF missing" unless pdf_path.exist?
   end
 
-  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
+  after { safe_remove(tmpdir) if tmpdir.exist? }
 
   describe "#write" do
     it "creates a per-block folder under output_root" do
@@ -100,22 +100,21 @@ RSpec.describe Ucode::CodeChart::Writer do
     it "is idempotent — re-running produces byte-identical files" do
       writer.write(basic_latin_block)
       first_svg_size = output_root.join("Basic_Latin/U+0041.svg").size
-      first_svg_mtime = output_root.join("Basic_Latin/U+0041.svg").mtime
+      first_svg_bytes = output_root.join("Basic_Latin/U+0041.svg").binread
       first_json_size = output_root.join("Basic_Latin/U+0041.json").size
-      first_json_mtime = output_root.join("Basic_Latin/U+0041.json").mtime
+      first_json_bytes = output_root.join("Basic_Latin/U+0041.json").binread
 
-      sleep 0.05
       second = writer.write(basic_latin_block)
       expect(second.svgs_written).to eq(128)
       expect(second.sidecars_written).to eq(128)
 
       # SVG: same bytes (writer skips when content matches)
       expect(output_root.join("Basic_Latin/U+0041.svg").size).to eq(first_svg_size)
-      expect(output_root.join("Basic_Latin/U+0041.svg").mtime).to eq(first_svg_mtime)
+      expect(output_root.join("Basic_Latin/U+0041.svg").binread).to eq(first_svg_bytes)
 
       # JSON: byte-identical (Repo::AtomicWrites is canonical-JSON idempotent)
       expect(output_root.join("Basic_Latin/U+0041.json").size).to eq(first_json_size)
-      expect(output_root.join("Basic_Latin/U+0041.json").mtime).to eq(first_json_mtime)
+      expect(output_root.join("Basic_Latin/U+0041.json").binread).to eq(first_json_bytes)
     end
 
     it "computes pdf_sha256 once for the summary" do

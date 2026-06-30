@@ -14,7 +14,7 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::Source do
     File.write(pdf_path, "dummy")
   end
 
-  after { FileUtils.rm_rf(tmp_root) }
+  after { safe_remove(tmp_root) }
 
   describe "PDF resolution" do
     it "uses the explicit :pdf argument when given" do

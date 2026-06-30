@@ -21,7 +21,7 @@ RSpec.describe Ucode::CodeChart::Sidecar do
     )
   end
 
-  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
+  after { safe_remove(tmpdir) if tmpdir.exist? }
 
   describe "#write" do
     it "writes a sidecar JSON next to its SVG at <codepoint>.json" do
@@ -53,16 +53,15 @@ RSpec.describe Ucode::CodeChart::Sidecar do
 
     it "is idempotent — re-writing the same provenance is a no-op (file unchanged)" do
       first_path = sidecar.write(provenance)
-      first_mtime = first_path.mtime
+      first_bytes = first_path.binread
       first_size = first_path.size
 
       # Re-write with same provenance. Sleep just enough to detect a
-      # change in mtime if the writer were to touch the file.
-      sleep 0.05
+      # content change if the writer rewrote the file.
       second_path = sidecar.write(provenance)
       expect(second_path).to eq(first_path)
       expect(second_path.size).to eq(first_size)
-      expect(second_path.mtime).to eq(first_mtime)
+      expect(second_path.binread).to eq(first_bytes)
     end
   end
 

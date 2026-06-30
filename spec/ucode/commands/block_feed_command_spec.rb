@@ -11,7 +11,7 @@ RSpec.describe Ucode::Commands::BlockFeedCommand do
   let(:feed_root) { workdir.join("block-feed") }
 
   before { ucode_root.mkpath }
-  after { FileUtils.remove_entry(workdir) if workdir.exist? }
+  after { safe_remove(workdir) if workdir.exist? }
 
   def write_json(path, payload)
     path = ucode_root.join(path)

@@ -32,7 +32,7 @@ RSpec.describe Ucode::Audit::LibraryAuditor do
   end
 
   after do
-    FileUtils.remove_entry(library_dir) if library_dir && File.exist?(library_dir)
+    safe_remove(library_dir) if library_dir && File.exist?(library_dir)
   end
 
   describe "#audit on a flat library directory" do

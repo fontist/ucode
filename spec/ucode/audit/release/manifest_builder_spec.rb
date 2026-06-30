@@ -19,7 +19,7 @@ RSpec.describe Ucode::Audit::Release::ManifestBuilder, type: :emitter_spec do
     ]
   end
 
-  after { FileUtils.remove_entry(release_root) if release_root.exist? }
+  after { safe_remove(release_root) if release_root.exist? }
 
   def write_universal_set(root:, entries: [], glyphs: {}, unicode_version: "17.0.0")
     uset = root.join("universal_glyph_set")
@@ -190,7 +190,7 @@ RSpec.describe Ucode::Audit::Release::ManifestBuilder, type: :emitter_spec do
           )
           expect(manifest.universal_set.available).to be(true)
         ensure
-          FileUtils.remove_entry(sandbox) if sandbox.exist?
+          safe_remove(sandbox) if sandbox.exist?
         end
       end
     end

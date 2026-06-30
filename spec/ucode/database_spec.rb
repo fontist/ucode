@@ -89,8 +89,8 @@ RSpec.describe Ucode::Database, :sqlite do
       original = Ucode.configuration.cache_root
       Ucode.configuration.cache_root = @cache_root
       Ucode::Cache.ensure_version_dir!(version)
-      FileUtils.rm_rf(Ucode::Cache.ucd_dir(version))
-      FileUtils.rm_rf(Ucode::Cache.unihan_dir(version))
+      safe_remove(Ucode::Cache.ucd_dir(version))
+      safe_remove(Ucode::Cache.unihan_dir(version))
       FileUtils.cp_r(ucd_dir, Ucode::Cache.ucd_dir(version))
       FileUtils.cp_r(unihan_dir, Ucode::Cache.unihan_dir(version))
       begin

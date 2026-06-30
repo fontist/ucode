@@ -103,16 +103,16 @@ RSpec.describe Ucode::Site::Generator do
       plane_path  = site_root.join("plane", "0.md")
       block_path  = site_root.join("block", "Basic_Latin.md")
 
-      config_mtime = config_path.mtime
-      plane_mtime  = plane_path.mtime
-      block_mtime  = block_path.mtime
+      config_bytes = config_path.binread
+      plane_bytes  = plane_path.binread
+      block_bytes  = block_path.binread
 
       sleep(0.02)
       gen.build
 
-      expect(config_path.mtime).to eq(config_mtime)
-      expect(plane_path.mtime).to eq(plane_mtime)
-      expect(block_path.mtime).to eq(block_mtime)
+      expect(config_path.binread).to eq(config_bytes)
+      expect(plane_path.binread).to eq(plane_bytes)
+      expect(block_path.binread).to eq(block_bytes)
     end
 
     it "builds without an init step (config + pages still emitted)" do

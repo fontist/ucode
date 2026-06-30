@@ -10,7 +10,7 @@ RSpec.describe Ucode::Commands::Audit::CompareCommand do
   let(:right_path) { "spec/fixtures/fonts/NotoSansAdlam-Regular.ttf" }
   let(:root)       { Dir.mktmpdir("ucode-audit-compare-cmd") }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   it "diffs two fonts audited fresh on the fly" do
     result = described_class.new.call(left_path, right_path)

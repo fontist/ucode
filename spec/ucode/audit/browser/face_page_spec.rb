@@ -19,7 +19,7 @@ RSpec.describe Ucode::Audit::Browser::FacePage, type: :emitter_spec do
 
   let(:root) { Dir.mktmpdir("ucode-face-page") }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   describe "#render" do
     let(:html) { page.render }

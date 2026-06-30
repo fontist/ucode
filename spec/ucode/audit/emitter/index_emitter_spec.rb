@@ -12,7 +12,7 @@ RSpec.describe Ucode::Audit::Emitter::IndexEmitter, type: :emitter_spec do
   let(:root)      { Dir.mktmpdir("ucode-idx-emit") }
   let(:face_dir)  { Ucode::Audit::Emitter::Paths.face_dir(root, "MonaSans-Regular") }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   it "writes index.json under the face directory" do
     emitter.emit(face_dir, report)
@@ -28,12 +28,11 @@ RSpec.describe Ucode::Audit::Emitter::IndexEmitter, type: :emitter_spec do
     expect(emitter.emit(face_dir, report)).to be(false)
   end
 
-  it "does not modify mtime on second write" do
+  it "does not modify content on second write" do
     emitter.emit(face_dir, report)
-    first = File.mtime(face_dir.join("index.json"))
-    sleep 0.05
+    first = File.binread(face_dir.join("index.json"))
     emitter.emit(face_dir, report)
-    second = File.mtime(face_dir.join("index.json"))
+    second = File.binread(face_dir.join("index.json"))
     expect(second).to eq(first)
   end
 

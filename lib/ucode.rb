@@ -55,6 +55,7 @@ module Ucode
   autoload :Repo, "ucode/repo"
   autoload :Glyphs, "ucode/glyphs"
   autoload :Audit, "ucode/audit"
+  autoload :CodeChart, "ucode/code_chart"
   autoload :Site, "ucode/site"
   autoload :Commands, "ucode/commands"
   autoload :Cli, "ucode/cli"

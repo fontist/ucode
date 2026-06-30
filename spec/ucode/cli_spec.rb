@@ -15,8 +15,29 @@ RSpec.describe Ucode::Cli do
         "version", "parse", "glyphs", "build",
       )
       expect(described_class.subcommands).to include(
-        "fetch", "site", "lookup", "cache",
+        "fetch", "site", "lookup", "cache", "code-chart",
       )
+    end
+  end
+
+  describe "code-chart subcommand" do
+    it "registers fetch, extract, list under code-chart" do
+      cc_cls = described_class.subcommand_classes["code-chart"]
+      expect(cc_cls.commands.keys).to include("fetch", "extract", "list")
+    end
+
+    it "list prints a helpful message when no PDFs are cached" do
+      Dir.mktmpdir do |root|
+        original = Ucode.configuration.cache_root
+        Ucode.configuration.cache_root = Pathname.new(root)
+        begin
+          expect {
+            described_class.start(%w[code-chart list])
+          }.to output(/no cached Code Charts PDFs/).to_stdout
+        ensure
+          Ucode.configuration.cache_root = original
+        end
+      end
     end
   end
 

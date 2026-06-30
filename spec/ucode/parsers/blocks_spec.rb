@@ -79,4 +79,27 @@ RSpec.describe Ucode::Parsers::Blocks do
       expect(block.id).to eq("Greek_and_Coptic")
     end
   end
+
+  describe ".find_by_id!" do
+    it "returns the matching block (same as find_by_id)" do
+      block = described_class.find_by_id!(fixture_path, "Basic_Latin")
+      expect(block.name).to eq("Basic Latin")
+    end
+
+    it "raises Ucode::UnknownBlockError when no block matches" do
+      expect {
+        described_class.find_by_id!(fixture_path, "No_Such_Block")
+      }.to raise_error(Ucode::UnknownBlockError) do |err|
+        expect(err.context[:block_id]).to eq("No_Such_Block")
+        expect(err.context[:blocks_txt]).to eq(fixture_path.to_s)
+        expect(err.message).to include("No_Such_Block")
+      end
+    end
+
+    it "raises Ucode::UnknownBlockError when the id is nil" do
+      expect {
+        described_class.find_by_id!(fixture_path, nil)
+      }.to raise_error(Ucode::UnknownBlockError)
+    end
+  end
 end

@@ -166,12 +166,14 @@ module Ucode
       option :block, type: :string, required: true,
                     desc: "Block identifier (e.g. Sidetic, Basic_Latin)"
       def fetch(version = nil)
-        block_first_cp = resolve_block_first_cp!(options[:block], version)
-        result = Commands::FetchCommand.new.fetch_charts(
-          VersionResolver.resolve(version),
-          block_first_cps: [block_first_cp],
-        )
-        puts JSON.pretty_generate(result)
+        with_codechart_errors do
+          block_first_cp = resolve_block_first_cp!(options[:block], version)
+          result = Commands::FetchCommand.new.fetch_charts(
+            VersionResolver.resolve(version),
+            block_first_cps: [block_first_cp],
+          )
+          puts JSON.pretty_generate(result)
+        end
       end
 
       desc "extract --block BLOCK --to DIR [VERSION]",
@@ -181,26 +183,29 @@ module Ucode
       option :to, type: :string, required: true,
                   desc: "Output directory (will contain <block_id>/<U+XXXX>.svg + .json)"
       def extract(version = nil)
-        version_str = VersionResolver.resolve(version)
-        block_first_cp = resolve_block_first_cp!(options[:block], version_str)
+        with_codechart_errors do
+          version_str = VersionResolver.resolve(version)
+          block = resolve_block!(options[:block], version_str)
+          block_first_cp = block.range_first
 
-        # Download (idempotent — re-runs skip when the PDF is cached).
-        Commands::FetchCommand.new.fetch_charts(version_str, block_first_cps: [block_first_cp])
+          # Download (idempotent — re-runs skip when the PDF is cached).
+          Commands::FetchCommand.new.fetch_charts(version_str, block_first_cps: [block_first_cp])
 
-        blocks_txt = Ucode::Cache.ucd_dir(version_str).join("Blocks.txt")
-        block = Ucode::Parsers::Blocks.find_by_id(blocks_txt, options[:block]) or
-          raise Thor::Error, "Unknown block: #{options[:block].inspect}"
+          pdf = Ucode::Glyphs::PdfFetcher.new(version_str)
+            .fetch(block_first_cp: block_first_cp)
+          raise Ucode::CodeChartNotFoundError.new(
+            "Code Charts PDF unavailable for block #{block.id.inspect}",
+            context: { block_id: block.id, version: version_str },
+          ) unless pdf
 
-        pdf = Ucode::Glyphs::PdfFetcher.new(version_str).fetch(block_first_cp: block.range_first) or
-          raise Thor::Error, "PDF unavailable for block #{options[:block]}"
-
-        writer = Ucode::CodeChart::Writer.new(
-          output_root: Pathname.new(options[:to]),
-          pdf_path: pdf,
-          ucd_version: version_str,
-        )
-        summary = writer.write(block)
-        puts JSON.pretty_generate(summary.to_h.compact)
+          writer = Ucode::CodeChart::Writer.new(
+            output_root: Pathname.new(options[:to]),
+            pdf_path: pdf,
+            ucd_version: version_str,
+          )
+          summary = writer.write(block)
+          puts JSON.pretty_generate(summary.to_h.compact)
+        end
       end
 
       desc "list", "List cached Code Charts PDFs under the version's cache"
@@ -220,29 +225,36 @@ module Ucode
       private
 
       # Resolve a block name to its first codepoint via the cached
-      # Blocks.txt. Raises a clean Thor error on miss.
-      def resolve_block_first_cp!(block_id, version)
+      # Blocks.txt. Raises {Ucode::UnknownBlockError} on miss.
+      def resolve_block!(block_id, version)
         blocks_txt = Ucode::Cache.ucd_dir(VersionResolver.resolve(version)).join("Blocks.txt")
-        block = Ucode::Parsers::Blocks.find_by_id(blocks_txt, block_id)
-        raise Thor::Error, "Unknown block: #{block_id.inspect}" unless block
+        Ucode::Parsers::Blocks.find_by_id!(blocks_txt, block_id)
+      end
 
-        block.range_first
+      def resolve_block_first_cp!(block_id, version)
+        resolve_block!(block_id, version).range_first
+      end
+
+      # Convert semantic Ucode errors into Thor errors so Thor's
+      # dispatch prints the message cleanly instead of a stack trace.
+      # Thor's `start` rescues only `Thor::Error`; without this bridge,
+      # any `Ucode::Error` subclass propagates as an uncaught exception.
+      def with_codechart_errors
+        yield
+      rescue Ucode::Error => e
+        raise Thor::Error, e.message
       end
     end
 
-    desc "code-chart", "Extract per-codepoint SVG glyphs from Unicode Code Charts PDFs"
-    subcommand "code-chart", CodeChartCmd
-
-    # Thor 1.5.0 normalizes command names by converting hyphens to
-    # underscores, but `subcommand "code-chart"` registers under the
-    # literal hyphenated name — `all_commands["code_chart"]` is then
-    # nil and dispatch fails with "Could not find command". This
-    # `code_chart` bridge method mirrors the subcommand under the
-    # normalized name so `ucode code-chart CMD` dispatches correctly.
-    desc "code_chart [COMMAND]", "Bridge for hyphenated subcommand dispatch"
-    define_method("code_chart") do |*args|
-      invoke CodeChartCmd, args
-    end
+    # Register the subcommand under the underscored method name
+    # (`code_chart`). Thor's `normalize_command_name` converts the
+    # user's hyphenated form (`code-chart`) to the underscored form
+    # before lookup, so `ucode code-chart <cmd>` dispatches correctly.
+    # `desc` first registers the method as a Thor command so the
+    # dispatch table has an entry; `subcommand` then attaches the
+    # CodeChartCmd class to it.
+    desc "code_chart <command>", "Extract SVG glyphs from Unicode Code Charts PDFs"
+    subcommand "code_chart", CodeChartCmd
 
     # ─────────────── lookup ───────────────
     class Lookup < Thor

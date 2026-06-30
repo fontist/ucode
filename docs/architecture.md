@@ -197,6 +197,11 @@ Two migrations are in flight (see `TODO.new/`):
   process rules.
 - `docs/FONTISAN_MIGRATION.md` — Phase A/B/C/D runbook for the UCD
   migration (companion to `TODO.new/18-20`).
+- `docs/adr/` — Architecture Decision Records (settled decisions;
+  start with the [README](adr/README.md)). The mutool dependency is
+  justified in [ADR-0001](adr/0001-pdf-library-choice.md) — read
+  that before suggesting a switch to hexapdf, origami, or another
+  PDF library.
 - `docs/guide/` — user-facing guides (dataset, lookup, site, migration).
 - `docs/performance.md` — performance targets and benchmarks.
 - `TODO/` — historical implementation TODOs for the v0.1 release.

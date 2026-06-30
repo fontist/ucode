@@ -30,6 +30,7 @@ module Ucode
   autoload :DatabaseMissingError, "ucode/error"
   autoload :DatabaseSchemaError, "ucode/error"
   autoload :UnknownVersionError, "ucode/error"
+  autoload :UnknownBlockError, "ucode/error"
   autoload :GlyphError, "ucode/error"
   autoload :PdfRenderError, "ucode/error"
   autoload :GridDetectionError, "ucode/error"

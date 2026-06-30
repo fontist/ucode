@@ -15,14 +15,14 @@ RSpec.describe Ucode::Cli do
         "version", "parse", "glyphs", "build",
       )
       expect(described_class.subcommands).to include(
-        "fetch", "site", "lookup", "cache", "code-chart",
+        "fetch", "site", "lookup", "cache", "code_chart", "audit",
       )
     end
   end
 
   describe "code-chart subcommand" do
-    it "registers fetch, extract, list under code-chart" do
-      cc_cls = described_class.subcommand_classes["code-chart"]
+    it "registers fetch, extract, list under code_chart" do
+      cc_cls = described_class.subcommand_classes["code_chart"]
       expect(cc_cls.commands.keys).to include("fetch", "extract", "list")
     end
 

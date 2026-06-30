@@ -6,6 +6,22 @@ require "pathname"
 require "fileutils"
 require "json"
 
+# Test Pillar 3 source — returns one deterministic Result per
+# codepoint so the Writer spec doesn't depend on mutool or fixture
+# PDF content. Real class (no doubles). Lives at file scope to
+# avoid leaky constant declarations.
+class AlwaysPillar3 < Ucode::Glyphs::Source
+  def tier = :pillar3
+
+  def fetch(codepoint)
+    Ucode::Glyphs::Source::Result.new(
+      tier: :pillar3, codepoint: codepoint,
+      svg: "<svg>glyph-#{codepoint.to_s(16)}</svg>",
+      provenance: "stub:pillar3",
+    )
+  end
+end
+
 RSpec.describe Ucode::CodeChart::Writer do
   let(:tmpdir) { Pathname.new(Dir.mktmpdir("ucode-writer-")) }
   let(:output_root) { tmpdir.join("output") }
@@ -29,28 +45,6 @@ RSpec.describe Ucode::CodeChart::Writer do
       plane_number: 0,
     )
   end
-
-  before do
-    skip "mutool not on PATH" unless system("which mutool >/dev/null 2>&1")
-    skip "fixture PDF missing" unless pdf_path.exist?
-  end
-
-  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
-
-  # A real Pillar 3 source (no doubles) that returns one Result per
-  # codepoint — lets us exercise the Writer without depending on
-  # mutool + fixture PDF content for every test.
-  class AlwaysPillar3 < Ucode::Glyphs::Source
-    def tier = :pillar3
-    def fetch(codepoint)
-      Ucode::Glyphs::Source::Result.new(
-        tier: :pillar3, codepoint: codepoint,
-        svg: "<svg>glyph-#{codepoint.to_s(16)}</svg>",
-        provenance: "stub:pillar3",
-      )
-    end
-  end
-
   let(:writer) do
     described_class.new(
       output_root: output_root,
@@ -60,6 +54,13 @@ RSpec.describe Ucode::CodeChart::Writer do
       now: Time.utc(2026, 6, 30, 12, 0, 0),
     )
   end
+
+  before do
+    skip "mutool not on PATH" unless system("which mutool >/dev/null 2>&1")
+    skip "fixture PDF missing" unless pdf_path.exist?
+  end
+
+  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
 
   describe "#write" do
     it "creates a per-block folder under output_root" do
@@ -97,7 +98,7 @@ RSpec.describe Ucode::CodeChart::Writer do
     end
 
     it "is idempotent — re-running produces byte-identical files" do
-      first = writer.write(basic_latin_block)
+      writer.write(basic_latin_block)
       first_svg_size = output_root.join("Basic_Latin/U+0041.svg").size
       first_svg_mtime = output_root.join("Basic_Latin/U+0041.svg").mtime
       first_json_size = output_root.join("Basic_Latin/U+0041.json").size

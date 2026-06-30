@@ -87,9 +87,9 @@ RSpec.describe Ucode::Parsers::Blocks do
     end
 
     it "raises Ucode::UnknownBlockError when no block matches" do
-      expect {
+      expect do
         described_class.find_by_id!(fixture_path, "No_Such_Block")
-      }.to raise_error(Ucode::UnknownBlockError) do |err|
+      end.to raise_error(Ucode::UnknownBlockError) do |err|
         expect(err.context[:block_id]).to eq("No_Such_Block")
         expect(err.context[:blocks_txt]).to eq(fixture_path.to_s)
         expect(err.message).to include("No_Such_Block")
@@ -97,9 +97,9 @@ RSpec.describe Ucode::Parsers::Blocks do
     end
 
     it "raises Ucode::UnknownBlockError when the id is nil" do
-      expect {
+      expect do
         described_class.find_by_id!(fixture_path, nil)
-      }.to raise_error(Ucode::UnknownBlockError)
+      end.to raise_error(Ucode::UnknownBlockError)
     end
   end
 end

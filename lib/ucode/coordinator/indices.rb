@@ -69,7 +69,7 @@ module Ucode
       #   `output/relationships/`
       # @yieldparam records [Hash<Integer|String, Record|Array<Record>>]
       # @return [Enumerator] when no block is given
-      def each_relationship(&block)
+      def each_relationship(&)
         return enum_for(:each_relationship) unless block_given?
 
         RELATIONSHIPS.each do |slug, field|

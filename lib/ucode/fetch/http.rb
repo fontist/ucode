@@ -44,21 +44,19 @@ module Ucode
 
           last_error = nil
           (attempts + 1).times do |attempt|
-            begin
-              response = stream_to(uri, destination, read_timeout)
-              validate_response!(validate, response, destination) if validate
-              return destination
-            rescue ValidationFailure => e
-              raise e.cause
-            rescue StandardError => e
-              last_error = e
-              sleep_for = backoff_sequence[attempt] || backoff_sequence.last
-              Ucode.configuration.logger&.warn do
-                "Http GET #{uri} failed (attempt #{attempt + 1}/#{attempts + 1}): " \
-                  "#{e.class}: #{e.message}; retrying in #{sleep_for}s"
-              end
-              sleep(sleep_for)
+            response = stream_to(uri, destination, read_timeout)
+            validate_response!(validate, response, destination) if validate
+            return destination
+          rescue ValidationFailure => e
+            raise e.cause
+          rescue StandardError => e
+            last_error = e
+            sleep_for = backoff_sequence[attempt] || backoff_sequence.last
+            Ucode.configuration.logger&.warn do
+              "Http GET #{uri} failed (attempt #{attempt + 1}/#{attempts + 1}): " \
+                "#{e.class}: #{e.message}; retrying in #{sleep_for}s"
             end
+            sleep(sleep_for)
           end
 
           raise Ucode::NetworkError.new(

@@ -93,12 +93,10 @@ module Ucode
       # injected, only assigned codepoints (those the embedded
       # font actually covers) yield Results; the rest are silently
       # skipped, satisfying the REQ's "skip unassigned codepoints".
-      def each_codepoint
+      def each_codepoint(&)
         return enum_for(:each_codepoint) unless block_given?
 
-        (@block.range_first..@block.range_last).each do |cp|
-          yield cp
-        end
+        (@block.range_first..@block.range_last).each(&)
       end
 
       def build_resolver

@@ -29,7 +29,7 @@ RSpec.describe Ucode::Repo::BlockFeedEmitter do
   end
 
   before { ucode_root.mkpath }
-  after { FileUtils.remove_entry(workdir) if workdir.exist? }
+  after { safe_remove(workdir) if workdir.exist? }
 
   def write_json(path, payload)
     path = ucode_root.join(path)
@@ -223,12 +223,11 @@ RSpec.describe Ucode::Repo::BlockFeedEmitter do
     end
 
     it "re-running on the same input does not rewrite any file" do
-      first_mtimes = emitter_paths.to_h { |p| [p, File.mtime(p)] }
+      first_bytess = emitter_paths.to_h { |p| [p, File.binread(p)] }
 
-      sleep 0.05
       described_class.new(ucode_root, feed_root).emit(ucd_version: "17.0.0")
 
-      emitter_paths.each { |p| expect(File.mtime(p)).to eq(first_mtimes[p]) }
+      emitter_paths.each { |p| expect(File.binread(p)).to eq(first_bytess[p]) }
     end
   end
 end

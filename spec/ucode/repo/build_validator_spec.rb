@@ -60,7 +60,7 @@ RSpec.describe Ucode::Repo::BuildValidator do
         validator = described_class.new(out, unicode_version: "17.0.0")
         validator.validate
         path = File.join(out, "validation-report.json")
-        first_mtime = File.mtime(path)
+        first_bytes = File.binread(path)
         sleep(0.01)
 
         validator.validate
@@ -68,7 +68,7 @@ RSpec.describe Ucode::Repo::BuildValidator do
         # may be rewritten — assert the structure is stable instead.
         parsed = JSON.parse(File.read(path))
         expect(parsed["totals"]["codepoints_checked"]).to eq(1)
-        expect(first_mtime).not_to be_nil
+        expect(first_bytes).not_to be_nil
       end
     end
   end

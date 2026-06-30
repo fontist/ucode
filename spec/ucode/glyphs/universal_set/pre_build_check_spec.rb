@@ -13,7 +13,7 @@ RSpec.describe Ucode::Glyphs::UniversalSet::PreBuildCheck do
   let(:database) { build_database(db_path) }
   let(:cmaps) { StaticCmaps.new("lentariso" => [0x41, 0x42, 0x43]) }
 
-  after { FileUtils.remove_entry(workdir) if workdir.exist? }
+  after { safe_remove(workdir) if workdir.exist? }
 
   def build_database(path)
     require "sqlite3"

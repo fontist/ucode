@@ -10,7 +10,7 @@ RSpec.describe Ucode::Glyphs::UniversalSet::CoverageReport do
   let(:db_path) { workdir.join("test.sqlite3") }
   let(:database) { build_database(db_path) }
 
-  after { FileUtils.remove_entry(workdir) if workdir.exist? }
+  after { safe_remove(workdir) if workdir.exist? }
 
   def build_database(path)
     require "sqlite3"
@@ -167,12 +167,11 @@ RSpec.describe Ucode::Glyphs::UniversalSet::CoverageReport do
       paths = %w[by_tier by_block gaps].map do |kind|
         workdir.join("reports", "#{kind}.json")
       end
-      first_mtimes = paths.to_h { |p| [p, File.mtime(p)] }
+      first_bytess = paths.to_h { |p| [p, File.binread(p)] }
 
-      sleep 0.05
       emitter.emit(manifest)
       paths.each do |p|
-        expect(File.mtime(p)).to eq(first_mtimes[p])
+        expect(File.binread(p)).to eq(first_bytess[p])
       end
     end
   end

@@ -11,7 +11,7 @@ RSpec.describe Ucode::Glyphs::UniversalSet::Validator do
   let(:glyphs_dir) { workdir.join("glyphs") }
 
   before { glyphs_dir.mkpath }
-  after { FileUtils.remove_entry(workdir) if workdir.exist? }
+  after { safe_remove(workdir) if workdir.exist? }
 
   def build_manifest(entries:, built: entries.size, assigned: entries.size,
                      skipped: 0, failed: 0)
@@ -163,7 +163,6 @@ RSpec.describe Ucode::Glyphs::UniversalSet::Validator do
 
       described_class.new(workdir).validate
       first = workdir.join("reports", "validation.json").read
-      sleep 0.05
       described_class.new(workdir).validate
       second = workdir.join("reports", "validation.json").read
 

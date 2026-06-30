@@ -7,7 +7,7 @@ require "fileutils"
 RSpec.describe Ucode::Glyphs::SourceConfig do
   let(:tmpdir) { Pathname.new(Dir.mktmpdir("ucode-config")) }
 
-  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
+  after { safe_remove(tmpdir) if tmpdir.exist? }
 
   def write_config(content)
     path = tmpdir.join("universal.yml")

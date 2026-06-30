@@ -18,7 +18,7 @@ RSpec.describe Ucode::Audit::Emitter::ScriptEmitter, type: :emitter_spec do
   let(:root)     { Dir.mktmpdir("ucode-scr-emit") }
   let(:face_dir) { Ucode::Audit::Emitter::Paths.face_dir(root, "Mona") }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   it "writes <face_dir>/scripts/<CODE>.json keyed by ISO 15924 code" do
     emitter.emit(face_dir, script)

@@ -10,7 +10,7 @@ require "ucode/models"
 RSpec.describe Ucode::Repo::Writers do
   let(:output_root) { Pathname.new(Dir.mktmpdir) }
 
-  after { FileUtils.rm_rf(output_root) }
+  after { safe_remove(output_root) }
 
   def write(writer)
     Dir.mktmpdir do |dir|

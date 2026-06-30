@@ -14,7 +14,7 @@ RSpec.describe Ucode::Fetch::SpecialistFontFetcher do
   let(:manifest_path) { workdir.join("specialist_fonts.yml") }
   let(:http) { LocalHttp.new }
 
-  after { FileUtils.remove_entry(workdir) if workdir.exist? }
+  after { safe_remove(workdir) if workdir.exist? }
 
   def write_bytes(path, content)
     path = Pathname.new(path)

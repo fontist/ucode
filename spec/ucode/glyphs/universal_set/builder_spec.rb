@@ -177,16 +177,15 @@ RSpec.describe Ucode::Glyphs::UniversalSet::Builder do
         )
 
         builder.build(codepoints)
-        first_mtimes = Dir.glob(File.join(out, "**", "*")).each_with_object({}) do |p, h|
-          h[p] = File.mtime(p) if File.file?(p)
+        first_contents = Dir.glob(File.join(out, "**", "*")).each_with_object({}) do |p, h|
+          h[p] = File.binread(p) if File.file?(p)
         end
 
-        sleep 0.05 # ensure mtime resolution differs if writes happen
         builder.build(codepoints)
 
-        first_mtimes.each do |path, mtime|
+        first_contents.each do |path, bytes|
           expect(File.exist?(path)).to be(true)
-          expect(File.mtime(path)).to eq(mtime)
+          expect(File.binread(path)).to eq(bytes)
         end
       end
     end

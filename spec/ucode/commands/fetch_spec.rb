@@ -100,7 +100,7 @@ RSpec.describe Ucode::Commands::FetchCommand do
       )
     end
 
-    after { FileUtils.remove_entry(workdir) if workdir.exist? }
+    after { safe_remove(workdir) if workdir.exist? }
 
     before do
       source_file.dirname.mkpath

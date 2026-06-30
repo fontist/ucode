@@ -9,7 +9,7 @@ RSpec.describe Ucode::Commands::Audit::FontCommand do
   let(:fixture) { "spec/fixtures/fonts/MonaSans/MonaSans-Regular.otf" }
   let(:root)    { Dir.mktmpdir("ucode-audit-font-cmd") }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   it "writes a per-face directory under <root>/font_audit/<label>/" do
     result = described_class.new.call(fixture, output_root: root, brief: true)

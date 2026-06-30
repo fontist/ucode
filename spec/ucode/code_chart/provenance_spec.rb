@@ -24,7 +24,7 @@ RSpec.describe Ucode::CodeChart::Provenance do
     pdf_path.write(pdf_bytes)
   end
 
-  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
+  after { safe_remove(tmpdir) if tmpdir.exist? }
 
   describe "the value object" do
     it "carries every REQ R5 field as a keyword-init attribute" do

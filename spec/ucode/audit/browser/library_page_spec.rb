@@ -35,7 +35,7 @@ RSpec.describe Ucode::Audit::Browser::LibraryPage, type: :emitter_spec do
 
   let(:root) { Dir.mktmpdir("ucode-library-page") }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   describe "#render" do
     let(:html) { page.render }

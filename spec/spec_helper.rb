@@ -13,6 +13,7 @@ SimpleCov.start do
 end
 
 require "ucode"
+require "support/spec_cleanup"
 
 # Spec-wide prohibitions. These enforce the architectural rules from
 # CLAUDE.md: no doubles, no hand-rolled serialization, no encapsulation
@@ -30,4 +31,8 @@ RSpec.configure do |config|
   end
 
   config.filter_run_when_matching :focus
+
+  # Make safe_remove available in all example groups so `after`
+  # blocks can clean up temp dirs without crashing on Windows.
+  config.include SpecCleanup
 end

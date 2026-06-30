@@ -15,7 +15,7 @@ RSpec.describe Ucode::Commands::Audit::CollectionCommand do
   end
   let(:root) { Dir.mktmpdir("ucode-audit-collection-cmd") }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   it "raises CollectionRequiredError when the source is not a collection" do
     expect do

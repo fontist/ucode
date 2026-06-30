@@ -97,6 +97,10 @@ module Ucode
   # Version string not in Config.known_versions.
   class UnknownVersionError < LookupError; end
 
+  # Block identifier not present in the cached Blocks.txt. Carries the
+  # offending id and the path searched in `context:`.
+  class UnknownBlockError < LookupError; end
+
   # Glyph pipeline failures.
   class GlyphError < Error; end
 

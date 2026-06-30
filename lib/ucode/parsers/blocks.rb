@@ -55,6 +55,22 @@ module Ucode
           nil
         end
 
+        # Same as {find_by_id} but raises {Ucode::UnknownBlockError} on
+        # miss. Use this in callers that can't recover from a missing
+        # block (CLI commands, extractors that need a block to proceed).
+        #
+        # @param path [Pathname, String] path to a Blocks.txt
+        # @param id [String] block identifier
+        # @return [Models::Block]
+        # @raise [Ucode::UnknownBlockError] when no block matches
+        def find_by_id!(path, id)
+          find_by_id(path, id) or
+            raise Ucode::UnknownBlockError.new(
+              "unknown Unicode block: #{id.inspect}",
+              context: { block_id: id, blocks_txt: path.to_s },
+            )
+        end
+
         private
 
         def build_block(range, name)

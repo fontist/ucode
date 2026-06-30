@@ -10,6 +10,15 @@ RSpec.describe Ucode::Glyphs::Writer do
   end
 
   describe "#write_block on the Basic Latin fixture", :integration do
+    before do
+      # The Glyphs::Writer requires a PDF renderer (mutool / pdf2svg /
+      # pdftocairo / dvisvgm) to convert PDF pages to SVG. CI hosts
+      # may not have any of these installed; skip the integration
+      # specs when that's the case rather than crashing on
+      # `undefined method `render' for nil` inside #render_page.
+      skip "no PDF renderer installed on PATH" unless Ucode::Glyphs::PageRenderer.available.any?
+    end
+
     let(:block) do
       Ucode::Models::Block.new(
         id: "Basic_Latin",
@@ -185,6 +194,10 @@ RSpec.describe Ucode::Glyphs::Writer do
   end
 
   describe "#write_all", :integration do
+    before do
+      skip "no PDF renderer installed on PATH" unless Ucode::Glyphs::PageRenderer.available.any?
+    end
+
     let(:block_a) do
       Ucode::Models::Block.new(
         id: "Basic_Latin", name: "Basic Latin",

@@ -19,4 +19,7 @@ end
 # local sibling checkout, set FONTISAN_PATH before running bundle.
 #   FONTISAN_PATH=../fontisan bundle install
 gem "fontisan", path: ENV["FONTISAN_PATH"] if ENV["FONTISAN_PATH"]
-gem "fontisan", "~> 0.2" unless ENV["FONTISAN_PATH"]
+# Pin fontisan to 0.2.22 — 0.2.23+ removed
+# `Fontisan::Commands::AuditCommand` and 0.4.x removed the Audit
+# subsystem entirely. See ucode.gemspec for the rationale.
+gem "fontisan", "= 0.2.22" unless ENV["FONTISAN_PATH"]

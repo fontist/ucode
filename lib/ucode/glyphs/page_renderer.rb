@@ -70,9 +70,22 @@ module Ucode
           raise NotImplementedError
         end
 
-        # @return [Boolean] true if the binary is on PATH
+        # @return [Boolean] true if the binary is on PATH. Returns
+        #   false on hosts without `which`/`where` or where the
+        #   binary isn't installed — the next renderer in
+        #   KNOWN_RENDERERS is tried.
         def available?
-          system("which", binary_name.to_s, out: "/dev/null", err: "/dev/null")
+          if Gem.win_platform?
+            # `where` returns the first match path; exit status 0
+            # means the binary is found. Suppress stdout/stderr to
+            # avoid polluting test output.
+            system("where #{binary_name} >NUL 2>NUL")
+          else
+            system("which", binary_name.to_s,
+                   out: "/dev/null", err: "/dev/null")
+          end
+        rescue Errno::ENOENT, Errno::EINVAL
+          false
         end
 
         # Smoke-test the binary by actually rendering one page of the

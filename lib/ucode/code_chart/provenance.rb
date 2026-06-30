@@ -33,14 +33,15 @@ module Ucode
 
     # Computes the source PDF's URL from a block name and first
     # codepoint. Mirrors the per-block URL convention in
-    # {Ucode::Fetch::CodeCharts}: 4-digit hex for BMP, 6-digit for
-    # supplementary planes.
+    # {Ucode::Fetch::CodeCharts}: the hex representation of the
+    # codepoint, zero-padded to a minimum of 4 digits (e.g.
+    # `U0000.pdf` for BMP, `U10920.pdf` for Plane 1,
+    # `U100000.pdf` for Plane 16 SPUA-B).
     #
     # @param block_first_cp [Integer]
     # @return [String]
     def self.code_chart_url(block_first_cp)
-      width = block_first_cp > 0xFFFF ? 6 : 4
-      slug = block_first_cp.to_s(16).upcase.rjust(width, "0")
+      slug = block_first_cp.to_s(16).upcase.rjust(4, "0")
       "#{Ucode.configuration.charts_base_url}/U#{slug}.pdf"
     end
 

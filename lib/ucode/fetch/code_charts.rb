@@ -6,7 +6,7 @@ module Ucode
     #
     # URL pattern: `https://www.unicode.org/charts/PDF/U<XXXX>.pdf`
     # where `XXXX` is the block's first codepoint zero-padded to 4 digits
-    # (5–6 digits for planes > 0).
+    # (5 digits for planes > 0).
     module CodeCharts
       class << self
         # @param version [String] used as the on-disk path namespace; PDFs
@@ -48,8 +48,7 @@ module Ucode
         private
 
         def hex_pad(codepoint)
-          width = codepoint > 0xFFFF ? 6 : 4
-          codepoint.to_s(16).upcase.rjust(width, "0")
+          codepoint.to_s(16).upcase.rjust(4, "0")
         end
       end
     end

@@ -29,6 +29,19 @@ RSpec.describe Ucode::Glyphs::Pipeline do
     end
 
     it "builds a Spec per available block when the cache is populated" do
+      # Pre-stage the fixture PDF into the cache so the pipeline
+      # doesn't depend on network access. The pipeline's PdfFetcher
+      # checks the cache before downloading.
+      fixture_pdf = Pathname.new(__dir__).join("..", "..", "fixtures",
+                                              "pdfs", "basic_latin.pdf")
+      if fixture_pdf.exist?
+        pdfs_dir = Ucode::Cache.pdfs_dir(fixture_version)
+        pdfs_dir.mkpath
+        %w[U0000 U0080 U0370].each do |slug|
+          FileUtils.cp(fixture_pdf, pdfs_dir.join("#{slug}.pdf"))
+        end
+      end
+
       specs = pipeline.build_specs(force: force)
       expect(specs).to all(be_a(described_class::Spec))
       expect(specs).not_to be_empty

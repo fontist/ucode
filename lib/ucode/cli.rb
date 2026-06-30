@@ -3,6 +3,7 @@
 require "thor"
 
 require "ucode/commands"
+require "ucode/code_chart"
 require "ucode/version_resolver"
 
 module Ucode
@@ -156,6 +157,92 @@ module Ucode
 
     desc "site", "Generate the Vitepress site"
     subcommand "site", Site
+
+    # ─────────────── code-chart ───────────────
+    # Extract per-codepoint SVG glyphs from a Unicode Code Charts PDF.
+    # One folder per block under --to, with <U+XXXX>.svg + .json pairs.
+    class CodeChartCmd < Thor
+      desc "fetch --block BLOCK [VERSION]", "Download the Code Charts PDF for a block"
+      option :block, type: :string, required: true,
+                    desc: "Block identifier (e.g. Sidetic, Basic_Latin)"
+      def fetch(version = nil)
+        block_first_cp = resolve_block_first_cp!(options[:block], version)
+        result = Commands::FetchCommand.new.fetch_charts(
+          VersionResolver.resolve(version),
+          block_first_cps: [block_first_cp],
+        )
+        puts JSON.pretty_generate(result)
+      end
+
+      desc "extract --block BLOCK --to DIR [VERSION]",
+           "Extract per-codepoint SVG + provenance sidecars from a Code Charts PDF"
+      option :block, type: :string, required: true,
+                    desc: "Block identifier (e.g. Sidetic)"
+      option :to, type: :string, required: true,
+                  desc: "Output directory (will contain <block_id>/<U+XXXX>.svg + .json)"
+      def extract(version = nil)
+        version_str = VersionResolver.resolve(version)
+        block_first_cp = resolve_block_first_cp!(options[:block], version_str)
+
+        # Download (idempotent — re-runs skip when the PDF is cached).
+        Commands::FetchCommand.new.fetch_charts(version_str, block_first_cps: [block_first_cp])
+
+        blocks_txt = Ucode::Cache.ucd_dir(version_str).join("Blocks.txt")
+        block = Ucode::Parsers::Blocks.find_by_id(blocks_txt, options[:block]) or
+          raise Thor::Error, "Unknown block: #{options[:block].inspect}"
+
+        pdf = Ucode::Glyphs::PdfFetcher.new(version_str).fetch(block_first_cp: block.range_first) or
+          raise Thor::Error, "PDF unavailable for block #{options[:block]}"
+
+        writer = Ucode::CodeChart::Writer.new(
+          output_root: Pathname.new(options[:to]),
+          pdf_path: pdf,
+          ucd_version: version_str,
+        )
+        summary = writer.write(block)
+        puts JSON.pretty_generate(summary.to_h.compact)
+      end
+
+      desc "list", "List cached Code Charts PDFs under the version's cache"
+      def list
+        version = VersionResolver.resolve(nil)
+        pdfs_dir = Ucode::Cache.pdfs_dir(version)
+        files = pdfs_dir.exist? ? pdfs_dir.children.sort : []
+        if files.empty?
+          puts "(no cached Code Charts PDFs)"
+          return
+        end
+        files.each do |f|
+          puts f.basename.to_s
+        end
+      end
+
+      private
+
+      # Resolve a block name to its first codepoint via the cached
+      # Blocks.txt. Raises a clean Thor error on miss.
+      def resolve_block_first_cp!(block_id, version)
+        blocks_txt = Ucode::Cache.ucd_dir(VersionResolver.resolve(version)).join("Blocks.txt")
+        block = Ucode::Parsers::Blocks.find_by_id(blocks_txt, block_id)
+        raise Thor::Error, "Unknown block: #{block_id.inspect}" unless block
+
+        block.range_first
+      end
+    end
+
+    desc "code-chart", "Extract per-codepoint SVG glyphs from Unicode Code Charts PDFs"
+    subcommand "code-chart", CodeChartCmd
+
+    # Thor 1.5.0 normalizes command names by converting hyphens to
+    # underscores, but `subcommand "code-chart"` registers under the
+    # literal hyphenated name — `all_commands["code_chart"]` is then
+    # nil and dispatch fails with "Could not find command". This
+    # `code_chart` bridge method mirrors the subcommand under the
+    # normalized name so `ucode code-chart CMD` dispatches correctly.
+    desc "code_chart [COMMAND]", "Bridge for hyphenated subcommand dispatch"
+    define_method("code_chart") do |*args|
+      invoke CodeChartCmd, args
+    end
 
     # ─────────────── lookup ───────────────
     class Lookup < Thor

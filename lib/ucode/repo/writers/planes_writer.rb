@@ -16,16 +16,16 @@ module Ucode
         # Static metadata for the 17 Unicode planes. Planes 4–13 are
         # unassigned in Unicode 17; their entries use placeholder names.
         PLANE_TABLE = {
-          0  => ["Basic Multilingual Plane",            "BMP"],
-          1  => ["Supplementary Multilingual Plane",    "SMP"],
-          2  => ["Supplementary Ideographic Plane",     "SIP"],
-          3  => ["Tertiary Ideographic Plane",          "TIP"],
-          4  => ["Unassigned Plane 4",                  "—"],
-          5  => ["Unassigned Plane 5",                  "—"],
-          6  => ["Unassigned Plane 6",                  "—"],
-          7  => ["Unassigned Plane 7",                  "—"],
-          8  => ["Unassigned Plane 8",                  "—"],
-          9  => ["Unassigned Plane 9",                  "—"],
+          0 => ["Basic Multilingual Plane",            "BMP"],
+          1 => ["Supplementary Multilingual Plane",    "SMP"],
+          2 => ["Supplementary Ideographic Plane",     "SIP"],
+          3 => ["Tertiary Ideographic Plane",          "TIP"],
+          4 => ["Unassigned Plane 4",                  "—"],
+          5 => ["Unassigned Plane 5",                  "—"],
+          6 => ["Unassigned Plane 6",                  "—"],
+          7 => ["Unassigned Plane 7",                  "—"],
+          8 => ["Unassigned Plane 8",                  "—"],
+          9 => ["Unassigned Plane 9",                  "—"],
           10 => ["Unassigned Plane 10",                 "—"],
           11 => ["Unassigned Plane 11",                 "—"],
           12 => ["Unassigned Plane 12",                 "—"],
@@ -68,12 +68,12 @@ module Ucode
           range_first = plane_number * 0x10000
           range_last  = range_first + 0xFFFF
           to_pretty_json(
-            "number"       => plane_number,
-            "name"         => name,
-            "abbrev"       => abbrev,
-            "range_first"  => range_first,
-            "range_last"   => range_last,
-            "block_ids"    => block_ids,
+            "number" => plane_number,
+            "name" => name,
+            "abbrev" => abbrev,
+            "range_first" => range_first,
+            "range_last" => range_last,
+            "block_ids" => block_ids,
           )
         end
       end

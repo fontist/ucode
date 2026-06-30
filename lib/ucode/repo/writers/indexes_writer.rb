@@ -34,11 +34,11 @@ module Ucode
         def write
           count = 0
           count += 1 if write_atomic(Paths.names_index_path(@output_root),
-                                      to_pretty_json(@names))
+                                     to_pretty_json(@names))
           count += 1 if write_atomic(Paths.labels_index_path(@output_root),
-                                      to_pretty_json(@labels))
+                                     to_pretty_json(@labels))
           count += 1 if write_atomic(codepoint_to_block_path,
-                                      to_pretty_json(@cp_to_block))
+                                     to_pretty_json(@cp_to_block))
           count
         end
 

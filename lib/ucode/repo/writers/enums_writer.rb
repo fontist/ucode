@@ -27,7 +27,7 @@ module Ucode
         def write
           path = Pathname(@output_root).join("enums.json")
           payload = {
-            "properties"      => @property_aliases.map(&:to_yaml_hash),
+            "properties" => @property_aliases.map(&:to_yaml_hash),
             "property_values" => @property_value_aliases.map(&:to_yaml_hash),
           }
           write_atomic(path, to_pretty_json(payload)) ? 1 : 0

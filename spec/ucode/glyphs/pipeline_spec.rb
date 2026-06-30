@@ -4,17 +4,16 @@ require "spec_helper"
 require "support/fixture_database"
 require "tmpdir"
 require "pathname"
-require "set"
 
 RSpec.describe Ucode::Glyphs::Pipeline do
+  subject(:pipeline) do
+    described_class.new(version: fixture_version, block_filter: block_filter)
+  end
+
   include_context "with fixture ucd database"
 
   let(:block_filter) { nil }
   let(:force) { false }
-
-  subject(:pipeline) do
-    described_class.new(version: fixture_version, block_filter: block_filter)
-  end
 
   describe "#build_specs" do
     it "returns an empty array when Blocks.txt is missing" do

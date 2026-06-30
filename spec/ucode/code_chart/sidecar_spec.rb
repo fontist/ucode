@@ -8,10 +8,7 @@ require "json"
 
 RSpec.describe Ucode::CodeChart::Sidecar do
   let(:tmpdir) { Pathname.new(Dir.mktmpdir("ucode-sidecar-")) }
-  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
-
   let(:sidecar) { described_class.new(output_root: tmpdir) }
-
   let(:provenance) do
     Ucode::CodeChart::Provenance.new(
       codepoint: "U+10920",
@@ -23,6 +20,8 @@ RSpec.describe Ucode::CodeChart::Sidecar do
       extractor_version: "0.2.0",
     )
   end
+
+  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
 
   describe "#write" do
     it "writes a sidecar JSON next to its SVG at <codepoint>.json" do

@@ -45,10 +45,10 @@ module Ucode
         def write
           path = Paths.manifest_path(@output_root)
           content = {
-            "ucd_version"     => @ucd_version,
+            "ucd_version" => @ucd_version,
             "codepoint_count" => @codepoint_count,
-            "glyph_count"     => @glyph_count,
-            "schema_version"  => SCHEMA_VERSION,
+            "glyph_count" => @glyph_count,
+            "schema_version" => SCHEMA_VERSION,
           }
           ts = preserved_or_new_timestamp(path, content)
           payload = content.merge("generated_at" => ts)

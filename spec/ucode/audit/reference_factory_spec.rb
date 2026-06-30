@@ -42,7 +42,7 @@ RSpec.describe Ucode::Audit::ReferenceFactory do
 
     it "returns nil when the manifest path does not exist" do
       result = described_class.build_from_cli(flag: "/nonexistent/manifest.json",
-                                               version: fixture_version)
+                                              version: fixture_version)
       expect(result).to be_nil
     end
   end

@@ -41,11 +41,11 @@ module Ucode
 
         def script_payload(code, ranges)
           to_pretty_json(
-            "code"           => code,
-            "name"           => ranges.first&.name,
-            "range_first"    => ranges.map(&:range_first).min,
-            "range_last"     => ranges.map(&:range_last).max,
-            "codepoint_ids"  => (@script_codepoint_ids[code] || []),
+            "code" => code,
+            "name" => ranges.first&.name,
+            "range_first" => ranges.map(&:range_first).min,
+            "range_last" => ranges.map(&:range_last).max,
+            "codepoint_ids" => @script_codepoint_ids[code] || [],
           )
         end
       end

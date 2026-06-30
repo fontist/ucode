@@ -31,7 +31,7 @@ module Ucode
       # @return [Pathname] the written sidecar path
       def write(provenance)
         path = path_for(provenance)
-        payload = JSON.pretty_generate(provenance.to_h) + "\n"
+        payload = "#{JSON.pretty_generate(provenance.to_h)}\n"
         write_atomic(path, payload)
         path
       end

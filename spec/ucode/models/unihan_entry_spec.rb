@@ -16,7 +16,7 @@ RSpec.describe Ucode::Models::UnihanEntry do
 
   it "defaults to empty collections in all 8 categories" do
     e = described_class.new
-    described_class::CATEGORIES.keys.each do |cat|
+    described_class::CATEGORIES.each_key do |cat|
       expect(e.public_send(cat)).to eq([])
     end
   end
@@ -79,14 +79,14 @@ RSpec.describe Ucode::Models::UnihanEntry do
   describe "FILE_TO_CATEGORY" do
     it "maps every Unihan file to a category" do
       expect(Ucode::Models::UnihanEntry::FILE_TO_CATEGORY).to include(
-        "Unihan_DictionaryIndices.txt"    => :dictionary_indices,
-        "Unihan_DictionaryLikeData.txt"   => :dictionary_like_data,
-        "Unihan_IRGSources.txt"           => :irg_sources,
-        "Unihan_NumericValues.txt"        => :numeric_values,
-        "Unihan_RadicalStrokeCounts.txt"  => :radical_stroke_counts,
-        "Unihan_Readings.txt"             => :readings,
-        "Unihan_Variants.txt"             => :variants,
-        "Unihan_OtherMappings.txt"        => :other_mappings,
+        "Unihan_DictionaryIndices.txt" => :dictionary_indices,
+        "Unihan_DictionaryLikeData.txt" => :dictionary_like_data,
+        "Unihan_IRGSources.txt" => :irg_sources,
+        "Unihan_NumericValues.txt" => :numeric_values,
+        "Unihan_RadicalStrokeCounts.txt" => :radical_stroke_counts,
+        "Unihan_Readings.txt" => :readings,
+        "Unihan_Variants.txt" => :variants,
+        "Unihan_OtherMappings.txt" => :other_mappings,
       )
     end
   end

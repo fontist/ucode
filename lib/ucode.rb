@@ -35,6 +35,7 @@ module Ucode
   autoload :GridDetectionError, "ucode/error"
   autoload :LastResortMissingError, "ucode/error"
   autoload :EmbeddedFontsMissingError, "ucode/error"
+  autoload :CodeChartNotFoundError, "ucode/error"
 
   # Infrastructure
   autoload :Cache, "ucode/cache"

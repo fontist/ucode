@@ -23,9 +23,17 @@ module Ucode
         #   directory is created if absent.
         # @param retries [Integer, nil] override Config.http_retries.
         # @param timeout [Integer, nil] override Config.http_timeout.
+        # @param validate [Symbol, nil] when `:pdf`, after a successful
+        #   download verify (a) Content-Type starts with `application/pdf`
+        #   and (b) the first 4 bytes of the body are `%PDF`. Raises
+        #   {Ucode::CodeChartNotFoundError} with the offending header
+        #   value in `context:` on failure. nil = no validation (the
+        #   default for non-PDF callers like UcdZip and UnihanZip).
         # @return [Pathname] destination path on success.
         # @raise [Ucode::NetworkError] if all retries fail.
-        def get(url, dest:, retries: nil, timeout: nil)
+        # @raise [Ucode::CodeChartNotFoundError] when `validate: :pdf`
+        #   and the response fails content validation.
+        def get(url, dest:, retries: nil, timeout: nil, validate: nil)
           uri = url.is_a?(URI) ? url : URI(url)
           destination = Pathname.new(dest)
           destination.dirname.mkpath
@@ -36,15 +44,21 @@ module Ucode
 
           last_error = nil
           (attempts + 1).times do |attempt|
-            return stream_to(uri, destination, read_timeout)
-          rescue StandardError => e
-            last_error = e
-            sleep_for = backoff_sequence[attempt] || backoff_sequence.last
-            Ucode.configuration.logger&.warn do
-              "Http GET #{uri} failed (attempt #{attempt + 1}/#{attempts + 1}): " \
-                "#{e.class}: #{e.message}; retrying in #{sleep_for}s"
+            begin
+              response = stream_to(uri, destination, read_timeout)
+              validate_response!(validate, response, destination) if validate
+              return destination
+            rescue ValidationFailure => e
+              raise e.cause
+            rescue StandardError => e
+              last_error = e
+              sleep_for = backoff_sequence[attempt] || backoff_sequence.last
+              Ucode.configuration.logger&.warn do
+                "Http GET #{uri} failed (attempt #{attempt + 1}/#{attempts + 1}): " \
+                  "#{e.class}: #{e.message}; retrying in #{sleep_for}s"
+              end
+              sleep(sleep_for)
             end
-            sleep(sleep_for)
           end
 
           raise Ucode::NetworkError.new(
@@ -55,19 +69,34 @@ module Ucode
 
         private
 
+        # Internal carrier for a validation failure inside a retry
+        # attempt. Re-raised from the loop so the response body (which
+        # is partial on retries) isn't double-validated against
+        # truncated bytes.
+        class ValidationFailure < StandardError
+          attr_reader :cause
+
+          def initialize(cause)
+            @cause = cause
+            super(cause.message)
+          end
+        end
+
         def stream_to(uri, destination, read_timeout)
+          response = nil
           Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https",
                                               read_timeout: read_timeout) do |http|
             request = Net::HTTP::Get.new(uri)
-            http.request(request) do |response|
-              unless response.is_a?(Net::HTTPSuccess)
-                raise "HTTP #{response.code} #{response.message}"
+            http.request(request) do |r|
+              unless r.is_a?(Net::HTTPSuccess)
+                raise "HTTP #{r.code} #{r.message}"
               end
 
-              write_body(response, destination)
+              write_body(r, destination)
+              response = r
             end
           end
-          destination
+          response or raise "no response received"
         end
 
         def write_body(response, destination)
@@ -76,6 +105,47 @@ module Ucode
             response.read_body { |chunk| file.write(chunk) }
           end
           File.rename(partial.to_s, destination.to_s)
+        end
+
+        # Verifies Content-Type and magic bytes for a downloaded file.
+        # Raises ValidationFailure carrying a CodeChartNotFoundError so
+        # the retry loop in `get` doesn't re-attempt a download that's
+        # structurally invalid (only the transport is retriable).
+        def validate_response!(mode, response, destination)
+          case mode
+          when :pdf then validate_pdf!(response, destination)
+          else raise ArgumentError, "unknown validate mode: #{mode.inspect}"
+          end
+        end
+
+        PDF_CONTENT_TYPE_PREFIX = "application/pdf"
+        PDF_MAGIC = "%PDF"
+        private_constant :PDF_CONTENT_TYPE_PREFIX, :PDF_MAGIC
+
+        def validate_pdf!(response, destination)
+          content_type = response["Content-Type"].to_s
+          unless content_type.start_with?(PDF_CONTENT_TYPE_PREFIX)
+            raise ValidationFailure.new(
+              Ucode::CodeChartNotFoundError.new(
+                "expected Content-Type application/pdf, got #{content_type.inspect}",
+                context: { url: response.uri.to_s, content_type: content_type },
+              ),
+            )
+          end
+
+          # Re-open the destination file and peek at the first 4 bytes.
+          # The response body has already been written to disk by
+          # `stream_to`; we don't re-read from the response (which is
+          # consumed by then).
+          magic = File.open(destination, "rb") { |f| f.read(4) }
+          unless magic == PDF_MAGIC
+            raise ValidationFailure.new(
+              Ucode::CodeChartNotFoundError.new(
+                "expected %PDF magic bytes, got #{magic.inspect}",
+                context: { url: response.uri.to_s, magic: magic },
+              ),
+            )
+          end
         end
       end
     end

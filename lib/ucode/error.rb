@@ -114,6 +114,13 @@ module Ucode
   # `mutool` is not installed on the PATH.
   class EmbeddedFontsMissingError < GlyphError; end
 
+  # The Code Charts PDF for a requested block cannot be obtained: the
+  # network returned 4xx/5xx, the response wasn't application/pdf, or
+  # the body didn't start with the `%PDF` magic. Distinct from
+  # {EmbeddedFontsMissingError} (which fires when the file is already
+  # on disk and we just can't open it): this fires at fetch time.
+  class CodeChartNotFoundError < GlyphError; end
+
   # Pre-build validation failed for a universal-set build. The
   # context carries the failing checks so the CLI can render a
   # useful diagnostic without re-running them. Distinct from

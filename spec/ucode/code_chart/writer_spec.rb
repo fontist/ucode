@@ -1,0 +1,125 @@
+# frozen_string_literal: true
+
+require "spec_helper"
+require "tmpdir"
+require "pathname"
+require "fileutils"
+require "json"
+
+RSpec.describe Ucode::CodeChart::Writer do
+  let(:tmpdir) { Pathname.new(Dir.mktmpdir("ucode-writer-")) }
+  let(:output_root) { tmpdir.join("output") }
+  let(:pdf_dir) { tmpdir.join("pdfs") }
+
+  # Use the repo's real basic_latin.pdf fixture. Its font is
+  # WinAnsiEncoding for the actual Basic Latin glyphs (no
+  # /ToUnicode CMap), so the embedded-font catalog yields nothing
+  # for U+0000..U+007F — which is exactly what we want for the
+  # Writer spec: the Writer's job is to put bytes on disk and
+  # Provenance next to them, not to test the catalog.
+  let(:pdf_path) do
+    Pathname.new(File.expand_path("../../fixtures/pdfs/basic_latin.pdf", __dir__))
+  end
+  let(:pdf_sha) { Digest::SHA256.file(pdf_path).hexdigest }
+
+  let(:basic_latin_block) do
+    Ucode::Models::Block.new(
+      id: "Basic_Latin", name: "Basic Latin",
+      range_first: 0x0000, range_last: 0x007F,
+      plane_number: 0,
+    )
+  end
+
+  before do
+    skip "mutool not on PATH" unless system("which mutool >/dev/null 2>&1")
+    skip "fixture PDF missing" unless pdf_path.exist?
+  end
+
+  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
+
+  # A real Pillar 3 source (no doubles) that returns one Result per
+  # codepoint — lets us exercise the Writer without depending on
+  # mutool + fixture PDF content for every test.
+  class AlwaysPillar3 < Ucode::Glyphs::Source
+    def tier = :pillar3
+    def fetch(codepoint)
+      Ucode::Glyphs::Source::Result.new(
+        tier: :pillar3, codepoint: codepoint,
+        svg: "<svg>glyph-#{codepoint.to_s(16)}</svg>",
+        provenance: "stub:pillar3",
+      )
+    end
+  end
+
+  let(:writer) do
+    described_class.new(
+      output_root: output_root,
+      pdf_path: pdf_path,
+      ucd_version: "17.0.0",
+      pillar3_source: AlwaysPillar3.new,
+      now: Time.utc(2026, 6, 30, 12, 0, 0),
+    )
+  end
+
+  describe "#write" do
+    it "creates a per-block folder under output_root" do
+      writer.write(basic_latin_block)
+      expect(output_root.join("Basic_Latin").directory?).to be(true)
+    end
+
+    it "writes one .svg + one .json per extracted codepoint" do
+      summary = writer.write(basic_latin_block)
+      expect(summary.svgs_written).to eq(128)
+      expect(summary.sidecars_written).to eq(128)
+      expect(output_root.join("Basic_Latin/U+0041.svg").exist?).to be(true)
+      expect(output_root.join("Basic_Latin/U+0041.json").exist?).to be(true)
+    end
+
+    it "writes the SVG bytes verbatim from the extractor Result" do
+      writer.write(basic_latin_block)
+      content = output_root.join("Basic_Latin/U+0041.svg").read
+      expect(content).to eq("<svg>glyph-41</svg>")
+    end
+
+    it "writes valid sidecar JSON with all REQ R5 fields" do
+      writer.write(basic_latin_block)
+      payload = JSON.parse(output_root.join("Basic_Latin/U+0041.json").read)
+      expect(payload).to include(
+        "codepoint" => "U+0041",
+        "block" => "Basic_Latin",
+        "ucd_version" => "17.0.0",
+        "extractor_version" => Ucode::VERSION,
+        "extracted_at" => "2026-06-30T12:00:00Z",
+      )
+      expect(payload["source_pdf_url"])
+        .to eq("https://www.unicode.org/charts/PDF/U0000.pdf")
+      expect(payload["source_pdf_sha256"]).to eq(pdf_sha)
+    end
+
+    it "is idempotent — re-running produces byte-identical files" do
+      first = writer.write(basic_latin_block)
+      first_svg_size = output_root.join("Basic_Latin/U+0041.svg").size
+      first_svg_mtime = output_root.join("Basic_Latin/U+0041.svg").mtime
+      first_json_size = output_root.join("Basic_Latin/U+0041.json").size
+      first_json_mtime = output_root.join("Basic_Latin/U+0041.json").mtime
+
+      sleep 0.05
+      second = writer.write(basic_latin_block)
+      expect(second.svgs_written).to eq(128)
+      expect(second.sidecars_written).to eq(128)
+
+      # SVG: same bytes (writer skips when content matches)
+      expect(output_root.join("Basic_Latin/U+0041.svg").size).to eq(first_svg_size)
+      expect(output_root.join("Basic_Latin/U+0041.svg").mtime).to eq(first_svg_mtime)
+
+      # JSON: byte-identical (Repo::AtomicWrites is canonical-JSON idempotent)
+      expect(output_root.join("Basic_Latin/U+0041.json").size).to eq(first_json_size)
+      expect(output_root.join("Basic_Latin/U+0041.json").mtime).to eq(first_json_mtime)
+    end
+
+    it "computes pdf_sha256 once for the summary" do
+      summary = writer.write(basic_latin_block)
+      expect(summary.pdf_sha256).to eq(pdf_sha)
+    end
+  end
+end

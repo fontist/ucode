@@ -45,7 +45,12 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "base64"
-  spec.add_dependency "fontisan", "~> 0.2"
+  # Pin fontisan to 0.2.22 — 0.2.23+ removed
+  # `Fontisan::Commands::AuditCommand` (used by RealFonts::CoverageAuditor)
+  # and 0.4.x removed the entire Audit subsystem. Until
+  # CoverageAuditor is rewritten against the new fontisan API, this
+  # pin keeps the existing audit path working.
+  spec.add_dependency "fontisan", "= 0.2.22"
   spec.add_dependency "fontist", "~> 3.0"
   spec.add_dependency "logger"
   spec.add_dependency "lutaml-model", "~> 0.8"

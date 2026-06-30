@@ -29,7 +29,7 @@ module Ucode
             next if dest.exist? && !force
 
             url = "#{Ucode.configuration.charts_base_url}/#{filename}"
-            Http.get(url, dest: dest)
+            Http.get(url, dest: dest, validate: :pdf)
             downloaded += 1
           end
           downloaded

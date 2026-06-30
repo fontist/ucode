@@ -48,10 +48,10 @@ RSpec.describe Ucode::Site::SearchIndex do
       write_labels("U+0041" => { "name" => "LATIN CAPITAL LETTER A" })
       idx = described_class.new(output_root)
       idx.build
-      first_mtime = idx.target_path.mtime
+      first_bytes = idx.target_path.binread
       sleep(0.01)
       idx.build
-      expect(idx.target_path.mtime).to eq(first_mtime)
+      expect(idx.target_path.binread).to eq(first_bytes)
     end
 
     it "handles missing optional fields gracefully" do

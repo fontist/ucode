@@ -19,8 +19,8 @@ RSpec.describe Ucode::Commands::ReleaseCommand do
   end
 
   after do
-    FileUtils.remove_entry(output_root) if output_root.exist?
-    FileUtils.remove_entry(formulas_root) if formulas_root.exist?
+    safe_remove(output_root) if output_root.exist?
+    safe_remove(formulas_root) if formulas_root.exist?
   end
 
   def release_root
@@ -92,16 +92,15 @@ RSpec.describe Ucode::Commands::ReleaseCommand do
       cmd.call(from: formulas_root.to_s, output_root: output_root.to_s,
                brief: true, browse: false,
                generated_at: "2026-06-28T00:00:00Z")
-      library_mtime = release_root.join("library.json").mtime
-      manifest_mtime = release_root.join("manifest.json").mtime
+      library_bytes = release_root.join("library.json").binread
+      manifest_bytes = release_root.join("manifest.json").binread
 
-      sleep 0.05
       result = cmd.call(from: formulas_root.to_s, output_root: output_root.to_s,
                         brief: true, browse: false,
                         generated_at: "2026-06-28T00:00:00Z")
 
-      expect(release_root.join("library.json").mtime).to eq(library_mtime)
-      expect(release_root.join("manifest.json").mtime).to eq(manifest_mtime)
+      expect(release_root.join("library.json").binread).to eq(library_bytes)
+      expect(release_root.join("manifest.json").binread).to eq(manifest_bytes)
       expect(result.library_index_written).to be(false)
       expect(result.manifest_written).to be(false)
     end

@@ -150,15 +150,15 @@ RSpec.describe Ucode::Repo::CodepointWriter do
   end
 
   describe "#write — idempotency" do
-    it "does not rewrite when content is identical (mtime unchanged)" do
+    it "does not rewrite when content is identical (file content unchanged)" do
       Dir.mktmpdir do |out|
         writer = described_class.new(out, parallel_workers: 1)
         writer.write(codepoint)
         path = File.join(out, "blocks", "ASCII", "U+0041", "index.json")
-        first_mtime = File.mtime(path)
+        first_bytes = File.binread(path)
         sleep(0.01)
         writer.write(codepoint)
-        expect(File.mtime(path)).to eq(first_mtime)
+        expect(File.binread(path)).to eq(first_bytes)
       end
     end
 
@@ -383,16 +383,16 @@ RSpec.describe Ucode::Repo::CodepointWriter do
         writer.write(codepoint)
         json_path = File.join(out, "blocks", "ASCII", "U+0041", "index.json")
         glyph_path = File.join(out, "blocks", "ASCII", "U+0041", "glyph.svg")
-        json_mtime = File.mtime(json_path)
-        glyph_mtime = File.mtime(glyph_path)
+        json_bytes = File.binread(json_path)
+        glyph_bytes = File.binread(glyph_path)
         sleep(0.01)
 
         fresh_cp = Ucode::Models::CodePoint.new(
           cp: 0x41, id: "U+0041", name: "LATIN CAPITAL LETTER A", block_id: "ASCII",
         )
         writer.write(fresh_cp)
-        expect(File.mtime(json_path)).to eq(json_mtime)
-        expect(File.mtime(glyph_path)).to eq(glyph_mtime)
+        expect(File.binread(json_path)).to eq(json_bytes)
+        expect(File.binread(glyph_path)).to eq(glyph_bytes)
       end
     end
 

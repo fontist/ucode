@@ -8,7 +8,7 @@ RSpec.describe Ucode::Audit::Release::FaceCard, type: :emitter_spec do
   let(:report) { build_audit_report(postscript_name: "Inter-Regular") }
   let(:release_root) { Pathname.new(Dir.mktmpdir("ucode-release")) }
 
-  after { FileUtils.remove_entry(release_root) if release_root.exist? }
+  after { safe_remove(release_root) if release_root.exist? }
 
   describe "#label" do
     it "uses the postscript_name when present" do

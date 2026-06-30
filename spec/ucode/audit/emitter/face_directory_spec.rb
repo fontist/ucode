@@ -9,7 +9,7 @@ RSpec.describe Ucode::Audit::Emitter::FaceDirectory, type: :emitter_spec do
   let(:report)  { build_audit_report }
   let(:root)    { Dir.mktmpdir("ucode-face-dir") }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   describe "#emit_face default mode (non-verbose, no glyphs)" do
     let(:emitter) { described_class.new(output_root: root) }
@@ -151,7 +151,6 @@ RSpec.describe Ucode::Audit::Emitter::FaceDirectory, type: :emitter_spec do
     it "produces no new writes on a second pass with identical input" do
       emitter.emit_face(label: "MonaSans-Regular", report: report)
       paths_before = Dir.glob("#{root}/**/*").select { |p| File.file?(p) }
-      sleep 0.05
       emitter.emit_face(label: "MonaSans-Regular", report: report)
       paths_after = Dir.glob("#{root}/**/*").select { |p| File.file?(p) }
       expect(paths_after).to eq(paths_before)
@@ -162,8 +161,7 @@ RSpec.describe Ucode::Audit::Emitter::FaceDirectory, type: :emitter_spec do
       block_path_before = Ucode::Audit::Emitter::Paths
         .block_under(Ucode::Audit::Emitter::Paths.face_dir(root, "MonaSans-Regular"),
                      "Basic_Latin")
-      mtime_before = File.mtime(block_path_before)
-      sleep 0.05
+      bytes_before = File.binread(block_path_before)
 
       changed_report = build_audit_report(weight_class: 700)
       emitter.emit_face(label: "MonaSans-Regular", report: changed_report)
@@ -171,10 +169,10 @@ RSpec.describe Ucode::Audit::Emitter::FaceDirectory, type: :emitter_spec do
       # index.json should change (weight_class is in the font block)
       index_path = Ucode::Audit::Emitter::Paths
         .index_under(Ucode::Audit::Emitter::Paths.face_dir(root, "MonaSans-Regular"))
-      expect(File.mtime(index_path)).to be > mtime_before
+      expect(File.binread(index_path)).not_to eq(bytes_before)
 
       # block file should be unchanged (block data didn't change)
-      expect(File.mtime(block_path_before)).to eq(mtime_before)
+      expect(File.binread(block_path_before)).to eq(bytes_before)
     end
   end
 

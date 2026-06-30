@@ -18,7 +18,7 @@ RSpec.describe Ucode::Audit::Emitter::CodepointEmitter, type: :emitter_spec do
   let(:root)     { Dir.mktmpdir("ucode-cp-emit") }
   let(:face_dir) { Ucode::Audit::Emitter::Paths.face_dir(root, "Mona") }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   it "writes <face_dir>/codepoints/<NAME>.json" do
     emitter.emit(face_dir, block)

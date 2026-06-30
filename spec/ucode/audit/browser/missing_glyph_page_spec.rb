@@ -12,7 +12,7 @@ RSpec.describe Ucode::Audit::Browser::MissingGlyphPage, type: :emitter_spec do
     Pathname.new(root).join("face").tap(&:mkpath)
   end
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   def write_universal_set(entries:, glyphs:)
     uset_root = root.join("universal_glyph_set")

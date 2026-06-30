@@ -28,7 +28,7 @@ RSpec.describe Ucode::Audit::Release::LibraryIndexBuilder, type: :emitter_spec d
     ]
   end
 
-  after { FileUtils.remove_entry(release_root) if release_root.exist? }
+  after { safe_remove(release_root) if release_root.exist? }
 
   describe "#build" do
     let(:result) do

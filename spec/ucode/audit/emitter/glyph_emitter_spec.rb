@@ -8,7 +8,7 @@ RSpec.describe Ucode::Audit::Emitter::GlyphEmitter do
   let(:root)     { Dir.mktmpdir("ucode-glyph-emit") }
   let(:face_dir) { Ucode::Audit::Emitter::Paths.face_dir(root, "Mona") }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   describe "with the default resolver" do
     let(:emitter) { described_class.new }

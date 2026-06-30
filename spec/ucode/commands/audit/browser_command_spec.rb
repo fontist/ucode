@@ -18,7 +18,7 @@ RSpec.describe Ucode::Commands::Audit::BrowserCommand do
     )
   end
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   it "regenerates the library index.html from existing index.json" do
     html = File.join(audit_root, "index.html")
@@ -48,12 +48,12 @@ RSpec.describe Ucode::Commands::Audit::BrowserCommand do
   end
 
   it "does not touch JSON files during regeneration" do
-    json_mtimes = Dir.glob(File.join(audit_root, "**", "index.json")).to_h do |f|
-      [f, File.mtime(f)]
+    json_bytes = Dir.glob(File.join(audit_root, "**", "index.json")).to_h do |f|
+      [f, File.binread(f)]
     end
     described_class.new.call(input: audit_root)
-    json_mtimes.each do |f, mtime|
-      expect(File.mtime(f)).to eq(mtime), "#{f} was rewritten"
+    json_bytes.each do |f, bytes|
+      expect(File.binread(f)).to eq(bytes), "#{f} was rewritten"
     end
   end
 

@@ -35,7 +35,7 @@ RSpec.describe Ucode::CodeChart::Extractor do
     )
   end
 
-  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
+  after { safe_remove(tmpdir) if tmpdir.exist? }
 
   describe "Result" do
     it "carries codepoint, svg, tier, provenance as keyword-init attributes" do

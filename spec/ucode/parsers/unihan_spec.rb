@@ -88,7 +88,7 @@ RSpec.describe Ucode::Parsers::Unihan do
         records = described_class.each_in_dir(partial).to_a
         expect(records.length).to eq(9)
       ensure
-        FileUtils.remove_entry(partial) if partial && File.exist?(partial)
+        safe_remove(partial) if partial && File.exist?(partial)
       end
     end
 

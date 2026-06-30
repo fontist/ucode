@@ -15,7 +15,7 @@ RSpec.describe Ucode::Glyphs::SourceConfig::CoverageAssertion do
   let(:source_map) { Ucode::Models::GlyphSourceMap.from_hash(yaml_hash) }
   let(:cmaps) { StaticCmaps.new("noto-sans" => [0x41, 0x42, 0x43, 0x61, 0x62, 0x63, 700, 701, 702]) }
 
-  after { FileUtils.remove_entry(db_dir) if db_dir.exist? }
+  after { safe_remove(db_dir) if db_dir.exist? }
 
   def build_database(path)
     require "sqlite3"

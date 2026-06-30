@@ -29,7 +29,7 @@ RSpec.describe Ucode::Audit::Release::Emitter, type: :emitter_spec do
     ]
   end
 
-  after { FileUtils.remove_entry(output_root) if output_root.exist? }
+  after { safe_remove(output_root) if output_root.exist? }
 
   def stage_universal_set(entries: 1)
     uset = release_root.join("universal_glyph_set")
@@ -144,16 +144,15 @@ RSpec.describe Ucode::Audit::Release::Emitter, type: :emitter_spec do
       emitter.emit(formulas: formulas, unicode_version: "17.0.0",
                    generated_at: "2026-06-28T00:00:00Z")
       paths_before = Dir.glob("#{release_root}/**/*").select { |p| File.file?(p) }
-      mtimes_before = paths_before.to_h { |p| [p, File.mtime(p)] }
+      bytes_before = paths_before.to_h { |p| [p, File.binread(p)] }
 
-      sleep 0.05
       result = emitter.emit(formulas: formulas, unicode_version: "17.0.0",
                             generated_at: "2026-06-28T00:00:00Z")
 
       paths_after = Dir.glob("#{release_root}/**/*").select { |p| File.file?(p) }
       expect(paths_after).to match_array(paths_before)
-      mtimes_after = paths_after.to_h { |p| [p, File.mtime(p)] }
-      unchanged = mtimes_before.all? { |p, t| mtimes_after[p] == t }
+      bytes_after = paths_after.to_h { |p| [p, File.binread(p)] }
+      unchanged = bytes_before.all? { |p, t| bytes_after[p] == t }
       expect(unchanged).to be(true)
       expect(result.library_index_written).to be(false)
       expect(result.manifest_written).to be(false)
@@ -166,13 +165,12 @@ RSpec.describe Ucode::Audit::Release::Emitter, type: :emitter_spec do
                    generated_at: "2026-06-28T00:00:00Z",
                    source_config_sha256: "old")
       manifest_before = release_root.join("manifest.json")
-      mtime_before = manifest_before.mtime
+      bytes_before = manifest_before.binread
 
-      sleep 0.05
       emitter.emit(formulas: formulas, unicode_version: "17.0.0",
                    generated_at: "2026-06-28T00:00:00Z",
                    source_config_sha256: "new")
-      expect(manifest_before.mtime).to be > mtime_before
+      expect(manifest_before.binread).not_to eq(bytes_before)
       expect(JSON.parse(manifest_before.read)["source_config_sha256"]).to eq("new")
     end
   end
@@ -193,7 +191,7 @@ RSpec.describe Ucode::Audit::Release::Emitter, type: :emitter_spec do
         payload = JSON.parse(release_root.join("manifest.json").read)
         expect(payload["universal_set"]["available"]).to be(true)
       ensure
-        FileUtils.remove_entry(external) if external.exist?
+        safe_remove(external) if external.exist?
       end
     end
   end

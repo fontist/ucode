@@ -27,7 +27,7 @@ RSpec.describe Ucode::Audit::Emitter::LibraryEmitter, type: :emitter_spec do
   let(:emitter) { described_class.new }
   let(:root)    { Dir.mktmpdir("ucode-lib-emit") }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   it "writes <library_root>/index.json" do
     emitter.emit(root, summary)

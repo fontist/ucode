@@ -35,7 +35,7 @@ RSpec.describe Ucode::Fetch::CodeCharts do
     Ucode.configuration.charts_base_url = o[:charts_base_url]
     Ucode.configuration.http_retries = o[:http_retries]
     server.shutdown
-    FileUtils.remove_entry(workdir) if workdir.exist?
+    safe_remove(workdir) if workdir.exist?
   end
 
   describe ".call" do

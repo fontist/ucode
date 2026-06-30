@@ -25,7 +25,7 @@ RSpec.describe Ucode::Audit::Emitter::CollectionEmitter, type: :emitter_spec do
   let(:emitter)        { described_class.new }
   let(:root)           { Dir.mktmpdir("ucode-coll-emit") }
 
-  after { FileUtils.remove_entry(root) if File.exist?(root) }
+  after { safe_remove(root) if File.exist?(root) }
 
   it "writes the collection-level index.json under <library_root>/<source_label>/" do
     emitter.emit(root, "MonaSans", reports, face_directory: face_directory)
@@ -58,7 +58,6 @@ RSpec.describe Ucode::Audit::Emitter::CollectionEmitter, type: :emitter_spec do
   it "is idempotent — re-running emits zero writes" do
     emitter.emit(root, "MonaSans", reports, face_directory: face_directory)
     paths_before = Dir.glob("#{root}/**/*").select { |p| File.file?(p) }
-    sleep 0.05
     emitter.emit(root, "MonaSans", reports, face_directory: face_directory)
     paths_after = Dir.glob("#{root}/**/*").select { |p| File.file?(p) }
     expect(paths_after).to eq(paths_before)

@@ -16,7 +16,7 @@ RSpec.describe Ucode::CodeChart::Provenance do
   end
 
   let(:tmpdir) { Pathname.new(Dir.mktmpdir("ucode-prov-")) }
-  let(:pdf_path) { tmpdir.join("U010920.pdf") }
+  let(:pdf_path) { tmpdir.join("U10920.pdf") }
   let(:pdf_bytes) { "%PDF-1.5\n...\n%%EOF\n" }
 
   before do
@@ -62,14 +62,40 @@ RSpec.describe Ucode::CodeChart::Provenance do
   end
 
   describe ".code_chart_url" do
-    it "produces a 4-digit URL for BMP blocks" do
+    it "zero-pads BMP codepoints to 4 digits" do
+      expect(Ucode::CodeChart.code_chart_url(0x0000))
+        .to eq("https://www.unicode.org/charts/PDF/U0000.pdf")
       expect(Ucode::CodeChart.code_chart_url(0x0041))
         .to eq("https://www.unicode.org/charts/PDF/U0041.pdf")
     end
 
-    it "produces a 6-digit URL for supplementary blocks" do
+    it "uses 5 digits for Plane 1 (SMP) without extra padding" do
       expect(Ucode::CodeChart.code_chart_url(0x10920))
-        .to eq("https://www.unicode.org/charts/PDF/U010920.pdf")
+        .to eq("https://www.unicode.org/charts/PDF/U10920.pdf")
+      expect(Ucode::CodeChart.code_chart_url(0x16A40))
+        .to eq("https://www.unicode.org/charts/PDF/U16A40.pdf")
+    end
+
+    it "uses 5 digits for Plane 2 (SIP) CJK Extension B" do
+      expect(Ucode::CodeChart.code_chart_url(0x20000))
+        .to eq("https://www.unicode.org/charts/PDF/U20000.pdf")
+      expect(Ucode::CodeChart.code_chart_url(0x2B740))
+        .to eq("https://www.unicode.org/charts/PDF/U2B740.pdf")
+    end
+
+    it "uses 5 digits for Plane 3 (TIP) CJK Extension G" do
+      expect(Ucode::CodeChart.code_chart_url(0x30000))
+        .to eq("https://www.unicode.org/charts/PDF/U30000.pdf")
+    end
+
+    it "uses 5 digits for Plane 14 (SSP)" do
+      expect(Ucode::CodeChart.code_chart_url(0xE0000))
+        .to eq("https://www.unicode.org/charts/PDF/UE0000.pdf")
+    end
+
+    it "uses 6 digits for Plane 16 (SPUA-B) without truncation" do
+      expect(Ucode::CodeChart.code_chart_url(0x100000))
+        .to eq("https://www.unicode.org/charts/PDF/U100000.pdf")
     end
   end
 
@@ -94,7 +120,7 @@ RSpec.describe Ucode::CodeChart::Provenance do
       expect(provenance.codepoint).to eq("U+10920")
       expect(provenance.block).to eq("Sidetic")
       expect(provenance.source_pdf_url)
-        .to eq("https://www.unicode.org/charts/PDF/U010920.pdf")
+        .to eq("https://www.unicode.org/charts/PDF/U10920.pdf")
       expect(provenance.source_pdf_sha256).to eq(Digest::SHA256.file(pdf_path).hexdigest)
       expect(provenance.ucd_version).to eq("17.0.0")
       expect(provenance.extracted_at).to eq("2026-06-30T12:00:00Z")

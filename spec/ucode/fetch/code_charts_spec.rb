@@ -40,9 +40,9 @@ RSpec.describe Ucode::Fetch::CodeCharts do
 
   describe ".call" do
     it "downloads a PDF and validates content-type + magic bytes" do
-      # 0x10920 > 0xFFFF, so hex_pad produces "U010920.pdf"
+      # 0x10920 > 0xFFFF, so hex_pad produces "U10920.pdf"
       server.respond_with(
-        "http://127.0.0.1:#{server.port}/charts/U010920.pdf",
+        "http://127.0.0.1:#{server.port}/charts/U10920.pdf",
         pdf_body,
         headers: { "Content-Type" => "application/pdf" },
       )
@@ -50,7 +50,7 @@ RSpec.describe Ucode::Fetch::CodeCharts do
       count = described_class.call(version, block_first_cps: [0x10920])
       expect(count).to eq(1)
 
-      pdf_path = Ucode::Cache.pdfs_dir(version).join("U010920.pdf")
+      pdf_path = Ucode::Cache.pdfs_dir(version).join("U10920.pdf")
       expect(pdf_path.exist?).to be(true)
       expect(pdf_path.read).to eq(pdf_body)
     end

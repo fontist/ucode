@@ -45,12 +45,12 @@ module Ucode
           path = Paths.blocks_index_path(@output_root)
           summary = @blocks.map do |block|
             {
-              "id"           => block.id,
-              "name"         => block.name,
-              "first_cp"     => block.range_first,
-              "last_cp"      => block.range_last,
+              "id" => block.id,
+              "name" => block.name,
+              "first_cp" => block.range_first,
+              "last_cp" => block.range_last,
               "plane_number" => block.plane_number,
-              "age"          => @block_ages[block.id],
+              "age" => @block_ages[block.id],
             }
           end
           write_atomic(path, to_pretty_json(summary)) ? 1 : 0
@@ -58,13 +58,13 @@ module Ucode
 
         def block_payload(block)
           to_pretty_json(
-            "id"             => block.id,
-            "name"           => block.name,
-            "range_first"    => block.range_first,
-            "range_last"     => block.range_last,
-            "plane_number"   => block.plane_number,
-            "age"            => @block_ages[block.id],
-            "codepoint_ids"  => (@block_codepoint_ids[block.id] || []),
+            "id" => block.id,
+            "name" => block.name,
+            "range_first" => block.range_first,
+            "range_last" => block.range_last,
+            "plane_number" => block.plane_number,
+            "age" => @block_ages[block.id],
+            "codepoint_ids" => @block_codepoint_ids[block.id] || [],
           )
         end
       end

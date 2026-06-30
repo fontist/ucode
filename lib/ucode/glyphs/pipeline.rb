@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "pathname"
-require "set"
 
 require "ucode/cache"
 require "ucode/glyphs/pdf_fetcher"

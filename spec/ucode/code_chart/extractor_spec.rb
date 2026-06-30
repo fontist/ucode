@@ -4,14 +4,27 @@ require "spec_helper"
 require "tmpdir"
 require "pathname"
 
+# Test Pillar 3 source — returns the same SVG for every codepoint
+# so the Extractor spec can verify composition without depending on
+# mutool or the Last Resort UFO. Real class (no doubles) per the
+# project's no-doubles rule. Lives at file scope (not inside a
+# `describe`) so it isn't a "leaky constant declaration."
+class StubPillar3 < Ucode::Glyphs::Source
+  def tier = :pillar3
+
+  def fetch(_codepoint)
+    Ucode::Glyphs::Source::Result.new(
+      tier: :pillar3, codepoint: 0, svg: "<svg/>", provenance: "stub:pillar3",
+    )
+  end
+end
+
 RSpec.describe Ucode::CodeChart::Extractor do
   let(:pdf_path) do
     Pathname.new(File.expand_path("../../fixtures/pdfs/basic_latin.pdf", __dir__))
   end
 
   let(:tmpdir) { Pathname.new(Dir.mktmpdir("ucode-extractor-")) }
-  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
-
   let(:basic_latin_block) do
     Ucode::Models::Block.new(
       id: "Basic_Latin",
@@ -21,6 +34,8 @@ RSpec.describe Ucode::CodeChart::Extractor do
       plane_number: 0,
     )
   end
+
+  after { FileUtils.remove_entry(tmpdir) if tmpdir.exist? }
 
   describe "Result" do
     it "carries codepoint, svg, tier, provenance as keyword-init attributes" do
@@ -97,19 +112,6 @@ RSpec.describe Ucode::CodeChart::Extractor do
     end
 
     context "with a Pillar 3 source injected" do
-      # A stub Pillar 3 source that returns the same SVG for every
-      # codepoint — verifies the Extractor composes injected sources
-      # correctly. Real class (no doubles) satisfying the project's
-      # no-doubles rule.
-      class StubPillar3 < Ucode::Glyphs::Source
-        def tier = :pillar3
-        def fetch(_codepoint)
-          Ucode::Glyphs::Source::Result.new(
-            tier: :pillar3, codepoint: 0, svg: "<svg/>", provenance: "stub:pillar3",
-          )
-        end
-      end
-
       it "returns one Result per codepoint when Pillar 3 catches everything" do
         skip "mutool not on PATH" unless system("which mutool >/dev/null 2>&1")
 

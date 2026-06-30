@@ -7,8 +7,9 @@ require "json"
 
 require "ucode/models"
 
-RSpec.describe "Repo::Writers per-concern writers" do
+RSpec.describe Ucode::Repo::Writers do
   let(:output_root) { Pathname.new(Dir.mktmpdir) }
+
   after { FileUtils.rm_rf(output_root) }
 
   def write(writer)

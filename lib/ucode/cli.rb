@@ -164,7 +164,7 @@ module Ucode
     class CodeChartCmd < Thor
       desc "fetch --block BLOCK [VERSION]", "Download the Code Charts PDF for a block"
       option :block, type: :string, required: true,
-                    desc: "Block identifier (e.g. Sidetic, Basic_Latin)"
+                     desc: "Block identifier (e.g. Sidetic, Basic_Latin)"
       def fetch(version = nil)
         with_codechart_errors do
           block_first_cp = resolve_block_first_cp!(options[:block], version)
@@ -179,7 +179,7 @@ module Ucode
       desc "extract --block BLOCK --to DIR [VERSION]",
            "Extract per-codepoint SVG + provenance sidecars from a Code Charts PDF"
       option :block, type: :string, required: true,
-                    desc: "Block identifier (e.g. Sidetic)"
+                     desc: "Block identifier (e.g. Sidetic)"
       option :to, type: :string, required: true,
                   desc: "Output directory (will contain <block_id>/<U+XXXX>.svg + .json)"
       def extract(version = nil)
@@ -193,10 +193,12 @@ module Ucode
 
           pdf = Ucode::Glyphs::PdfFetcher.new(version_str)
             .fetch(block_first_cp: block_first_cp)
-          raise Ucode::CodeChartNotFoundError.new(
-            "Code Charts PDF unavailable for block #{block.id.inspect}",
-            context: { block_id: block.id, version: version_str },
-          ) unless pdf
+          unless pdf
+            raise Ucode::CodeChartNotFoundError.new(
+              "Code Charts PDF unavailable for block #{block.id.inspect}",
+              context: { block_id: block.id, version: version_str },
+            )
+          end
 
           writer = Ucode::CodeChart::Writer.new(
             output_root: Pathname.new(options[:to]),
@@ -218,7 +220,7 @@ module Ucode
           return
         end
         files.each do |f|
-          puts f.basename.to_s
+          puts f.basename
         end
       end
 

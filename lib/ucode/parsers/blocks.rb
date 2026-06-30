@@ -37,6 +37,24 @@ module Ucode
           nil
         end
 
+        # Resolves a block by its identifier (the underscored form of
+        # the block name, e.g. "Basic_Latin", "Egyptian_Hieroglyphs_Extended-B").
+        # Streams `Blocks.txt` once and short-circuits on first match —
+        # callers don't need to walk the whole ~340-block file.
+        #
+        # @param path [Pathname, String] path to a Blocks.txt
+        # @param id [String] block identifier (matches `Models::Block#id`)
+        # @return [Models::Block, nil] the block, or nil when no block
+        #   has the given id
+        def find_by_id(path, id)
+          return nil if id.nil? || id.empty?
+
+          each_record(path) do |block|
+            return block if block.id == id
+          end
+          nil
+        end
+
         private
 
         def build_block(range, name)

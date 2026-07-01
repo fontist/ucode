@@ -32,8 +32,6 @@ module Ucode
   autoload :UnknownVersionError, "ucode/error"
   autoload :UnknownBlockError, "ucode/error"
   autoload :GlyphError, "ucode/error"
-  autoload :PdfRenderError, "ucode/error"
-  autoload :GridDetectionError, "ucode/error"
   autoload :LastResortMissingError, "ucode/error"
   autoload :EmbeddedFontsMissingError, "ucode/error"
   autoload :CodeChartNotFoundError, "ucode/error"

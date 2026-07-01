@@ -249,6 +249,7 @@ module Ucode
             font_obj_id: font_obj_id,
             tu_ref: tu_ref,
             cid_map_kind: cid_map_kind,
+            base_font: base_font,
           )
           return nil if cp_to_gid.empty?
 
@@ -275,14 +276,23 @@ module Ucode
         # when no /ToUnicode is present, consult the correlator_configs
         # registry — if the user supplied a config for this font, render
         # the relevant page(s) to SVG and run positional correlation.
-        # Returns an empty hash when neither path produces a map (the
-        # caller treats that as "skip this font").
-        def build_codepoint_to_gid(font_obj_id:, tu_ref:, cid_map_kind:)
+        # Pillar-2b fallback: when no caller-supplied config either,
+        # auto-detect via `mutool trace` — parse the structured text
+        # trace to build `{codepoint => gid}` from hex labels + specimen
+        # positions. Returns an empty hash when none of the paths
+        # produce a map (the caller treats that as "skip this font").
+        def build_codepoint_to_gid(font_obj_id:, tu_ref:, cid_map_kind:,
+                                   base_font: nil)
           return {} if cid_map_kind != :identity
 
           return codepoint_map_from_tounicode(tu_ref) if tu_ref
 
-          codepoint_map_from_correlator(font_obj_id)
+          map = codepoint_map_from_correlator(font_obj_id)
+          return map unless map.empty?
+
+          return {} unless base_font
+
+          codepoint_map_from_trace(base_font, font_obj_id)
         end
 
         def codepoint_map_from_tounicode(tu_ref)
@@ -296,6 +306,73 @@ module Ucode
 
           svg = render_pages(config.page_numbers)
           ContentStreamCorrelator.new(config).correlate(svg)
+        end
+
+        # Pillar-2b: auto-detect codepoint → GID via `mutool trace`.
+        # For CID-keyed fonts without /ToUnicode and without a
+        # caller-supplied correlator config, trace every page of the
+        # PDF and positionally match hex labels to specimen glyphs.
+        # `mutool info` only reports the first page per font, so tracing
+        # all pages is simpler and catches every chart page.
+        #
+        # Each page is correlated independently to prevent cross-page
+        # position interference (page coordinate systems overlap, so
+        # a label on page 3 could wrongly match a specimen on page 2).
+        # First match wins when a codepoint appears on multiple pages.
+        def codepoint_map_from_trace(base_font, _font_obj_id)
+          return {} unless font_appears_in_pdf?(base_font)
+
+          runner = TraceRunner.new(@source.pdf_path)
+          correlator = TraceCorrelator.new(specimen_font_name: base_font)
+
+          (1..page_count).each_with_object({}) do |page, mapping|
+            glyphs = runner.trace([page])
+            page_mapping = correlator.correlate(glyphs)
+            page_mapping.each do |cp, gid|
+              mapping[cp] ||= gid
+            end
+          end
+        end
+
+        def font_appears_in_pdf?(base_font)
+          font_entries_cache.key?(base_font)
+        end
+
+        # Lazy cache of {base_font => true} — which fonts `mutool info`
+        # reports in this PDF. We only need the key set, not page numbers,
+        # because {codepoint_map_from_trace} traces all pages regardless.
+        def font_entries_cache
+          @font_entries_cache ||= begin
+            result = {}
+            mutool_info_text.each_line do |line|
+              next unless line.include?("Type0")
+
+              font_match = line.match(/Type0\s+'([^']+)'/)
+              next unless font_match
+
+              result[font_match[1]] = true
+            end
+            result
+          end
+        end
+
+        # Total pages in the PDF, parsed from `mutool info`'s
+        # `Pages: N` line. Falls back to the first font page if parsing
+        # fails (so we still try at least one page).
+        def page_count
+          @page_count ||= begin
+            m = mutool_info_text.match(/^Pages:\s+(\d+)/)
+            m ? m[1].to_i : 1
+          end
+        end
+
+        def mutool_info_text
+          @mutool_info_text ||= run_mutool_info
+        end
+
+        def run_mutool_info
+          out, err, status = Open3.capture3("mutool", "info", @source.pdf_to_s)
+          status.success? ? out + err : ""
         end
 
         def resolve_fontfile(fd_dict)

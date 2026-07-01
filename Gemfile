@@ -4,8 +4,13 @@ source "https://rubygems.org"
 
 gemspec
 
+# Rake must be in the default group (not :development) because the
+# GHA release workflow runs `bundle exec rake release` to publish the
+# gem. The release runner installs with `--without development`, so
+# gems in the :development group are excluded.
+gem "rake"
+
 group :development do
-  gem "rake"
   gem "rspec"
   gem "rubocop"
   gem "rubocop-performance"

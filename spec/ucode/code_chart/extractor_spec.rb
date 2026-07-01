@@ -77,20 +77,31 @@ RSpec.describe Ucode::CodeChart::Extractor do
 
   describe "#extract" do
     # The basic_latin.pdf fixture uses WinAnsiEncoding for the basic
-    # Latin glyphs (no /ToUnicode CMap on those fonts), so Pillar 1
-    # cannot serve them — they fall through the Resolver. The
-    # catalog DOES index 213 codepoints from other blocks in this
-    # multi-block fixture (CJK, math symbols, etc.), but those are
-    # outside the Basic Latin range and so aren't yielded by #extract.
-    # Without a Tier 1 source or a Pillar 2 correlator, the result
-    # is empty — which is the correct behavior.
-    it "returns no Results when no tier can serve the block (basic_latin has no /ToUnicode)" do
+    # Latin *visual* glyphs (no /ToUnicode CMap on those fonts), so
+    # Pillar 1 cannot serve them — they fall through the Resolver.
+    # However the fixture also embeds the GMKHIH+SpecialsUC6 CIDFont
+    # (no ToUnicode) which the trace correlator now serves for the
+    # control-character range (U+0000-U+001F, U+007F). The catalog
+    # also indexes 213 codepoints from other blocks (CJK, math, etc.),
+    # all outside the Basic Latin range. Without a Tier 1 source or
+    # a Pillar 3 fallback, results cover the subset the catalog serves.
+    it "returns Results for codepoints Pillar 1 (via ToUnicode or trace) can serve" do
       skip "mutool not on PATH" unless system("which mutool >/dev/null 2>&1")
 
       extractor = described_class.new(block: basic_latin_block, pdf_path: pdf_path)
       results = extractor.extract
 
-      expect(results).to be_empty
+      # Control characters get served via the embedded Specials font
+      # (GMKHIH+SpecialsUC6, no ToUnicode — picked up by trace). The
+      # exact set depends on the catalog's coverage, so just verify
+      # the result set is bounded by the catalog and doesn't raise.
+      expect(results).not_to be_empty
+      results.each do |r|
+        expect(r.codepoint).to be_between(
+          basic_latin_block.range_first, basic_latin_block.range_last,
+        )
+        expect(r.tier).to eq(:pillar1)
+      end
     end
 
     it "yields every codepoint in the block range, even when no tier serves them" do
@@ -112,7 +123,7 @@ RSpec.describe Ucode::CodeChart::Extractor do
     end
 
     context "with a Pillar 3 source injected" do
-      it "returns one Result per codepoint when Pillar 3 catches everything" do
+      it "returns one Result per codepoint: Pillar 1 where it can, Pillar 3 for the rest" do
         skip "mutool not on PATH" unless system("which mutool >/dev/null 2>&1")
 
         extractor = described_class.new(
@@ -121,8 +132,16 @@ RSpec.describe Ucode::CodeChart::Extractor do
           pillar3_source: StubPillar3.new,
         )
         results = extractor.extract
+
         expect(results.size).to eq(basic_latin_block.range_last - basic_latin_block.range_first + 1)
-        expect(results.map(&:tier).uniq).to eq([:pillar3])
+
+        # Pillar 1 serves the subset the catalog can; Pillar 3 fills
+        # in everything else. The exact split depends on the catalog,
+        # but every codepoint should produce exactly one Result.
+        tier_counts = results.map(&:tier).tally
+        expect(tier_counts[:pillar1]).to be > 0
+        expect(tier_counts[:pillar3]).to be > 0
+        expect(tier_counts.values.sum).to eq(basic_latin_block.range_last - basic_latin_block.range_first + 1)
       end
     end
   end

@@ -9,7 +9,6 @@ module Ucode
   module Commands
     autoload :FetchCommand, "ucode/commands/fetch"
     autoload :ParseCommand, "ucode/commands/parse"
-    autoload :GlyphsCommand, "ucode/commands/glyphs"
     autoload :SiteCommand, "ucode/commands/site"
     autoload :LookupCommand, "ucode/commands/lookup"
     autoload :CacheCommand, "ucode/commands/cache"

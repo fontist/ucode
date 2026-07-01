@@ -20,10 +20,7 @@ module Ucode
     # `index.json` + `glyph.svg` atomically, accumulate per-tier +
     # per-block stats, and emit `output/build-report.json`.
     #
-    # This is the v0.2 replacement for the v0.1 cell-extractor pipeline
-    # in {GlyphsCommand}. The two coexist until the v0.1 pipeline is
-    # removed (TODOs 17-19); CanonicalBuildCommand is the path forward
-    # for production dataset runs.
+    # This is the production path for dataset runs.
     #
     # == Pre-conditions (per TODO 21)
     #

@@ -28,8 +28,8 @@ RSpec.describe Ucode::Error do
       [Ucode::DatabaseSchemaError, Ucode::LookupError],
       [Ucode::UnknownVersionError, Ucode::LookupError],
       [Ucode::GlyphError, Ucode::Error],
-      [Ucode::PdfRenderError, Ucode::GlyphError],
-      [Ucode::GridDetectionError, Ucode::GlyphError],
+      [Ucode::LastResortMissingError, Ucode::GlyphError],
+      [Ucode::EmbeddedFontsMissingError, Ucode::GlyphError],
     ].each do |leaf, parent|
       it "#{leaf} is a #{parent}" do
         expect(leaf.new).to be_a(parent)

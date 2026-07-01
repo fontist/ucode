@@ -24,8 +24,6 @@ module Ucode
   #   │   ├── Ucode::DatabaseSchemaError
   #   │   └── Ucode::UnknownVersionError
   #   └── Ucode::GlyphError
-  #       ├── Ucode::PdfRenderError
-  #       ├── Ucode::GridDetectionError
   #       ├── Ucode::LastResortMissingError
   #       ├── Ucode::EmbeddedFontsMissingError
   #       └── Ucode::UniversalSetPreBuildError
@@ -103,12 +101,6 @@ module Ucode
 
   # Glyph pipeline failures.
   class GlyphError < Error; end
-
-  # PDF → SVG rendering failure.
-  class PdfRenderError < GlyphError; end
-
-  # Grid detection couldn't anchor on codepoint labels.
-  class GridDetectionError < GlyphError; end
 
   # The Last Resort Font UFO source cannot be located or is missing a
   # required artifact (cmap-f13.ttx, font.ufo/glyphs/, contents.plist).

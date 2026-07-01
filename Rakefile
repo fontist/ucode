@@ -4,15 +4,26 @@ require "rubygems"
 require "rake"
 require "bundler/gem_tasks"
 
-require "rspec/core/rake_task"
-RSpec::Core::RakeTask.new(:spec)
+begin
+  require "rspec/core/rake_task"
+  RSpec::Core::RakeTask.new(:spec)
+rescue LoadError
+  # rspec is in the :development group; not available in the
+  # release runner (`bundle install --without development`).
+end
 
-require "rubocop/rake_task"
-RuboCop::RakeTask.new
+begin
+  require "rubocop/rake_task"
+  RuboCop::RakeTask.new
+rescue LoadError
+end
 
-require "yard"
-YARD::Rake::YardocTask.new do |t|
-  t.options = ["--output-dir", "docs/api"]
+begin
+  require "yard"
+  YARD::Rake::YardocTask.new do |t|
+    t.options = ["--output-dir", "docs/api"]
+  end
+rescue LoadError
 end
 
 task default: %i[spec rubocop]

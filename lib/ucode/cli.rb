@@ -109,34 +109,6 @@ module Ucode
       puts JSON.pretty_generate(result)
     end
 
-    # ─────────────── glyphs ───────────────
-    desc "glyphs [VERSION]", "Extract per-codepoint SVGs from Code Charts PDFs (experimental)"
-    long_desc <<~LONG
-      EXPERIMENTAL in v0.1. The cell extractor currently includes cell-border
-      decorations alongside the actual character outline, so the output is not
-      yet suitable for end-user display. Opt in with --include-glyphs to run
-      the pipeline anyway; otherwise it returns a skipped payload.
-    LONG
-    option :to, type: :string, default: "./output"
-    option :block, type: :array, desc: "Limit to these block ids"
-    option :force, type: :boolean, default: false
-    option :monolith, type: :string, default: "CodeCharts.pdf",
-                      desc: "Path to CodeCharts.pdf for fallback slicing"
-    option :include_glyphs, type: :boolean, default: false,
-                            desc: "Opt into the experimental v0.1 pipeline"
-    def glyphs(version = nil)
-      result = Commands::GlyphsCommand.new.call(
-        VersionResolver.resolve(version),
-        output_root: options[:to],
-        block_filter: options[:block],
-        force: options[:force],
-        monolith_path: options[:monolith],
-        include_glyphs: options[:include_glyphs],
-        warn: $stderr,
-      )
-      puts JSON.pretty_generate(result)
-    end
-
     # ─────────────── site ───────────────
     class Site < Thor
       desc "init", "Copy the Vitepress scaffold into site/"
@@ -345,22 +317,16 @@ module Ucode
     subcommand "cache", Cache
 
     # ─────────────── build ───────────────
-    desc "build [VERSION]", "Full pipeline: fetch + parse + (optional) glyphs + site"
+    desc "build [VERSION]", "Full pipeline: fetch + parse + site"
     option :to, type: :string, default: "./output"
     option :site, type: :string, default: nil, desc: "Build the site here (skipped if nil)"
-    option :monolith, type: :string, default: "CodeCharts.pdf"
     option :force_fetch, type: :boolean, default: false
-    option :include_glyphs, type: :boolean, default: false,
-                            desc: "Opt into the experimental v0.1 glyph step"
     def build(version = nil)
       result = Commands::BuildCommand.new.call(
         version,
         output_root: options[:to],
         site_root: options[:site],
-        monolith_path: options[:monolith],
         force_fetch: options[:force_fetch],
-        include_glyphs: options[:include_glyphs],
-        warn: $stderr,
       )
       puts JSON.pretty_generate(result)
     end

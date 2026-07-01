@@ -12,7 +12,7 @@ RSpec.describe Ucode::Cli do
 
     it "registers all top-level subcommands" do
       expect(described_class.commands.keys).to include(
-        "version", "parse", "glyphs", "build",
+        "version", "parse", "build",
       )
       expect(described_class.subcommands).to include(
         "fetch", "site", "lookup", "cache", "code_chart", "audit",

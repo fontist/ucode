@@ -3,24 +3,14 @@
 module Ucode
   # Glyphs — converts Code Charts PDF pages into per-codepoint SVGs.
   #
-  # Pipeline: fetch per-block PDF → render to SVG → detect grid → extract
-  # cell → normalize viewBox → write glyph.svg.
+  # The current pipeline is the 4-tier sourcing strategy:
+  # Tier 1 (real fonts) → Pillar 1 (embedded CIDFont + ToUnicode) →
+  # Pillar 2 (positional correlation) → Pillar 3 (Last Resort UFO).
+  # See {EmbeddedFonts} for Pillar 1 + 2 and {LastResort} for Pillar 3.
   #
   # Vector extraction only. NEVER run OCR.
   module Glyphs
     autoload :PdfFetcher, "ucode/glyphs/pdf_fetcher"
-    autoload :PageRenderer, "ucode/glyphs/page_renderer"
-    autoload :MutoolRenderer, "ucode/glyphs/mutool_renderer"
-    autoload :Pdf2svgRenderer, "ucode/glyphs/pdf2svg_renderer"
-    autoload :DvisvgmRenderer, "ucode/glyphs/dvisvgm_renderer"
-    autoload :PdftocairoRenderer, "ucode/glyphs/pdftocairo_renderer"
-    autoload :Grid, "ucode/glyphs/grid"
-    autoload :PathBbox, "ucode/glyphs/path_bbox"
-    autoload :GridDetector, "ucode/glyphs/grid_detector"
-    autoload :CellExtractor, "ucode/glyphs/cell_extractor"
-    autoload :MonolithPageMap, "ucode/glyphs/monolith_page_map"
-    autoload :Writer, "ucode/glyphs/writer"
-    autoload :Pipeline, "ucode/glyphs/pipeline"
     autoload :LastResort, "ucode/glyphs/last_resort"
     autoload :EmbeddedFonts, "ucode/glyphs/embedded_fonts"
     autoload :RealFonts, "ucode/glyphs/real_fonts"

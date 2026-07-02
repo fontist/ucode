@@ -2,8 +2,6 @@
 
 require "pathname"
 
-require_relative "../../error"
-
 module Ucode
   module Glyphs
     module EmbeddedFonts
@@ -29,7 +27,7 @@ module Ucode
       # the BaseFont (e.g. `CIAIIP+Uni2000Generalpunctuation.ttf`).
       # Re-runs skip extraction when the cached file is newer than the
       # PDF.
-      class Source
+      class PdfLocation
         attr_reader :pdf_path, :cache_dir
 
         # @param pdf [String, Pathname, nil] path to a Code Charts PDF

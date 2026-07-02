@@ -47,7 +47,7 @@ module Ucode
       # @param ucd_version [String, nil] UCD version to stamp on
       #   provenance. nil = resolved via {VersionResolver.resolve(nil)}.
       # @param cache_dir [Pathname, String, nil] font-stream cache
-      #   directory for the EmbeddedFonts::Source.
+      #   directory for the EmbeddedFonts::PdfLocation.
       # @param now [Time, nil] timestamp override (for tests).
       # @param pillar3_source, tier1_sources: forwarded to the Extractor.
       def initialize(output_root:, pdf_path:, ucd_version: nil,

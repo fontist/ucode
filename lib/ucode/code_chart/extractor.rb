@@ -2,14 +2,6 @@
 
 require "pathname"
 
-require "ucode/error"
-require "ucode/glyphs/embedded_fonts/catalog"
-require "ucode/glyphs/embedded_fonts/renderer"
-require "ucode/glyphs/embedded_fonts/source"
-require "ucode/glyphs/resolver"
-require "ucode/glyphs/sources/pillar1_embedded_tounicode"
-require "ucode/glyphs/sources/tier1_real_font"
-
 module Ucode
   module CodeChart
     # Walks every assigned codepoint in a block and returns one
@@ -108,7 +100,7 @@ module Ucode
       end
 
       def embedded_pillar_sources
-        embedded_source = Glyphs::EmbeddedFonts::Source.new(
+        embedded_source = Glyphs::EmbeddedFonts::PdfLocation.new(
           pdf: @pdf_path, cache_dir: @cache_dir,
         )
         catalog = Glyphs::EmbeddedFonts::Catalog.new(embedded_source)

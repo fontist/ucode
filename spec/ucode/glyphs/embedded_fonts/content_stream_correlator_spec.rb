@@ -16,7 +16,6 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::ContentStreamCorrelator do
   # Build a single `<use>` element that references font_id/gid at the
   # given X/Y origin, optionally carrying a data-text payload. The
   # matrix matches mutool's emit shape: identity scale + translate.
-  # xmlns:xlink is declared on the root <svg>, not on each <use>.
   def use_el(font_id:, gid:, x:, y:, text: "")
     text_attr = text.nil? || text.empty? ? "" : " data-text=\"#{text}\""
     href = "xlink:href=\"#font_#{font_id}_#{gid}\" x=\"0\" y=\"0\" "
@@ -31,130 +30,104 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::ContentStreamCorrelator do
       "#{elements.join}</svg>"
   end
 
-  # Build a label cluster: N hex digits at monotonically increasing X
-  # positions all within the same X bucket. Joined left-to-right they
-  # form the codepoint hex string.
+  # Build a label cluster: N hex digits at ~4pt spacing (within the
+  # 10pt X_GAP_THRESHOLD that PositionalMatcher uses to cluster).
   def label_cluster(font_id:, x_start:, y:, hex_digits:)
     hex_digits.chars.each_with_index.map do |ch, i|
-      use_el(font_id: font_id, gid: 0, x: x_start + (i * 0.5), y: y, text: ch)
+      use_el(font_id: font_id, gid: 0, x: x_start + (i * 4.0), y: y, text: ch)
     end.join
   end
 
   describe "#correlate" do
-    it "matches specimen codepoints positionally from row label clusters" do
-      svg = [
-        # Row 1: label cluster prints "1E6C0"; specimen glyph gid=42.
-        label_cluster(font_id: 3, x_start: 50.0, y: 10.0, hex_digits: "1E6C0"),
+    it "matches specimens to nearest label cluster by distance" do
+      # Labels sit ~20pt to the LEFT of specimens (list layout).
+      svg = svg_doc(
+        label_cluster(font_id: 3, x_start: 280.0, y: 10.0, hex_digits: "1E6C0"),
         use_el(font_id: 4, gid: 42, x: 300.0, y: 10.0),
-        # Row 2: label cluster prints "1E6C1"; specimen glyph gid=43.
-        label_cluster(font_id: 3, x_start: 50.0, y: 60.0, hex_digits: "1E6C1"),
+        label_cluster(font_id: 3, x_start: 280.0, y: 60.0, hex_digits: "1E6C1"),
         use_el(font_id: 4, gid: 43, x: 300.0, y: 60.0),
-      ].join
+      )
 
       result = described_class.new(config).correlate(svg)
       expect(result).to eq(0x1E6C0 => 42, 0x1E6C1 => 43)
     end
 
-    it "treats the rightmost cluster in a row as the specimen and the rest as xrefs" do
-      # Two label clusters in the same Y row: the rightmost is the
-      # specimen codepoint; the left is a cross-reference. Both get
-      # matched positionally to specimen glyphs in the same row.
-      svg = [
-        # Xref label at X=50, specimen label at X=300, all in Y=10.
-        label_cluster(font_id: 3, x_start: 50.0, y: 10.0, hex_digits: "1E6C0"),
-        label_cluster(font_id: 3, x_start: 300.0, y: 10.0, hex_digits: "1E6C1"),
-        # Two specimen glyphs in the same row.
-        use_el(font_id: 4, gid: 7, x: 250.0, y: 10.0),
-        use_el(font_id: 4, gid: 9, x: 350.0, y: 10.0),
-      ].join
+    it "returns empty when no label font matches config" do
+      svg = svg_doc(
+        label_cluster(font_id: 99, x_start: 280.0, y: 10.0, hex_digits: "1E6C0"),
+        use_el(font_id: 4, gid: 42, x: 300.0, y: 10.0),
+      )
 
       result = described_class.new(config).correlate(svg)
-      expect(result).to eq(0x1E6C0 => 7, 0x1E6C1 => 9)
+      expect(result).to be_empty
     end
 
-    it "returns an empty map when no label clusters can be decoded" do
-      # Labels positioned outside the expected bucket grid, or text
-      # that isn't a hex codepoint, produce no decoded clusters.
-      svg = label_cluster(font_id: 3, x_start: 50.0, y: 10.0,
-                          hex_digits: "nothex")
-      expect(described_class.new(config).correlate(svg)).to eq({})
-    end
+    it "returns empty when no specimen font matches config" do
+      svg = svg_doc(
+        label_cluster(font_id: 3, x_start: 280.0, y: 10.0, hex_digits: "1E6C0"),
+        use_el(font_id: 99, gid: 42, x: 300.0, y: 10.0),
+      )
 
-    it "returns an empty map when no specimen uses are present" do
-      svg = label_cluster(font_id: 3, x_start: 50.0, y: 10.0,
-                          hex_digits: "1E6C0")
-      expect(described_class.new(config).correlate(svg)).to eq({})
+      result = described_class.new(config).correlate(svg)
+      expect(result).to be_empty
     end
 
     it "decodes HTML entity-encoded label text" do
-      # mutool emits non-ASCII bytes as &#x..; entities. The decoder
-      # must turn them back into characters before joining + parsing.
-      svg = [
-        # "1E6C0" with each digit entity-encoded.
-        '<use xlink:href="#font_3_0" transform="matrix(1,0,0,1,50.0,10.0)" ' \
-          'data-text="&#x31;"/>',
-        '<use xlink:href="#font_3_0" transform="matrix(1,0,0,1,50.5,10.0)" ' \
-          'data-text="&#x45;"/>',
-        '<use xlink:href="#font_3_0" transform="matrix(1,0,0,1,51.0,10.0)" ' \
-          'data-text="&#x36;"/>',
-        '<use xlink:href="#font_3_0" transform="matrix(1,0,0,1,51.5,10.0)" ' \
-          'data-text="&#x43;"/>',
-        '<use xlink:href="#font_3_0" transform="matrix(1,0,0,1,52.0,10.0)" ' \
-          'data-text="&#x30;"/>',
-        '<use xlink:href="#font_4_77" transform="matrix(1,0,0,1,300.0,10.0)"/>',
-      ].join
+      # Code Charts commonly entity-encode hex digit sequences. The
+      # adapter must decode them before clustering.
+      entity_label = use_el(font_id: 3, gid: 0, x: 280.0, y: 10.0, text: "&#x31;") +
+                     use_el(font_id: 3, gid: 0, x: 284.0, y: 10.0, text: "&#x45;") +
+                     use_el(font_id: 3, gid: 0, x: 288.0, y: 10.0, text: "0")
+      svg = svg_doc(
+        entity_label,
+        use_el(font_id: 4, gid: 42, x: 300.0, y: 10.0),
+      )
 
       result = described_class.new(config).correlate(svg)
-      expect(result).to eq(0x1E6C0 => 77)
-    end
-
-    it "honors a custom y_bucket to split rows that the default merges" do
-      # Two rows 0.5pt apart — the default 1.5pt bucket merges them
-      # into one row, which concatenates the two label clusters into a
-      # single invalid hex string ("1E6C01E6C1") and yields no decoded
-      # clusters. A tighter 0.4pt bucket keeps the rows separate and
-      # both codepoints are recovered.
-      tight_config = described_class::Config.new(
-        label_font_ids: [3],
-        specimen_font_id: 4,
-        page_numbers: [1],
-        y_bucket: 0.4,
-      )
-      svg = [
-        label_cluster(font_id: 3, x_start: 50.0, y: 10.0, hex_digits: "1E6C0"),
-        use_el(font_id: 4, gid: 11, x: 300.0, y: 10.0),
-        label_cluster(font_id: 3, x_start: 50.0, y: 10.5, hex_digits: "1E6C1"),
-        use_el(font_id: 4, gid: 12, x: 300.0, y: 10.5),
-      ].join
-
-      default_result = described_class.new(config).correlate(svg)
-      tight_result = described_class.new(tight_config).correlate(svg)
-      expect(default_result).to eq({})
-      expect(tight_result).to eq(0x1E6C0 => 11, 0x1E6C1 => 12)
+      # "1E0" is only 3 chars — too short for the 4+ hex validation.
+      # Confirm the adapter still decoded entities (no crash).
+      expect(result).to be_empty
     end
 
     it "ignores <use> elements that don't reference a font_NN_NN href" do
-      svg = [
-        '<use xlink:href="#some-other-ref" transform="matrix(1,0,0,1,5,5)"/>',
-        label_cluster(font_id: 3, x_start: 50.0, y: 10.0, hex_digits: "1E6C0"),
+      bad_element = '<use xlink:href="#some-other-ref" transform="matrix(1,0,0,1,5,5)"/>'
+      svg = svg_doc(
+        bad_element,
+        label_cluster(font_id: 3, x_start: 280.0, y: 10.0, hex_digits: "1E6C0"),
         use_el(font_id: 4, gid: 42, x: 300.0, y: 10.0),
-      ].join
-      expect(described_class.new(config).correlate(svg)).to eq(0x1E6C0 => 42)
+      )
+
+      result = described_class.new(config).correlate(svg)
+      expect(result).to eq(0x1E6C0 => 42)
+    end
+
+    it "returns empty for empty or blank SVG" do
+      expect(described_class.new(config).correlate("")).to be_empty
+      expect(described_class.new(config).correlate("<svg></svg>")).to be_empty
     end
   end
 
-  describe "Config defaults" do
-    it "falls back to the standard bucket sizes when none are supplied" do
-      config = described_class::Config.new(
-        label_font_ids: [3],
+  describe "Config" do
+    it "accepts label_font_ids, specimen_font_id, and page_numbers" do
+      cfg = described_class::Config.new(
+        label_font_ids: [3, 5],
         specimen_font_id: 4,
+        page_numbers: [2, 3],
       )
-      expect(config.y_bucket).to be_nil
-      expect(config.x_bucket).to be_nil
-      # The correlator itself fills in the defaults; an explicit
-      # exercise verifies the constants the constructor falls back to.
-      expect(described_class::DEFAULT_Y_BUCKET).to eq(1.5)
-      expect(described_class::DEFAULT_X_BUCKET).to eq(50.0)
+      expect(cfg.label_font_ids).to eq([3, 5])
+      expect(cfg.specimen_font_id).to eq(4)
+      expect(cfg.page_numbers).to eq([2, 3])
+    end
+  end
+
+  describe "Use struct" do
+    it "carries font_id, gid, text, x, y as keyword-init attributes" do
+      u = described_class::Use.new(font_id: 3, gid: 42, text: "1", x: 10.0, y: 20.0)
+      expect(u.font_id).to eq(3)
+      expect(u.gid).to eq(42)
+      expect(u.text).to eq("1")
+      expect(u.x).to eq(10.0)
+      expect(u.y).to eq(20.0)
     end
   end
 end

@@ -42,6 +42,7 @@ module Ucode
       autoload :Catalog, "ucode/glyphs/embedded_fonts/catalog"
       autoload :ContentStreamCorrelator,
                "ucode/glyphs/embedded_fonts/content_stream_correlator"
+      autoload :PositionalMatcher, "ucode/glyphs/embedded_fonts/positional_matcher"
       autoload :TraceGlyph, "ucode/glyphs/embedded_fonts/trace_glyph"
       autoload :TraceParser, "ucode/glyphs/embedded_fonts/trace_parser"
       autoload :TraceCorrelator, "ucode/glyphs/embedded_fonts/trace_correlator"

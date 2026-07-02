@@ -39,6 +39,9 @@ module Ucode
       autoload :PdfLocation, "ucode/glyphs/embedded_fonts/pdf_location"
       autoload :ToUnicode, "ucode/glyphs/embedded_fonts/tounicode"
       autoload :FontEntry, "ucode/glyphs/embedded_fonts/font_entry"
+      autoload :RawFontDescriptor, "ucode/glyphs/embedded_fonts/raw_font_descriptor"
+      autoload :PdfIndexer, "ucode/glyphs/embedded_fonts/pdf_indexer"
+      autoload :CodepointMapper, "ucode/glyphs/embedded_fonts/codepoint_mapper"
       autoload :Catalog, "ucode/glyphs/embedded_fonts/catalog"
       autoload :ContentStreamCorrelator,
                "ucode/glyphs/embedded_fonts/content_stream_correlator"

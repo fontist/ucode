@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "ostruct"
+
+RangeTuple = Struct.new(:range_first, :range_last, :value) unless defined?(RangeTuple)
 
 RSpec.describe Ucode::Coordinator::Enrichment do
   describe "::REGISTRY" do
@@ -20,9 +21,7 @@ RSpec.describe Ucode::Coordinator::Enrichment do
     end
 
     it "every entry is a Module (stateless)" do
-      described_class::REGISTRY.each do |mod|
-        expect(mod).to be_a(Module)
-      end
+      expect(described_class::REGISTRY).to all(be_a(Module))
     end
   end
 
@@ -41,9 +40,9 @@ end
 RSpec.describe Ucode::Coordinator::RangeLookup do
   let(:ranges) do
     [
-      OpenStruct.new(range_first: 0x0041, range_last: 0x005A, value: "A"),
-      OpenStruct.new(range_first: 0x0061, range_last: 0x007A, value: "a"),
-      OpenStruct.new(range_first: 0x1F300, range_last: 0x1F320, value: "emoji"),
+      RangeTuple.new(0x0041, 0x005A, "A"),
+      RangeTuple.new(0x0061, 0x007A, "a"),
+      RangeTuple.new(0x1F300, 0x1F320, "emoji"),
     ]
   end
 
@@ -66,9 +65,9 @@ RSpec.describe Ucode::Coordinator::RangeLookup do
   describe ".all_range_values" do
     let(:overlapping) do
       [
-        OpenStruct.new(range_first: 0x1F300, range_last: 0x1F320, value: "A"),
-        OpenStruct.new(range_first: 0x1F300, range_last: 0x1F3FF, value: "B"),
-        OpenStruct.new(range_first: 0x1F400, range_last: 0x1F4FF, value: "C"),
+        RangeTuple.new(0x1F300, 0x1F320, "A"),
+        RangeTuple.new(0x1F300, 0x1F3FF, "B"),
+        RangeTuple.new(0x1F400, 0x1F4FF, "C"),
       ]
     end
 

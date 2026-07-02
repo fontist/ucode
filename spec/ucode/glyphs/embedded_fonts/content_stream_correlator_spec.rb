@@ -76,8 +76,8 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::ContentStreamCorrelator do
       # Code Charts commonly entity-encode hex digit sequences. The
       # adapter must decode them before clustering.
       entity_label = use_el(font_id: 3, gid: 0, x: 280.0, y: 10.0, text: "&#x31;") +
-                     use_el(font_id: 3, gid: 0, x: 284.0, y: 10.0, text: "&#x45;") +
-                     use_el(font_id: 3, gid: 0, x: 288.0, y: 10.0, text: "0")
+        use_el(font_id: 3, gid: 0, x: 284.0, y: 10.0, text: "&#x45;") +
+        use_el(font_id: 3, gid: 0, x: 288.0, y: 10.0, text: "0")
       svg = svg_doc(
         entity_label,
         use_el(font_id: 4, gid: 42, x: 300.0, y: 10.0),

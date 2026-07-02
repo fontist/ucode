@@ -39,8 +39,10 @@ module Ucode
         # @raise [Ucode::EmbeddedFontsMissingError] if the PDF is missing
         def initialize(pdf: nil, cache_dir: nil, env: ENV, gem_root: nil)
           @pdf_path = resolve_pdf(pdf, env, gem_root)
-          raise Ucode::EmbeddedFontsMissingError,
-                "Code Charts PDF not found at #{@pdf_path}" unless @pdf_path&.exist?
+          unless @pdf_path&.exist?
+            raise Ucode::EmbeddedFontsMissingError,
+                  "Code Charts PDF not found at #{@pdf_path}"
+          end
 
           @cache_dir = resolve_cache(cache_dir, env, gem_root)
           @cache_dir.mkpath unless @cache_dir.exist?

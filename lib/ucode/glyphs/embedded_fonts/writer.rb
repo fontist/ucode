@@ -2,10 +2,6 @@
 
 require "pathname"
 
-require_relative "renderer"
-require_relative "../../repo/atomic_writes"
-require_relative "../../repo/paths"
-
 module Ucode
   module Glyphs
     module EmbeddedFonts

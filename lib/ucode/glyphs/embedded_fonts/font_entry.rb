@@ -5,7 +5,6 @@ require "pathname"
 require "tempfile"
 
 require "fontisan"
-require_relative "../../error"
 
 module Ucode
   module Glyphs

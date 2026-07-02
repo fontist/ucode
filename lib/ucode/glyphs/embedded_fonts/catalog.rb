@@ -3,9 +3,6 @@
 require "open3"
 require "pathname"
 
-require_relative "../../error"
-require_relative "font_entry"
-require_relative "tounicode"
 
 module Ucode
   module Glyphs

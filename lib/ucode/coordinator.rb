@@ -487,17 +487,18 @@ module Ucode
     # array. Most codepoint+property pairs match at most one range, but
     # a codepoint can carry multiple binary properties from PropList or
     # emoji-data, so we collect them all.
+    #
+    # Ranges are sorted by `range_first`. Once we hit a range that
+    # starts after `cp`, every subsequent range also starts after `cp`,
+    # so we break. Ranges that end before `cp` are skipped.
     def all_range_values(cp, sorted_ranges)
       return [] if sorted_ranges.nil? || sorted_ranges.empty?
 
       values = []
       sorted_ranges.each do |record|
-        next if cp < record.range_first
-        break if cp > record.range_last && record.range_first > cp
-
-        if cp >= record.range_first && cp <= record.range_last
-          values << record.value
-        end
+        break if record.range_first > cp
+        next if record.range_last < cp
+        values << record.value
       end
       values
     end

@@ -126,9 +126,11 @@ module Ucode
         end
 
         def build_resolver(_version, config_path, database)
-          config = Glyphs::SourceConfig.new(path: config_path)
-          builder = Glyphs::SourceBuilder.new(config: config, database: database)
-          Glyphs::Resolver.new(sources: builder.tier1_sources(install: false))
+          Glyphs::ResolverFactory.build(
+            version: _version,
+            source_config_path: config_path,
+            database: database,
+          )
         end
 
         def codepoint_enum(version)

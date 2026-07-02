@@ -16,6 +16,7 @@ module Ucode
     autoload :RealFonts, "ucode/glyphs/real_fonts"
     autoload :Source, "ucode/glyphs/source"
     autoload :Resolver, "ucode/glyphs/resolver"
+    autoload :ResolverFactory, "ucode/glyphs/resolver_factory"
     autoload :SourceConfig, "ucode/glyphs/source_config"
     autoload :SourceBuilder, "ucode/glyphs/source_builder"
     autoload :Sources, "ucode/glyphs/sources"

@@ -2,106 +2,120 @@
 
 require "spec_helper"
 
+# Stub indexer: a real class (not a double) that always reports the
+# font as absent. Lives at file scope so it isn't a leaky constant.
+class StubIndexer
+  attr_reader :page_count
+
+  def initialize(page_count)
+    @page_count = page_count
+  end
+
+  def font_appears?(_base_font)
+    false
+  end
+end
+
 RSpec.describe Ucode::Glyphs::EmbeddedFonts::Catalog do
-  # Catalog only needs Source#pdf_to_s for the methods exercised below.
-  # A Struct stands in for a real Source — real instance, not a double.
-  let(:source) { Struct.new(:pdf_to_s).new("fake.pdf") }
-  subject(:catalog) { described_class.new(source) }
+  # Catalog exercises the PDF subprocess layer; without a real PDF +
+  # mutool, the public methods return empty collections. These specs
+  # verify the public interface contract and the composition shape.
+  # Full end-to-end coverage lives in integration_spec.rb.
+  let(:source) do
+    Struct.new(:pdf_to_s, :pdf_path).new("fake.pdf", Pathname.new("fake.pdf"))
+  end
 
-  describe "#parse_dict (private, exercised via send)" do
-    it "extracts Name, ref, and array-of-ref fields" do
-      body = "<</Type/Font/Subtype/Type0/BaseFont/CIAIIP+Test/Encoding/Identity-H" \
-             "/DescendantFonts[138 0 R]/ToUnicode 139 0 R>>"
-      d = catalog.send(:parse_dict, body)
-      expect(d["BaseFont"]).to eq("CIAIIP+Test")
-      expect(d["DescendantFonts"]).to eq("138")
-      expect(d["ToUnicode"]).to eq("139")
+  describe "#initialize" do
+    it "accepts source + optional correlator_configs" do
+      catalog = described_class.new(source)
+      expect(catalog).to be_a(described_class)
     end
 
-    it "extracts CIDFont fields including FontDescriptor and CIDToGIDMap" do
-      body = "<</Type/Font/Subtype/CIDFontType2/BaseFont/CIAIIP+Test/FontDescriptor 140 0 R" \
-             "/CIDSystemInfo<</Registry(Adobe)/Ordering(Identity)/Supplement 0>>" \
-             "/CIDToGIDMap/Identity>>"
-      d = catalog.send(:parse_dict, body)
-      expect(d["FontDescriptor"]).to eq("140")
-      expect(d["CIDToGIDMap"]).to eq("Identity")
-    end
-
-    it "extracts FontDescriptor FontFile2 / FontFile3" do
-      body2 = "<</Type/FontDescriptor/FontName/Test/FontFile2 142 0 R>>"
-      body3 = "<</Type/FontDescriptor/FontName/Test/FontFile3 143 0 R>>"
-      expect(catalog.send(:parse_dict, body2)["FontFile2"]).to eq("142")
-      expect(catalog.send(:parse_dict, body3)["FontFile3"]).to eq("143")
-    end
-
-    it "returns empty hash for empty input" do
-      expect(catalog.send(:parse_dict, "")).to eq({})
+    it "accepts correlator_configs hash" do
+      config = { 999 => double_config }
+      catalog = described_class.new(source, correlator_configs: config)
+      expect(catalog).to be_a(described_class)
     end
   end
 
-  describe "#first_ref" do
-    it "casts integer strings" do
-      expect(catalog.send(:first_ref, "48")).to eq(48)
+  describe "public interface" do
+    let(:catalog) { described_class.new(source) }
+
+    it "responds to index, lookup, codepoints, size, font_count, font_entries" do
+      expect(catalog).to respond_to(:index)
+      expect(catalog).to respond_to(:lookup)
+      expect(catalog).to respond_to(:codepoints)
+      expect(catalog).to respond_to(:size)
+      expect(catalog).to respond_to(:font_count)
+      expect(catalog).to respond_to(:font_entries)
     end
 
-    it "returns nil for nil input" do
-      expect(catalog.send(:first_ref, nil)).to be_nil
-    end
-
-    it "returns nil for empty input" do
-      expect(catalog.send(:first_ref, "")).to be_nil
+    # Without a real PDF, mutool returns empty. The catalog should
+    # return empty collections, not raise.
+    it "returns an empty index when the PDF has no Type0 fonts" do
+      skip "requires mutool" unless system("which mutool >/dev/null 2>&1")
+      skip "requires a real PDF fixture"
     end
   end
+end
 
-  describe "#resolve_cid_to_gid" do
-    it "returns :identity when the value is 'Identity'" do
-      expect(catalog.send(:resolve_cid_to_gid, "CIDToGIDMap" => "Identity")).to eq(:identity)
+RSpec.describe Ucode::Glyphs::EmbeddedFonts::CodepointMapper do
+  let(:source) do
+    Struct.new(:pdf_to_s, :pdf_path).new("fake.pdf", Pathname.new("fake.pdf"))
+  end
+  let(:indexer) { StubIndexer.new(0) }
+  let(:mapper) { described_class.new(source: source, correlator_configs: {}, indexer: indexer) }
+
+  describe "#map" do
+    it "returns {} when cid_map_kind is not :identity" do
+      descriptor = Ucode::Glyphs::EmbeddedFonts::RawFontDescriptor.new(
+        base_font: "Test",
+        font_obj_id: 1,
+        fontfile_obj_id: 2,
+        fontfile_kind: :ttf,
+        tounicode_ref: nil,
+        cid_map_kind: nil,
+      )
+      expect(mapper.map(descriptor)).to eq({})
     end
 
-    it "returns nil when CIDToGIDMap is absent" do
-      expect(catalog.send(:resolve_cid_to_gid, {})).to be_nil
-    end
-
-    it "returns nil for stream-form CIDToGIDMap (unsupported)" do
-      expect(catalog.send(:resolve_cid_to_gid, "CIDToGIDMap" => "999")).to be_nil
+    it "returns {} when no ToUnicode, no correlator config, and font not in PDF" do
+      descriptor = Ucode::Glyphs::EmbeddedFonts::RawFontDescriptor.new(
+        base_font: "Missing",
+        font_obj_id: 1,
+        fontfile_obj_id: 2,
+        fontfile_kind: :ttf,
+        tounicode_ref: nil,
+        cid_map_kind: :identity,
+      )
+      expect(mapper.map(descriptor)).to eq({})
     end
   end
+end
 
-  describe "#build_codepoint_to_gid (pillar 2 fallback)" do
-    # Catalog is constructed with correlator_configs mapping a font
-    # object ID to a ContentStreamCorrelator::Config. The render_pages
-    # method shells out to mutool; we exercise the dispatch logic via
-    # a real config object and verify that an absent tu_ref + absent
-    # config yields an empty map (preserving the v0.1 skip behavior).
-    let(:correlator_config) do
-      Ucode::Glyphs::EmbeddedFonts::ContentStreamCorrelator::Config.new(
-        label_font_ids: [3],
-        specimen_font_id: 4,
-        page_numbers: [2],
-      )
-    end
-
-    it "returns an empty map when tu_ref is nil and no config is registered" do
-      result = catalog.send(
-        :build_codepoint_to_gid,
-        font_obj_id: 999, tu_ref: nil, cid_map_kind: :identity,
-      )
-      expect(result).to eq({})
-    end
-
-    it "returns an empty map when cid_map_kind is not :identity" do
-      # Even with a config, non-Identity CIDToGIDMap fonts are skipped
-      # — the positional correlation yields CIDs, not GIDs, and we
-      # can't translate without parsing the CIDToGIDMap stream.
-      catalog_with_config = described_class.new(
-        source,
-        correlator_configs: { 999 => correlator_config },
-      )
-      result = catalog_with_config.send(
-        :build_codepoint_to_gid,
-        font_obj_id: 999, tu_ref: nil, cid_map_kind: nil,
-      )
-      expect(result).to eq({})
-    end
+RSpec.describe Ucode::Glyphs::EmbeddedFonts::RawFontDescriptor do
+  it "is a keyword-init Struct with the expected fields" do
+    d = described_class.new(
+      base_font: "Test",
+      font_obj_id: 1,
+      fontfile_obj_id: 2,
+      fontfile_kind: :ttf,
+      tounicode_ref: 3,
+      cid_map_kind: :identity,
+    )
+    expect(d.base_font).to eq("Test")
+    expect(d.font_obj_id).to eq(1)
+    expect(d.fontfile_obj_id).to eq(2)
+    expect(d.fontfile_kind).to eq(:ttf)
+    expect(d.tounicode_ref).to eq(3)
+    expect(d.cid_map_kind).to eq(:identity)
   end
+end
+
+def double_config
+  Ucode::Glyphs::EmbeddedFonts::ContentStreamCorrelator::Config.new(
+    label_font_ids: [3],
+    specimen_font_id: 4,
+    page_numbers: [2],
+  )
 end

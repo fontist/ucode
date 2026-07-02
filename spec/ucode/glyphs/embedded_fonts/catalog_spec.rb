@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# rubocop:disable RSpec/MultipleDescribes -- separate concerns in one file
+
 require "spec_helper"
 
 # Stub indexer: a real class (not a double) that always reports the
@@ -119,3 +121,5 @@ def double_config
     page_numbers: [2],
   )
 end
+
+# rubocop:enable RSpec/MultipleDescribes

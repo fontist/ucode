@@ -77,7 +77,7 @@ RSpec.describe Ucode::Glyphs::ResolverFactory do
 
     it "defaults install to false" do
       const = described_class.const_get(:DEFAULT_INSTALL)
-      expect(const).to eq(false)
+      expect(const).to be(false)
     end
   end
 end

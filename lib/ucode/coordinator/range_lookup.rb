@@ -56,6 +56,7 @@ module Ucode
         sorted_ranges.each do |record|
           break if record.range_first > cp
           next if record.range_last < cp
+
           values << record.value
         end
         values

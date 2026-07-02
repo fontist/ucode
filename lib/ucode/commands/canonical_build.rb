@@ -118,10 +118,10 @@ module Ucode
       end
 
       def build_resolver(version, source_config_path)
-        database = Database.open(version)
-        config = Glyphs::SourceConfig.new(path: source_config_path_or_default(source_config_path))
-        builder = Glyphs::SourceBuilder.new(config: config, database: database)
-        Glyphs::Resolver.new(sources: builder.tier1_sources(install: false))
+        Glyphs::ResolverFactory.build(
+          version: version,
+          source_config_path: source_config_path,
+        )
       end
 
       def source_config_path_or_default(path)

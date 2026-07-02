@@ -2,7 +2,6 @@
 
 require "open3"
 require "pathname"
-require "set"
 
 module Ucode
   module Glyphs

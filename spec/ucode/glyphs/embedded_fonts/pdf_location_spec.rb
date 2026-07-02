@@ -35,13 +35,13 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::PdfLocation do
         cache_dir: tmp_root.join("cache"),
         gem_root: tmp_root,
       )
-      expect(src.pdf_path).to eq(tmp_root + "CodeCharts.pdf")
+      expect(src.pdf_path).to eq(tmp_root.join("CodeCharts.pdf"))
     end
 
     it "raises EmbeddedFontsMissingError when the resolved PDF doesn't exist" do
-      expect {
+      expect do
         described_class.new(pdf: tmp_root.join("missing.pdf"), cache_dir: tmp_root.join("cache"))
-      }.to raise_error(Ucode::EmbeddedFontsMissingError)
+      end.to raise_error(Ucode::EmbeddedFontsMissingError)
     end
   end
 
@@ -68,7 +68,7 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::PdfLocation do
     it "joins base font name and extension under cache_dir" do
       src = described_class.new(pdf: pdf_path, cache_dir: tmp_root.join("cache"))
       path = src.font_cache_path("CIAIIP+Uni2000Generalpunctuation", ".ttf")
-      expect(path).to eq(tmp_root + "cache" + "CIAIIP+Uni2000Generalpunctuation.ttf")
+      expect(path).to eq(tmp_root.join("cache", "CIAIIP+Uni2000Generalpunctuation.ttf"))
     end
   end
 end

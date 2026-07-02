@@ -17,10 +17,12 @@ on:
         default: "skip"
   repository_dispatch:
     # `do-release` is dispatched by the maintainer to kick off the
-    # bump-and-tag leg. `release-passed` is dispatched by metanorma/ci
-    # at the end of the bump-and-tag leg to trigger the publish leg.
-    # Both must be listed or the 2-hop chain breaks.
-    types: [do-release, release-passed]
+    # bump-and-tag leg (or to trigger the publish leg on a ref that
+    # already has a release tag). `release-passed` is dispatched by
+    # metanorma/ci at the end of every leg as a fire-and-forget
+    # notification — it MUST NOT be a listener, or each publish leg
+    # dispatches another publish leg, creating an infinite loop.
+    types: [do-release]
 
 jobs:
   release:

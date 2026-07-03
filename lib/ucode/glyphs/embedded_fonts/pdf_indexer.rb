@@ -26,26 +26,35 @@ module Ucode
           return [] if type0_refs.empty?
 
           type0_dicts = fetch_objects(type0_refs.keys)
+          descendant_refs, = collect_refs(type0_refs, type0_dicts)
+          descendant_dicts = fetch_objects(descendant_refs)
+          fontdesc_dicts = fetch_fontdescs(descendant_dicts)
+
+          build_descriptors(type0_refs, type0_dicts, descendant_dicts, fontdesc_dicts)
+        end
+
+        def collect_refs(type0_refs, type0_dicts)
           descendant_refs = []
           tounicode_refs = []
           type0_refs.each_key do |font_obj_id|
             d = type0_dicts[font_obj_id] || {}
-            desc_ref = first_ref(d["DescendantFonts"])
-            tu_ref = first_ref(d["ToUnicode"])
-            descendant_refs << desc_ref if desc_ref
-            tounicode_refs << tu_ref if tu_ref
+            collect_ref(d["DescendantFonts"], descendant_refs)
+            collect_ref(d["ToUnicode"], tounicode_refs)
           end
+          [descendant_refs, tounicode_refs]
+        end
 
-          descendant_dicts = fetch_objects(descendant_refs)
+        def collect_ref(dict_value, acc)
+          ref = first_ref(dict_value)
+          acc << ref if ref
+        end
+
+        def fetch_fontdescs(descendant_dicts)
           fontdesc_refs = []
           descendant_dicts.each_value do |d|
-            fd_ref = first_ref(d["FontDescriptor"])
-            fontdesc_refs << fd_ref if fd_ref
+            collect_ref(d["FontDescriptor"], fontdesc_refs)
           end
-
-          fontdesc_dicts = fetch_objects(fontdesc_refs)
-
-          build_descriptors(type0_refs, type0_dicts, descendant_dicts, fontdesc_dicts)
+          fetch_objects(fontdesc_refs)
         end
 
         # @return [Integer] total pages in the PDF

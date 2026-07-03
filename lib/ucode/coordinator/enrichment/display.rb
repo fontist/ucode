@@ -9,15 +9,25 @@ module Ucode
       module Display
         class << self
           def enrich(cp, indices)
-            lb = RangeLookup.find_in_range(cp.cp, indices.line_break)&.value
-            eaw = RangeLookup.find_in_range(cp.cp, indices.east_asian_width)&.value
-            vo = RangeLookup.find_in_range(cp.cp, indices.vertical_orientation)&.value
+            lb = lookup_value(cp, indices.line_break)
+            eaw = lookup_value(cp, indices.east_asian_width)
+            vo = lookup_value(cp, indices.vertical_orientation)
             return if lb.nil? && eaw.nil? && vo.nil?
 
             cp.display ||= Ucode::Models::CodePoint::Display.new
-            cp.display.line_break_class = lb if lb
-            cp.display.east_asian_width = eaw if eaw
-            cp.display.vertical_orientation = vo if vo
+            apply_values(cp.display, lb, eaw, vo)
+          end
+
+          private
+
+          def lookup_value(cp, ranges)
+            RangeLookup.find_in_range(cp.cp, ranges)&.value
+          end
+
+          def apply_values(display, lb, eaw, vo)
+            display.line_break_class = lb if lb
+            display.east_asian_width = eaw if eaw
+            display.vertical_orientation = vo if vo
           end
         end
       end

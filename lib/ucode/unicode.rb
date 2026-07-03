@@ -24,7 +24,7 @@ module Ucode
   module Unicode
     SUPPORTED_VERSIONS = %w[17.0.0].freeze
 
-    LATEST_VERSION = "17.0.0".freeze
+    LATEST_VERSION = "17.0.0"
 
     # Official Unicode plane short names. Planes 4–13 are unassigned
     # and have no short name. Used by {Catalog} when building Plane
@@ -44,7 +44,10 @@ module Ucode
     autoload :Catalog, "ucode/unicode/catalog"
 
     module Metadata
+      # V17_0_0 mirrors the dotted version; underscores are intentional
+      # rubocop:disable Naming/VariableNumber
       autoload :V17_0_0, "ucode/unicode/metadata/v17_0_0"
+      # rubocop:enable Naming/VariableNumber
     end
 
     class << self

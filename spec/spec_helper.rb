@@ -4,6 +4,7 @@ require "simplecov"
 SimpleCov.start do
   add_filter "/spec/"
   add_filter "/vendor/"
+  add_filter "/lib/ucode/unicode/metadata/" # auto-generated frozen data modules
   minimum_coverage 80
   # Per-file floor is 30 (not 40): network fetchers (Fetch::CodeCharts,
   # Fetch::UcdZip, Fetch::UnihanZip) can't be fully exercised without

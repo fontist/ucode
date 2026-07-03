@@ -22,7 +22,7 @@ module Ucode
   #   catalog.find_plane_by_codepoint(0x41)
   #
   module Unicode
-    SUPPORTED_VERSIONS = %w[17.0.0].freeze
+    SUPPORTED_VERSIONS = %w[15.0.0 15.1.0 16.0.0 17.0.0].freeze
 
     LATEST_VERSION = "17.0.0"
 
@@ -42,10 +42,14 @@ module Ucode
     autoload :Plane, "ucode/unicode/plane"
     autoload :Block, "ucode/unicode/block"
     autoload :Catalog, "ucode/unicode/catalog"
+    autoload :MetadataWriter, "ucode/unicode/metadata_writer"
 
     module Metadata
-      # V17_0_0 mirrors the dotted version; underscores are intentional
+      # Module names mirror the dotted version with underscores.
       # rubocop:disable Naming/VariableNumber
+      autoload :V15_0_0, "ucode/unicode/metadata/v15_0_0"
+      autoload :V15_1_0, "ucode/unicode/metadata/v15_1_0"
+      autoload :V16_0_0, "ucode/unicode/metadata/v16_0_0"
       autoload :V17_0_0, "ucode/unicode/metadata/v17_0_0"
       # rubocop:enable Naming/VariableNumber
     end

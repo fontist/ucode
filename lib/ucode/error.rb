@@ -124,4 +124,9 @@ module Ucode
   # just PDFs: source config schema, font file presence, coverage
   # assertion.
   class UniversalSetPreBuildError < GlyphError; end
+
+  # The requested Unicode version has no metadata module shipped with
+  # this gem. The context carries the requested version and the list of
+  # supported versions.
+  class UnknownUnicodeVersionError < LookupError; end
 end

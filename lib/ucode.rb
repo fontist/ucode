@@ -35,6 +35,7 @@ module Ucode
   autoload :LastResortMissingError, "ucode/error"
   autoload :EmbeddedFontsMissingError, "ucode/error"
   autoload :CodeChartNotFoundError, "ucode/error"
+  autoload :UnknownUnicodeVersionError, "ucode/error"
 
   # Infrastructure
   autoload :Cache, "ucode/cache"
@@ -55,6 +56,7 @@ module Ucode
   autoload :Glyphs, "ucode/glyphs"
   autoload :Audit, "ucode/audit"
   autoload :CodeChart, "ucode/code_chart"
+  autoload :Unicode, "ucode/unicode"
   autoload :Site, "ucode/site"
   autoload :Commands, "ucode/commands"
   autoload :Cli, "ucode/cli"

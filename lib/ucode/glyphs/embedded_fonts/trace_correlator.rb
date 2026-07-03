@@ -33,15 +33,10 @@ module Ucode
         # @param trace_glyphs [Array<TraceGlyph>]
         # @return [Hash{Integer=>Integer}] codepoint => gid
         def correlate(trace_glyphs)
-          specimens = trace_glyphs.select { |g| g.font_name == @specimen_font_name }
+          specimens = select_specimens(trace_glyphs)
           return {} if specimens.empty?
 
-          label_font = detect_label_font(trace_glyphs)
-          return {} unless label_font
-
-          labels = trace_glyphs.select do |g|
-            g.font_name == label_font && g.unicode&.match?(/\A[0-9A-Fa-f]\z/)
-          end
+          labels = select_labels(trace_glyphs)
           return {} if labels.empty?
 
           PositionalMatcher.match(
@@ -51,6 +46,21 @@ module Ucode
         end
 
         private
+
+        def select_specimens(trace_glyphs)
+          trace_glyphs.select { |g| g.font_name == @specimen_font_name }
+        end
+
+        def select_labels(trace_glyphs)
+          label_font = detect_label_font(trace_glyphs)
+          return [] unless label_font
+
+          trace_glyphs.select { |g| hex_char_from?(g, label_font) }
+        end
+
+        def hex_char_from?(glyph, font_name)
+          glyph.font_name == font_name && glyph.unicode&.match?(/\A[0-9A-Fa-f]\z/)
+        end
 
         def to_position(glyph)
           PositionalMatcher::Position.new(
@@ -69,19 +79,23 @@ module Ucode
         # may also contain hex chars but are not co-located with
         # specimens.
         def detect_label_font(trace_glyphs)
-          specimens = trace_glyphs.select { |g| g.font_name == @specimen_font_name }
+          specimens = select_specimens(trace_glyphs)
           return nil if specimens.empty?
 
-          candidates = trace_glyphs.select do |g|
-            g.font_name != @specimen_font_name &&
-              g.unicode&.match?(/\A[0-9A-Fa-f]\z/)
-          end
+          candidates = select_hex_candidates(trace_glyphs)
           return nil if candidates.empty?
 
           counts = proximity_counts(specimens, candidates)
           return nil if counts.empty?
 
           counts.max_by { |_, n| n }.first
+        end
+
+        def select_hex_candidates(trace_glyphs)
+          trace_glyphs.select do |g|
+            g.font_name != @specimen_font_name &&
+              g.unicode&.match?(/\A[0-9A-Fa-f]\z/)
+          end
         end
 
         def proximity_counts(specimens, candidates)

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# rubocop:disable RSpec/MultipleDescribes -- separate concerns in one file
+
 require "spec_helper"
 
 RangeTuple = Struct.new(:range_first, :range_last, :value) unless defined?(RangeTuple)
@@ -87,3 +89,5 @@ RSpec.describe Ucode::Coordinator::RangeLookup do
     end
   end
 end
+
+# rubocop:enable RSpec/MultipleDescribes

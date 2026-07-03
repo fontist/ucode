@@ -7,15 +7,25 @@ module Ucode
       module Segmentation
         class << self
           def enrich(cp, indices)
-            grapheme = RangeLookup.find_in_range(cp.cp, indices.grapheme_break)&.value
-            word = RangeLookup.find_in_range(cp.cp, indices.word_break)&.value
-            sentence = RangeLookup.find_in_range(cp.cp, indices.sentence_break)&.value
+            grapheme = lookup_value(cp, indices.grapheme_break)
+            word = lookup_value(cp, indices.word_break)
+            sentence = lookup_value(cp, indices.sentence_break)
             return if grapheme.nil? && word.nil? && sentence.nil?
 
             cp.break_segmentation ||= Ucode::Models::CodePoint::BreakSegmentation.new
-            cp.break_segmentation.grapheme = grapheme if grapheme
-            cp.break_segmentation.word = word if word
-            cp.break_segmentation.sentence = sentence if sentence
+            apply_values(cp.break_segmentation, grapheme, word, sentence)
+          end
+
+          private
+
+          def lookup_value(cp, ranges)
+            RangeLookup.find_in_range(cp.cp, ranges)&.value
+          end
+
+          def apply_values(seg, grapheme, word, sentence)
+            seg.grapheme = grapheme if grapheme
+            seg.word = word if word
+            seg.sentence = sentence if sentence
           end
         end
       end

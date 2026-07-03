@@ -25,16 +25,15 @@ module Ucode
       def find_in_range(cp, sorted_ranges)
         return nil if sorted_ranges.nil? || sorted_ranges.empty?
 
-        idx = sorted_ranges.bsearch_index do |record|
-          if cp < record.range_first
-            -1
-          elsif cp > record.range_last
-            1
-          else
-            0
-          end
-        end
+        idx = sorted_ranges.bsearch_index { |record| compare_cp(cp, record) }
         idx.nil? ? nil : sorted_ranges[idx]
+      end
+
+      def compare_cp(cp, record)
+        return -1 if cp < record.range_first
+        return 1 if cp > record.range_last
+
+        0
       end
 
       # Returns every value whose range contains `cp` in a sorted tuple

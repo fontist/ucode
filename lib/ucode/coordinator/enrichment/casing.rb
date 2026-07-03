@@ -22,10 +22,14 @@ module Ucode
             return unless rules && !rules.empty?
 
             cp.casing ||= Ucode::Models::CodePoint::Casing.new
-            cp.casing.full_upper_ids = rules.flat_map(&:upper_ids)
-            cp.casing.full_lower_ids = rules.flat_map(&:lower_ids)
-            cp.casing.full_title_ids = rules.flat_map(&:title_ids)
-            cp.casing.conditions = rules.flat_map(&:conditions).uniq
+            apply_casing_rules(cp.casing, rules)
+          end
+
+          def apply_casing_rules(casing, rules)
+            casing.full_upper_ids = rules.flat_map(&:upper_ids)
+            casing.full_lower_ids = rules.flat_map(&:lower_ids)
+            casing.full_title_ids = rules.flat_map(&:title_ids)
+            casing.conditions = rules.flat_map(&:conditions).uniq
           end
 
           def assign_case_folding(cp, indices)

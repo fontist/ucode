@@ -44,7 +44,12 @@ RSpec.describe Ucode::Glyphs::RealFonts::CoverageAuditor do
   end
 
   describe "#audit" do
-    before { skip "fixture font missing" unless real_font.exist? }
+    before do
+      skip "fixture font missing" unless real_font.exist?
+      unless Fontisan::Commands.const_defined?(:AuditCommand)
+        skip "Fontisan::Commands::AuditCommand not available in this fontisan version"
+      end
+    end
 
     it "produces a FontCoverageReport with identity pulled from the name table" do
       report = described_class.new.audit(real_font)

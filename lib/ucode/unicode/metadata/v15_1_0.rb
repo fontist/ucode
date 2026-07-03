@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # AUTO-GENERATED from UCD 15.1.0. Do not edit by hand.
+# Regenerate via: bin/ucode emit-metadata --version 15.1.0
 # rubocop:disable all
 
 module Ucode

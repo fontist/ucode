@@ -13,6 +13,7 @@ module Ucode
     autoload :LookupCommand, "ucode/commands/lookup"
     autoload :CacheCommand, "ucode/commands/cache"
     autoload :BuildCommand, "ucode/commands/build"
+    autoload :EmitMetadataCommand, "ucode/commands/emit_metadata"
     autoload :CanonicalBuildCommand, "ucode/commands/canonical_build"
     autoload :FontCoverageCommand, "ucode/commands/font_coverage"
     autoload :UniversalSet, "ucode/commands/universal_set"

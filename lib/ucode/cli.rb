@@ -651,6 +651,18 @@ module Ucode
       puts JSON.pretty_generate(result.to_h)
     end
 
+    desc "emit-metadata [VERSION]", "Generate frozen Ruby metadata module from UCD data"
+    option :gem_root, type: :string, default: nil,
+                      desc: "Gem root for output path (default: auto-detect)"
+    def emit_metadata(version = nil)
+      version_str = VersionResolver.resolve(version)
+      result = Commands::EmitMetadataCommand.new.call(
+        version_str,
+        gem_root: options[:gem_root],
+      )
+      puts JSON.pretty_generate(result)
+    end
+
     private
 
     def result_to_h(result)

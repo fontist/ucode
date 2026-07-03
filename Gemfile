@@ -23,8 +23,8 @@ end
 # Default to the published fontisan from rubygems. To develop against a
 # local sibling checkout, set FONTISAN_PATH before running bundle.
 #   FONTISAN_PATH=../fontisan bundle install
+# fontist itself constrains fontisan to ~> 0.2, so we must stay in the
+# 0.2.x series. 0.2.23+ removed AuditCommand — CoverageAuditor guards
+# its absence with const_defined?.
 gem "fontisan", path: ENV["FONTISAN_PATH"] if ENV["FONTISAN_PATH"]
-# Pin fontisan to 0.2.22 — 0.2.23+ removed
-# `Fontisan::Commands::AuditCommand` and 0.4.x removed the Audit
-# subsystem entirely. See ucode.gemspec for the rationale.
-gem "fontisan", "= 0.2.22" unless ENV["FONTISAN_PATH"]
+gem "fontisan", ">= 0.2.22", "< 0.3" unless ENV["FONTISAN_PATH"]

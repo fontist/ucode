@@ -53,6 +53,13 @@ module Ucode
         # Unicode17Blocks table) and brief mode skips the UCD database
         # dependency that full mode requires.
         def run_fontisan_audit(font_path)
+          unless Fontisan::Commands.const_defined?(:AuditCommand)
+            raise Ucode::Error,
+                  "Fontisan::Commands::AuditCommand is not available in this " \
+                  "fontisan version. The coverage auditor requires fontisan < 0.2.23 " \
+                  "or a version that re-adds AuditCommand."
+          end
+
           Fontisan::Commands::AuditCommand.new(
             font_path.to_s,
             ucd_version: UCD_VERSION,

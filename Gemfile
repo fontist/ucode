@@ -27,4 +27,4 @@ end
 # 0.2.x series. 0.2.23+ removed AuditCommand — CoverageAuditor guards
 # its absence with const_defined?.
 gem "fontisan", path: ENV["FONTISAN_PATH"] if ENV["FONTISAN_PATH"]
-gem "fontisan", ">= 0.2.22", "< 0.3" unless ENV["FONTISAN_PATH"]
+gem "fontisan", "~> 0.4", ">= 0.4.9" unless ENV["FONTISAN_PATH"]

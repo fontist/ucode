@@ -17,7 +17,7 @@ module Ucode
       # discovered wins. Discovery order follows mutool info's page-major
       # listing, so earlier blocks' fonts win — the expected behavior.
       class Catalog
-        # @param source [PdfLocation]
+        # @param source [PdfSource]
         # @param correlator_configs [Hash{Integer=>ContentStreamCorrelator::Config}]
         #   maps a Type0 font's PDF object ID to the pillar-2 config to
         #   use when the font has no /ToUnicode CMap. Empty by default.

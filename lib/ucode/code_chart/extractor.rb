@@ -100,7 +100,7 @@ module Ucode
       end
 
       def embedded_pillar_sources
-        embedded_source = Glyphs::EmbeddedFonts::PdfLocation.new(
+        embedded_source = Glyphs::EmbeddedFonts::PdfSource.new(
           pdf: @pdf_path, cache_dir: @cache_dir,
         )
         catalog = Glyphs::EmbeddedFonts::Catalog.new(embedded_source)

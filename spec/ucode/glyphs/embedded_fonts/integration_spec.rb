@@ -9,7 +9,7 @@ RSpec.describe "Ucode::Glyphs::EmbeddedFonts end-to-end pipeline" do
   end
 
   let(:source) do
-    Ucode::Glyphs::EmbeddedFonts::PdfLocation.new(
+    Ucode::Glyphs::EmbeddedFonts::PdfSource.new(
       pdf: fixture_pdf,
       cache_dir: Pathname.new(Dir.mktmpdir),
     )

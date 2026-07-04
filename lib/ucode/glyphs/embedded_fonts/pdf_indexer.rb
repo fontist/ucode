@@ -15,7 +15,7 @@ module Ucode
       # GID (that's {CodepointMapper}'s job). The descriptor carries
       # every ref the mapper needs to do its work.
       class PdfIndexer
-        # @param source [PdfLocation]
+        # @param source [PdfSource]
         def initialize(source:)
           @source = source
         end

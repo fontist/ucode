@@ -31,7 +31,7 @@ module Ucode
         # @param renderer [EmbeddedFonts::Renderer] the renderer to
         #   delegate to. Callers typically construct it with the
         #   {EmbeddedFonts::Catalog} built from the resolved Code
-        #   Charts {EmbeddedFonts::PdfLocation}. To enable pillar-2
+        #   Charts {EmbeddedFonts::PdfSource}. To enable pillar-2
         #   fallback, that Catalog must be constructed with
         #   +correlator_configs:+.
         def initialize(renderer:)

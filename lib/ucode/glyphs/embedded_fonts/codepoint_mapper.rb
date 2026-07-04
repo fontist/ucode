@@ -1,128 +1,74 @@
 # frozen_string_literal: true
 
-require "open3"
 require "pathname"
-require "tempfile"
+
+require "ucode/glyphs/embedded_fonts/codepoint_mapper/strategy"
+require "ucode/glyphs/embedded_fonts/codepoint_mapper/tounicode_strategy"
+require "ucode/glyphs/embedded_fonts/codepoint_mapper/correlator_strategy"
+require "ucode/glyphs/embedded_fonts/codepoint_mapper/trace_strategy"
+require "ucode/glyphs/embedded_fonts/mutool"
+require "ucode/glyphs/embedded_fonts/page_trace_cache"
+require "ucode/error"
 
 module Ucode
   module Glyphs
     module EmbeddedFonts
-      # Resolves codepoint → GID for one Type0 font via a 3-path strategy:
+      # Resolves codepoint → GID for one Type0 font via a chain of
+      # {Strategy} subclasses. First non-empty result wins.
       #
-      # 1. **ToUnicode CMap** — the font's `/ToUnicode` stream (Tier 1
-      #    for pillar 1). Parsed by {ToUnicode}.
-      # 2. **Caller-supplied correlator config** (pillar 2) — render the
-      #    font's pages to SVG and run {ContentStreamCorrelator}.
-      # 3. **Auto-detect via mutool trace** (pillar 2b) — trace every
-      #    page and run {TraceCorrelator} positionally.
+      # Default chain (set by {.build}):
       #
-      # Each path returns a `{codepoint => gid}` map. First non-empty
-      # result wins; the strategy stops there.
+      #   1. {ToUnicodeStrategy} — `/ToUnicode` CMap (highest fidelity).
+      #   2. {CorrelatorStrategy} — caller-supplied pillar-2 config.
+      #   3. {TraceStrategy} — `mutool trace` fallback via PageTraceCache.
       #
-      # Pure strategy orchestration — does NOT parse the PDF object graph
-      # (that's {PdfIndexer}'s job). Takes a {RawFontDescriptor} + the
-      # shared {PdfIndexer} (for page_count + font_appears? queries used
-      # by the trace fallback).
+      # Adding a new strategy = one new Strategy subclass + one entry
+      # in the +strategies:+ constructor arg. No edit to {#map}
+      # (Open/Closed Principle).
       class CodepointMapper
-        # @param source [PdfSource]
-        # @param correlator_configs [Hash{Integer=>ContentStreamCorrelator::Config}]
-        #   caller-supplied pillar-2 configs, keyed by font_obj_id
-        # @param indexer [PdfIndexer] for page_count + font_appears? queries
-        def initialize(source:, correlator_configs:, indexer:)
-          @source = source
-          @correlator_configs = correlator_configs
-          @indexer = indexer
+        # @param strategies [Array<Strategy>] ordered chain
+        def initialize(strategies:)
+          @strategies = strategies
+        end
+
+        # Convenience builder — wires up the default chain with default
+        # Mutool wrappers. Callers that need to inject stubs for tests
+        # should construct strategies directly and pass them to
+        # +#initialize+.
+        #
+        # @return [CodepointMapper]
+        def self.build(source:, correlator_configs:, indexer:,
+                       mutool_show: Mutool::Show.new,
+                       mutool_draw: Mutool::Draw.new,
+                       mutool_trace: Mutool::Trace.new)
+          trace_cache = PageTraceCache.new(
+            pdf: source.pdf_path,
+            page_count: indexer.page_count,
+            mutool: mutool_trace,
+          )
+          strategies = [
+            ToUnicodeStrategy.new(source: source, mutool_show: mutool_show),
+            CorrelatorStrategy.new(source: source,
+                                   correlator_configs: correlator_configs,
+                                   mutool_draw: mutool_draw),
+            TraceStrategy.new(cache: trace_cache, indexer: indexer),
+          ]
+          new(strategies: strategies)
         end
 
         # @param descriptor [RawFontDescriptor]
-        # @return [Hash{Integer=>Integer}] codepoint => gid; empty when
-        #   no strategy produces a map
+        # @return [Hash{Integer=>Integer}] codepoint => gid; empty
+        #   when no strategy produces a map
         def map(descriptor)
           return {} unless descriptor.cid_map_kind == :identity
 
-          from_tounicode = map_from_tounicode(descriptor.tounicode_ref)
-          return from_tounicode unless from_tounicode.empty?
+          @strategies.each do |s|
+            next unless s.supports?(descriptor)
 
-          from_correlator = map_from_correlator(descriptor.font_obj_id)
-          return from_correlator unless from_correlator.empty?
-
-          map_from_trace(descriptor.base_font)
-        end
-
-        private
-
-        # ---- Strategy 1: /ToUnicode CMap --------------------------------
-
-        def map_from_tounicode(tu_ref)
-          return {} unless tu_ref
-
-          cmap_text = fetch_tounicode(tu_ref)
-          cid_to_cp = ToUnicode.parse(cmap_text)
-          build_codepoint_map(cid_to_cp)
-        end
-
-        def build_codepoint_map(cid_to_cp)
-          cid_to_cp.each_with_object({}) do |(cid, cp), h|
-            h[cp] = cid
+            result = s.map(descriptor)
+            return result unless result.empty?
           end
-        end
-
-        def fetch_tounicode(obj_id)
-          Tempfile.create("ucode-tounicode") do |tmp|
-            tmp.close
-            ok = system("mutool", "show", "-o", tmp.path, "-b",
-                        @source.pdf_to_s, obj_id.to_s,
-                        out: File::NULL, err: File::NULL)
-            unless ok
-              raise Ucode::EmbeddedFontsMissingError,
-                    "mutool show failed for ToUnicode obj=#{obj_id}"
-            end
-
-            File.binread(tmp.path).force_encoding("UTF-8")
-          end
-        end
-
-        # ---- Strategy 2: caller-supplied correlator config --------------
-
-        def map_from_correlator(font_obj_id)
-          config = @correlator_configs[font_obj_id]
-          return {} unless config
-
-          svg = render_pages(config.page_numbers)
-          ContentStreamCorrelator.new(config).correlate(svg)
-        end
-
-        def render_pages(page_numbers)
-          return "" if page_numbers.nil? || page_numbers.empty?
-
-          out, err, status = Open3.capture3(
-            "mutool", "draw", "-F", "svg",
-            @source.pdf_to_s,
-            *page_numbers.map(&:to_s),
-          )
-          unless status.success?
-            raise Ucode::EmbeddedFontsMissingError,
-                  "mutool draw failed: #{err.strip}"
-          end
-
-          out
-        end
-
-        # ---- Strategy 3: auto-detect via mutool trace --------------------
-
-        def map_from_trace(base_font)
-          return {} unless @indexer.font_appears?(base_font)
-
-          runner = TraceRunner.new(@source.pdf_path)
-          correlator = TraceCorrelator.new(specimen_font_name: base_font)
-
-          (1..@indexer.page_count).each_with_object({}) do |page, mapping|
-            glyphs = runner.trace([page])
-            page_mapping = correlator.correlate(glyphs)
-            page_mapping.each do |cp, gid|
-              mapping[cp] ||= gid
-            end
-          end
+          {}
         end
       end
     end

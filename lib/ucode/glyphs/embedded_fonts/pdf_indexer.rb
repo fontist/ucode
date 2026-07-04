@@ -1,29 +1,23 @@
 # frozen_string_literal: true
 
-require "open3"
 require "pathname"
+
+require "ucode/glyphs/embedded_fonts/mutool"
 
 module Ucode
   module Glyphs
     module EmbeddedFonts
-      # Walks the Code Charts PDF once via `mutool info` + `mutool show`
-      # and builds an Array of {RawFontDescriptor} — one per Type0 font
-      # that has the required descendant CIDFont, FontDescriptor, and
-      # FontFile2/3 + Identity CIDToGIDMap.
-      #
-      # Pure subprocess + parsing concern. Does NOT resolve codepoint →
-      # GID (that's {CodepointMapper}'s job). The descriptor carries
-      # every ref the mapper needs to do its work.
       class PdfIndexer
-        # One Type0 font discovered in `mutool info` output.
-        # Single source of truth for the Type0 font list — both
-        # the obj_id-keyed discovery hash and the BaseFont-name
-        # membership check derive their answer from this parse.
         Type0Entry = Struct.new(:font_obj_id, :base_font, keyword_init: true)
 
         # @param source [PdfSource]
-        def initialize(source:)
+        # @param mutool_info [Mutool::Info] injectable for tests
+        # @param mutool_show [Mutool::Show] injectable for tests
+        def initialize(source:, mutool_info: Mutool::Info.new,
+                       mutool_show: Mutool::Show.new)
           @source = source
+          @mutool_info = mutool_info
+          @mutool_show = mutool_show
         end
 
         # @return [Array<RawFontDescriptor>]
@@ -181,14 +175,7 @@ module Ucode
         def fetch_objects(obj_ids)
           return {} if obj_ids.empty?
 
-          args = ["mutool", "show", "-g",
-                  @source.pdf_to_s].concat(obj_ids.map(&:to_s))
-          out, err, status = Open3.capture3(*args)
-          unless status.success?
-            raise Ucode::EmbeddedFontsMissingError,
-                  "mutool show failed: #{err.strip}"
-          end
-
+          out = @mutool_show.grep(@source.pdf_to_s, *obj_ids)
           parse_grep_output(out)
         end
 
@@ -235,12 +222,7 @@ module Ucode
         end
 
         def mutool_info_text
-          @mutool_info_text ||= run_mutool_info
-        end
-
-        def run_mutool_info
-          out, err, status = Open3.capture3("mutool", "info", @source.pdf_to_s)
-          status.success? ? out + err : ""
+          @mutool_info_text ||= @mutool_info.call(@source.pdf_to_s)
         end
       end
     end

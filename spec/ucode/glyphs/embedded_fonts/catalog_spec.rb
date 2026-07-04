@@ -66,7 +66,7 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::CodepointMapper do
     Struct.new(:pdf_to_s, :pdf_path).new("fake.pdf", Pathname.new("fake.pdf"))
   end
   let(:indexer) { StubIndexer.new(0) }
-  let(:mapper) { described_class.new(source: source, correlator_configs: {}, indexer: indexer) }
+  let(:mapper) { described_class.build(source: source, correlator_configs: {}, indexer: indexer) }
 
   describe "#map" do
     it "returns {} when cid_map_kind is not :identity" do

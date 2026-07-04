@@ -93,7 +93,7 @@ module Ucode
         end
 
         def mapper
-          @mapper ||= CodepointMapper.new(
+          @mapper ||= CodepointMapper.build(
             source: @source,
             correlator_configs: @correlator_configs,
             indexer: indexer,

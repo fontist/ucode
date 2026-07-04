@@ -17,3 +17,12 @@
 /.bundle/config
 
 Gemfile.lock
+
+# Planning docs and scratch notes — local working tree only, never in git.
+TODO*
+BUG-*.md
+REQ-*.md
+
+# Built gem artifacts.
+*.gem
+

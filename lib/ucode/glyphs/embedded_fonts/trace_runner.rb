@@ -1,51 +1,38 @@
 # frozen_string_literal: true
 
-require "open3"
 require "pathname"
 
+require "ucode/glyphs/embedded_fonts/mutool"
+require "ucode/glyphs/embedded_fonts/trace_parser"
 require "ucode/error"
 
 module Ucode
   module Glyphs
     module EmbeddedFonts
-      # Thin I/O wrapper around `mutool trace <pdf> <page>`.
+      # Thin I/O wrapper around `mutool trace <pdf> <pages...>`.
       #
-      # Runs mutool on the given pages, captures the XML output,
-      # delegates parsing to {TraceParser}, and returns a flat
-      # `Array<TraceGlyph>` across all pages.
+      # Delegates the actual subprocess to {Mutool::Trace} (the
+      # injectable seam) and the XML parsing to {TraceParser}.
+      # Returns a flat `Array<TraceGlyph>` across all pages.
       #
       # The only class in the trace pipeline that touches the
-      # filesystem / spawns subprocesses. Everything upstream
-      # (parser, correlator) is pure.
+      # filesystem / spawns subprocesses indirectly (via Mutool::Trace).
+      # Everything upstream (parser, correlator) is pure.
       class TraceRunner
         # @param pdf_path [Pathname, String]
-        def initialize(pdf_path)
+        # @param mutool [Mutool::Trace] injectable for tests
+        def initialize(pdf_path, mutool: Mutool::Trace.new)
           @pdf_path = Pathname.new(pdf_path)
+          @mutool = mutool
         end
 
         # @param page_numbers [Array<Integer>] 1-based PDF page numbers
         # @return [Array<TraceGlyph>]
         def trace(page_numbers)
-          page_numbers.flat_map { |page| trace_page(page) }
-        end
+          return [] if page_numbers.empty?
 
-        private
-
-        def trace_page(page)
-          xml = run_mutool(page)
+          xml = @mutool.call(@pdf_path, *page_numbers)
           TraceParser.parse(xml)
-        end
-
-        def run_mutool(page)
-          out, err, status = Open3.capture3(
-            "mutool", "trace", @pdf_path.to_s, page.to_s,
-          )
-          unless status.success?
-            raise Ucode::EmbeddedFontsMissingError,
-                  "mutool trace failed: #{(out + err).strip}"
-          end
-
-          out + err
         end
       end
     end

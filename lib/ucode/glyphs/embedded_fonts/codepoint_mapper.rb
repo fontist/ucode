@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-require "open3"
 require "pathname"
-require "tempfile"
+
+require "ucode/glyphs/embedded_fonts/mutool"
+require "ucode/error"
 
 module Ucode
   module Glyphs
@@ -28,10 +29,19 @@ module Ucode
         # @param correlator_configs [Hash{Integer=>ContentStreamCorrelator::Config}]
         #   caller-supplied pillar-2 configs, keyed by font_obj_id
         # @param indexer [PdfIndexer] for page_count + font_appears? queries
-        def initialize(source:, correlator_configs:, indexer:)
+        # @param mutool_show [Mutool::Show] injectable for tests
+        # @param mutool_draw [Mutool::Draw] injectable for tests
+        # @param mutool_trace [Mutool::Trace] injectable for tests
+        def initialize(source:, correlator_configs:, indexer:,
+                       mutool_show: Mutool::Show.new,
+                       mutool_draw: Mutool::Draw.new,
+                       mutool_trace: Mutool::Trace.new)
           @source = source
           @correlator_configs = correlator_configs
           @indexer = indexer
+          @mutool_show = mutool_show
+          @mutool_draw = mutool_draw
+          @mutool_trace = mutool_trace
         end
 
         # @param descriptor [RawFontDescriptor]
@@ -68,18 +78,7 @@ module Ucode
         end
 
         def fetch_tounicode(obj_id)
-          Tempfile.create("ucode-tounicode") do |tmp|
-            tmp.close
-            ok = system("mutool", "show", "-o", tmp.path, "-b",
-                        @source.pdf_to_s, obj_id.to_s,
-                        out: File::NULL, err: File::NULL)
-            unless ok
-              raise Ucode::EmbeddedFontsMissingError,
-                    "mutool show failed for ToUnicode obj=#{obj_id}"
-            end
-
-            File.binread(tmp.path).force_encoding("UTF-8")
-          end
+          @mutool_show.stream(@source.pdf_to_s, obj_id)
         end
 
         # ---- Strategy 2: caller-supplied correlator config --------------
@@ -95,17 +94,7 @@ module Ucode
         def render_pages(page_numbers)
           return "" if page_numbers.nil? || page_numbers.empty?
 
-          out, err, status = Open3.capture3(
-            "mutool", "draw", "-F", "svg",
-            @source.pdf_to_s,
-            *page_numbers.map(&:to_s),
-          )
-          unless status.success?
-            raise Ucode::EmbeddedFontsMissingError,
-                  "mutool draw failed: #{err.strip}"
-          end
-
-          out
+          @mutool_draw.svg(@source.pdf_to_s, *page_numbers)
         end
 
         # ---- Strategy 3: auto-detect via mutool trace --------------------
@@ -113,11 +102,15 @@ module Ucode
         def map_from_trace(base_font)
           return {} unless @indexer.font_appears?(base_font)
 
-          runner = TraceRunner.new(@source.pdf_path)
+          # mutool trace accepts one page per call; loop and accumulate.
+          # TODO 10 will hoist this into a per-PDF cache so each page
+          # is traced exactly once across all CID fonts in the PDF
+          # (currently O(pages × fonts) — fine for one-font blocks
+          # like Garay/Ol_Onal, expensive for multi-font PDFs).
           correlator = TraceCorrelator.new(specimen_font_name: base_font)
-
           (1..@indexer.page_count).each_with_object({}) do |page, mapping|
-            glyphs = runner.trace([page])
+            xml = @mutool_trace.call(@source.pdf_path, page)
+            glyphs = TraceParser.parse(xml)
             page_mapping = correlator.correlate(glyphs)
             page_mapping.each do |cp, gid|
               mapping[cp] ||= gid

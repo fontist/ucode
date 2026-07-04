@@ -110,6 +110,12 @@ module Ucode
   # `mutool` is not installed on the PATH.
   class EmbeddedFontsMissingError < GlyphError; end
 
+  # A `mutool` subprocess exited non-zero. Distinct from
+  # {EmbeddedFontsMissingError} (file not found / not installed):
+  # this fires when mutool ran but failed (corrupt PDF, bad object
+  # ref, etc.). The context carries the argv that failed.
+  class MutoolError < GlyphError; end
+
   # The Code Charts PDF for a requested block cannot be obtained: the
   # network returned 4xx/5xx, the response wasn't application/pdf, or
   # the body didn't start with the `%PDF` magic. Distinct from

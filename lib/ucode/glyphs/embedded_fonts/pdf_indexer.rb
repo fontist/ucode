@@ -16,9 +16,12 @@ module Ucode
       class PdfIndexer
         # @param source [PdfLocation]
         # @param mutool_info [Mutool::Info] injectable for tests
-        def initialize(source:, mutool_info: Mutool::Info.new)
+        # @param mutool_show [Mutool::Show] injectable for tests
+        def initialize(source:, mutool_info: Mutool::Info.new,
+                       mutool_show: Mutool::Show.new)
           @source = source
           @mutool_info = mutool_info
+          @mutool_show = mutool_show
         end
 
         # @return [Array<RawFontDescriptor>]
@@ -155,7 +158,7 @@ module Ucode
         def fetch_objects(obj_ids)
           return {} if obj_ids.empty?
 
-          out = Mutool::Show.new.grep(@source.pdf_to_s, *obj_ids)
+          out = @mutool_show.grep(@source.pdf_to_s, *obj_ids)
           parse_grep_output(out)
         end
 

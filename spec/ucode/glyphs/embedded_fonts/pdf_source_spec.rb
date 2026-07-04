@@ -4,7 +4,7 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-RSpec.describe Ucode::Glyphs::EmbeddedFonts::PdfLocation do
+RSpec.describe Ucode::Glyphs::EmbeddedFonts::PdfSource do
   let(:tmp_root) { Pathname.new(Dir.mktmpdir) }
   let(:pdf_path) { tmp_root.join("CodeCharts.pdf") }
 

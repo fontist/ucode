@@ -24,7 +24,7 @@ module Ucode
       # shared {PdfIndexer} (for page_count + font_appears? queries used
       # by the trace fallback).
       class CodepointMapper
-        # @param source [PdfLocation]
+        # @param source [PdfSource]
         # @param correlator_configs [Hash{Integer=>ContentStreamCorrelator::Config}]
         #   caller-supplied pillar-2 configs, keyed by font_obj_id
         # @param indexer [PdfIndexer] for page_count + font_appears? queries

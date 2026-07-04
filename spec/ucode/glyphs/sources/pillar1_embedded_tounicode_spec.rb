@@ -12,7 +12,7 @@ RSpec.describe Ucode::Glyphs::Sources::Pillar1EmbeddedTounicode do
   end
 
   let(:embedded_source) do
-    Ucode::Glyphs::EmbeddedFonts::PdfLocation.new(
+    Ucode::Glyphs::EmbeddedFonts::PdfSource.new(
       pdf: fixture_pdf,
       cache_dir: Pathname.new(Dir.mktmpdir),
     )

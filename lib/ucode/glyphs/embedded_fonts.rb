@@ -36,7 +36,7 @@ module Ucode
     # `mutool info` (font enumeration) and `mutool show -b -o` (raw
     # stream extraction).
     module EmbeddedFonts
-      autoload :PdfLocation, "ucode/glyphs/embedded_fonts/pdf_location"
+      autoload :PdfSource, "ucode/glyphs/embedded_fonts/pdf_source"
       autoload :ToUnicode, "ucode/glyphs/embedded_fonts/tounicode"
       autoload :FontEntry, "ucode/glyphs/embedded_fonts/font_entry"
       autoload :RawFontDescriptor, "ucode/glyphs/embedded_fonts/raw_font_descriptor"

@@ -25,7 +25,7 @@ module SpecCleanup
     return if Gem.win_platform?
     return unless path
 
-    resolved = path.respond_to?(:to_s) ? path.to_s : path
+    resolved = path.to_s
     FileUtils.remove_entry_secure(resolved) if File.exist?(resolved)
   rescue Errno::ENOTEMPTY, Errno::EACCES, Errno::ENOENT
     # Locked dir or already gone — leave it for the OS.

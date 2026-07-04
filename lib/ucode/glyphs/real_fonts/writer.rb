@@ -3,8 +3,6 @@
 require "fileutils"
 require "pathname"
 
-require_relative "font_coverage_report"
-
 module Ucode
   module Glyphs
     module RealFonts

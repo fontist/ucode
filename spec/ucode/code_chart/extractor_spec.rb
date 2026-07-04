@@ -85,7 +85,14 @@ RSpec.describe Ucode::CodeChart::Extractor do
     # also indexes 213 codepoints from other blocks (CJK, math, etc.),
     # all outside the Basic Latin range. Without a Tier 1 source or
     # a Pillar 3 fallback, results cover the subset the catalog serves.
-    it "returns Results for codepoints Pillar 1 (via ToUnicode or trace) can serve" do
+    # Smoke: against the real basic_latin.pdf fixture, the embedded-fonts
+    # catalog (Pillar 1 via ToUnicode or trace) serves some subset of the
+    # block. The exact codepoints depend on the catalog's coverage of the
+    # fixture (which varies with mutool + fontisan versions), so this spec
+    # only asserts boundedness + tier identity. The deterministic
+    # partition spec lives in the "with a Pillar 3 source injected"
+    # context below.
+    it "smokes: every Result is in the block range and tagged :pillar1" do
       skip "mutool not on PATH" unless system("which mutool >/dev/null 2>&1")
 
       extractor = described_class.new(block: basic_latin_block, pdf_path: pdf_path)
@@ -104,13 +111,18 @@ RSpec.describe Ucode::CodeChart::Extractor do
       end
     end
 
-    it "yields every codepoint in the block range, even when no tier serves them" do
+    it "is bounded by the block range and does not raise when no source serves" do
       skip "mutool not on PATH" unless system("which mutool >/dev/null 2>&1")
 
       extractor = described_class.new(block: basic_latin_block, pdf_path: pdf_path)
-      # private method each_codepoint — exercise via extract's loop
-      # by confirming it doesn't raise across the full range.
-      expect { extractor.extract }.not_to raise_error
+      # No source injected; #extract must still terminate cleanly across
+      # the full block range and yield only codepoints inside it.
+      results = extractor.extract
+      results.each do |r|
+        expect(r.codepoint).to be_between(
+          basic_latin_block.range_first, basic_latin_block.range_last,
+        )
+      end
     end
 
     it "raises a typed error when the PDF path is missing" do

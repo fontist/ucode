@@ -5,10 +5,6 @@ require "time"
 
 require "fontisan"
 
-require_relative "block_coverage"
-require_relative "font_coverage_report"
-require_relative "unicode_17_blocks"
-
 module Ucode
   module Glyphs
     module RealFonts

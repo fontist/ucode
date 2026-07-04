@@ -2,8 +2,6 @@
 
 require "lutaml/model"
 
-require_relative "block_coverage"
-
 module Ucode
   module Glyphs
     module RealFonts

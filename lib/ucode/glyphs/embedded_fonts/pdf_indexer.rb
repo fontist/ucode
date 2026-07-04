@@ -15,6 +15,12 @@ module Ucode
       # GID (that's {CodepointMapper}'s job). The descriptor carries
       # every ref the mapper needs to do its work.
       class PdfIndexer
+        # One Type0 font discovered in `mutool info` output.
+        # Single source of truth for the Type0 font list — both
+        # the obj_id-keyed discovery hash and the BaseFont-name
+        # membership check derive their answer from this parse.
+        Type0Entry = Struct.new(:font_obj_id, :base_font, keyword_init: true)
+
         # @param source [PdfSource]
         def initialize(source:)
           @source = source
@@ -68,10 +74,44 @@ module Ucode
         # @param base_font [String] e.g. "GPJAHB+WolofGaraySansSerif"
         # @return [Boolean] true if this font appears on any page
         def font_appears?(base_font)
-          font_entries_cache.key?(base_font)
+          type0_base_fonts.include?(base_font)
         end
 
         private
+
+        # Single source of truth for the Type0 font list. Both
+        # `discover_type0_fonts` (keyed by obj_id) and
+        # `font_appears?` (membership check by name) derive their
+        # answer from this parse, so changes to `mutool info`'s output
+        # format break in exactly one place.
+        #
+        # @return [Array<Type0Entry>]
+        def type0_entries
+          @type0_entries ||= parse_type0_entries
+        end
+
+        # @return [Set<String>] every Type0 BaseFont name seen
+        def type0_base_fonts
+          @type0_base_fonts ||= type0_entries.each_with_object(Set.new) do |e, s|
+            s << e.base_font
+          end
+        end
+
+        def parse_type0_entries
+          seen = Set.new
+          mutool_info_text.each_line.filter_map do |line|
+            next unless line.include?("Type0")
+
+            m = line.match(/Type0\s+'([^']+)'\s+\S+\s+\((\d+)\s+0\s+R\)/)
+            next unless m
+
+            font_obj_id = m[2].to_i
+            next if seen.include?(font_obj_id)
+
+            seen << font_obj_id
+            Type0Entry.new(font_obj_id: font_obj_id, base_font: m[1])
+          end
+        end
 
         def build_descriptors(type0_refs, type0_dicts, descendant_dicts, fontdesc_dicts)
           type0_refs.filter_map do |font_obj_id, base_font|
@@ -133,22 +173,9 @@ module Ucode
         # ---- mutool subprocess + dict parsing ----------------------------
 
         def discover_type0_fonts
-          text = mutool_info_text
-          result = {}
-          seen = Set.new
-          text.each_line do |line|
-            next unless line.include?("Type0")
-
-            m = line.match(/Type0\s+'([^']+)'\s+\S+\s+\((\d+)\s+0\s+R\)/)
-            next unless m
-
-            font_obj_id = m[2].to_i
-            next if seen.include?(font_obj_id)
-
-            seen << font_obj_id
-            result[font_obj_id] = m[1]
+          type0_entries.each_with_object({}) do |e, h|
+            h[e.font_obj_id] = e.base_font
           end
-          result
         end
 
         def fetch_objects(obj_ids)
@@ -214,21 +241,6 @@ module Ucode
         def run_mutool_info
           out, err, status = Open3.capture3("mutool", "info", @source.pdf_to_s)
           status.success? ? out + err : ""
-        end
-
-        def font_entries_cache
-          @font_entries_cache ||= begin
-            result = {}
-            mutool_info_text.each_line do |line|
-              next unless line.include?("Type0")
-
-              font_match = line.match(/Type0\s+'([^']+)'/)
-              next unless font_match
-
-              result[font_match[1]] = true
-            end
-            result
-          end
         end
       end
     end

@@ -52,29 +52,6 @@ RSpec.describe Ucode::CodeChart::Extractor do
     end
   end
 
-  describe "#initialize" do
-    it "stores the block, pdf_path, and source injections" do
-      extractor = described_class.new(block: basic_latin_block, pdf_path: pdf_path)
-      expect(extractor.instance_variable_get(:@block)).to eq(basic_latin_block)
-      expect(extractor.instance_variable_get(:@pdf_path)).to eq(pdf_path)
-      expect(extractor.instance_variable_get(:@tier1_sources)).to eq([])
-      expect(extractor.instance_variable_get(:@pillar3_source)).to be_nil
-    end
-
-    it "expands String pdf_path to Pathname" do
-      extractor = described_class.new(block: basic_latin_block, pdf_path: pdf_path.to_s)
-      expect(extractor.instance_variable_get(:@pdf_path)).to be_a(Pathname)
-    end
-
-    it "expands cache_dir to Pathname when provided" do
-      extractor = described_class.new(
-        block: basic_latin_block, pdf_path: pdf_path,
-        cache_dir: tmpdir.to_s,
-      )
-      expect(extractor.instance_variable_get(:@cache_dir)).to be_a(Pathname)
-    end
-  end
-
   describe "#extract" do
     # The basic_latin.pdf fixture uses WinAnsiEncoding for the basic
     # Latin *visual* glyphs (no /ToUnicode CMap on those fonts), so

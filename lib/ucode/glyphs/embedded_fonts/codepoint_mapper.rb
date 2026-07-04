@@ -46,13 +46,17 @@ module Ucode
                        mutool_show: Mutool::Show.new,
                        mutool_draw: Mutool::Draw.new,
                        mutool_trace: Mutool::Trace.new)
+          trace_cache = PageTraceCache.new(
+            pdf: source.pdf_path,
+            page_count: indexer.page_count,
+            mutool: mutool_trace,
+          )
           strategies = [
             ToUnicodeStrategy.new(source: source, mutool_show: mutool_show),
             CorrelatorStrategy.new(source: source,
                                    correlator_configs: correlator_configs,
                                    mutool_draw: mutool_draw),
-            TraceStrategy.new(source: source, indexer: indexer,
-                              mutool_trace: mutool_trace),
+            TraceStrategy.new(cache: trace_cache, indexer: indexer),
           ]
           new(strategies: strategies)
         end

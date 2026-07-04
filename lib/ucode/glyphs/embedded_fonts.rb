@@ -51,6 +51,7 @@ module Ucode
       autoload :TraceCorrelator, "ucode/glyphs/embedded_fonts/trace_correlator"
       autoload :TraceRunner, "ucode/glyphs/embedded_fonts/trace_runner"
       autoload :Mutool, "ucode/glyphs/embedded_fonts/mutool"
+      autoload :PageTraceCache, "ucode/glyphs/embedded_fonts/page_trace_cache"
       autoload :Svg, "ucode/glyphs/embedded_fonts/svg"
       autoload :Renderer, "ucode/glyphs/embedded_fonts/renderer"
       autoload :Writer, "ucode/glyphs/embedded_fonts/writer"

@@ -84,10 +84,14 @@ RSpec.describe Ucode::Database, :sqlite do
   let(:version) { "17.0.0" }
 
   around do |example|
-    Dir.mktmpdir do |cache_root|
-      @cache_root = Pathname.new(cache_root)
-      original = Ucode.configuration.cache_root
-      Ucode.configuration.cache_root = @cache_root
+    # Non-block form of Dir.mktmpdir: see spec/support/fixture_database.rb
+    # for why the block form breaks on Windows (SQLite file locks
+    # during cleanup).
+    cache_root = Dir.mktmpdir
+    @cache_root = Pathname.new(cache_root)
+    original = Ucode.configuration.cache_root
+    Ucode.configuration.cache_root = @cache_root
+    begin
       Ucode::Cache.ensure_version_dir!(version)
       # force_remove_dir (not safe_remove): the dirs are freshly
       # created by ensure_version_dir! and contain no files, so the
@@ -98,11 +102,10 @@ RSpec.describe Ucode::Database, :sqlite do
       force_remove_dir(Ucode::Cache.unihan_dir(version))
       FileUtils.cp_r(ucd_dir, Ucode::Cache.ucd_dir(version))
       FileUtils.cp_r(unihan_dir, Ucode::Cache.unihan_dir(version))
-      begin
-        example.run
-      ensure
-        Ucode.configuration.cache_root = original
-      end
+      example.run
+    ensure
+      Ucode.configuration.cache_root = original
+      safe_remove(cache_root)
     end
   end
 

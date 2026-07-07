@@ -16,6 +16,7 @@ module Ucode
           # @param correlator_configs [Hash{Integer=>ContentStreamCorrelator::Config}]
           # @param mutool_draw [Mutool::Draw]
           def initialize(source:, correlator_configs:, mutool_draw:)
+            super()
             @source = source
             @correlator_configs = correlator_configs
             @mutool_draw = mutool_draw
@@ -24,6 +25,11 @@ module Ucode
           def supports?(descriptor)
             descriptor.cid_map_kind == :identity &&
               @correlator_configs.key?(descriptor.font_obj_id)
+          end
+
+          # @see Strategy#positional?
+          def positional?
+            true
           end
 
           def map(descriptor)

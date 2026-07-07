@@ -30,7 +30,8 @@ module Ucode
     # not checked out.
     class Extractor
       # Result of extracting one codepoint.
-      Result = Struct.new(:codepoint, :svg, :tier, :provenance, keyword_init: true)
+      Result = Struct.new(:codepoint, :svg, :tier, :provenance,
+                          keyword_init: true)
 
       # @param block [Ucode::Models::Block] block whose assigned
       #   codepoints will be extracted
@@ -103,7 +104,10 @@ module Ucode
         embedded_source = Glyphs::EmbeddedFonts::PdfSource.new(
           pdf: @pdf_path, cache_dir: @cache_dir,
         )
-        catalog = Glyphs::EmbeddedFonts::Catalog.new(embedded_source)
+        catalog = Glyphs::EmbeddedFonts::Catalog.new(
+          embedded_source,
+          block_range: (@block.range_first..@block.range_last),
+        )
         renderer = Glyphs::EmbeddedFonts::Renderer.new(catalog)
         [Glyphs::Sources::Pillar1EmbeddedTounicode.new(renderer: renderer)]
       end

@@ -16,6 +16,7 @@ module Ucode
           # @param source [PdfSource]
           # @param mutool_show [Mutool::Show]
           def initialize(source:, mutool_show:)
+            super()
             @source = source
             @mutool_show = mutool_show
           end

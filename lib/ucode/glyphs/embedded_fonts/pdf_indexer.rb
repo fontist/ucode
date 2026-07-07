@@ -167,8 +167,8 @@ module Ucode
         # ---- mutool subprocess + dict parsing ----------------------------
 
         def discover_type0_fonts
-          type0_entries.each_with_object({}) do |e, h|
-            h[e.font_obj_id] = e.base_font
+          type0_entries.to_h do |e|
+            [e.font_obj_id, e.base_font]
           end
         end
 

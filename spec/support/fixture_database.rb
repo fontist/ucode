@@ -26,8 +26,13 @@ RSpec.shared_context "with fixture ucd database" do
       original = Ucode.configuration.cache_root
       Ucode.configuration.cache_root = Pathname.new(cache_root)
       Ucode::Cache.ensure_version_dir!(fixture_version)
-      safe_remove(Ucode::Cache.ucd_dir(fixture_version))
-      safe_remove(Ucode::Cache.unihan_dir(fixture_version))
+      # force_remove_dir (not safe_remove): these dirs are freshly
+      # created by ensure_version_dir! and contain no files, so the
+      # Windows OS-lock concern that makes safe_remove a no-op does
+      # not apply. cp_r nests the source into an existing dst
+      # directory, so we MUST clear the dst first.
+      force_remove_dir(Ucode::Cache.ucd_dir(fixture_version))
+      force_remove_dir(Ucode::Cache.unihan_dir(fixture_version))
       FileUtils.cp_r(fixture_ucd_dir, Ucode::Cache.ucd_dir(fixture_version))
       FileUtils.cp_r(fixture_unihan_dir, Ucode::Cache.unihan_dir(fixture_version))
       Ucode::DbBuilder.build(fixture_version)

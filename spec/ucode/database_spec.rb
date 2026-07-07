@@ -89,8 +89,13 @@ RSpec.describe Ucode::Database, :sqlite do
       original = Ucode.configuration.cache_root
       Ucode.configuration.cache_root = @cache_root
       Ucode::Cache.ensure_version_dir!(version)
-      safe_remove(Ucode::Cache.ucd_dir(version))
-      safe_remove(Ucode::Cache.unihan_dir(version))
+      # force_remove_dir (not safe_remove): the dirs are freshly
+      # created by ensure_version_dir! and contain no files, so the
+      # Windows OS-lock concern that makes safe_remove a no-op does
+      # not apply. cp_r nests the source into an existing dst
+      # directory, so we MUST clear the dst first.
+      force_remove_dir(Ucode::Cache.ucd_dir(version))
+      force_remove_dir(Ucode::Cache.unihan_dir(version))
       FileUtils.cp_r(ucd_dir, Ucode::Cache.ucd_dir(version))
       FileUtils.cp_r(unihan_dir, Ucode::Cache.unihan_dir(version))
       begin

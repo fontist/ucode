@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# rubocop:disable RSpec/MultipleDescribes -- one describe per Mutool collaborator
+
 require "spec_helper"
 require "pathname"
 
@@ -8,13 +10,16 @@ require "pathname"
 class CapturingRunner
   attr_reader :calls
 
-  def initialize(responses: {})
+  def initialize(responses: {}, writer: nil)
     @responses = responses
+    @writer = writer
     @calls = []
   end
 
   def run(*argv)
     @calls << argv
+    return @writer.call(argv) if @writer
+
     @responses.fetch(argv) do
       raise KeyError, "no canned response for #{argv.inspect}"
     end
@@ -78,17 +83,13 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::Mutool::Show do
     it "writes the stream to a tempfile and returns its bytes as UTF-8" do
       canned_bytes = "%PDF-1.5\nfake CMap stream\n"
       canned_utf8 = canned_bytes.dup.force_encoding("UTF-8")
-      runner = CapturingRunner.new(responses: {})
       writer = lambda do |argv|
         idx = argv.index("-o")
         path = argv[idx + 1]
         File.binwrite(path, canned_bytes)
         ""
       end
-      runner.define_singleton_method(:run) do |*argv|
-        @calls << argv
-        writer.call(argv)
-      end
+      runner = CapturingRunner.new(responses: {}, writer: writer)
 
       show = described_class.new(runner: runner)
       result = show.stream("/x.pdf", 42)
@@ -139,3 +140,5 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::Mutool::Trace do
     end
   end
 end
+
+# rubocop:enable RSpec/MultipleDescribes

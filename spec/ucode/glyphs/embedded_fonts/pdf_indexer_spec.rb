@@ -16,9 +16,9 @@ class IndexerStubRunner
   def run(*argv)
     binary = argv[0]
     subcommand = argv[1]
-    return @info_text if binary == "mutool" && subcommand == "info"
+    return @info_text if mutool_info?(binary, subcommand)
 
-    if binary == "mutool" && subcommand == "show" && argv.include?("-g")
+    if mutool_show_grep?(binary, subcommand, argv)
       positionals = argv.drop(2).reject { |a| a.start_with?("-") }
       _pdf, *obj_ids = positionals
       obj_ids.map { |id| obj_body_string(id.to_i) }.join
@@ -28,6 +28,14 @@ class IndexerStubRunner
   end
 
   private
+
+  def mutool_info?(binary, subcommand)
+    binary == "mutool" && subcommand == "info"
+  end
+
+  def mutool_show_grep?(binary, subcommand, argv)
+    binary == "mutool" && subcommand == "show" && argv.include?("-g")
+  end
 
   def obj_body_string(obj_id)
     body = @obj_bodies.fetch(obj_id, "")
@@ -104,40 +112,34 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::PdfIndexer do
     end
 
     it "skips Type0 fonts missing DescendantFonts" do
-      obj_bodies.merge!(5 => "<< /Subtype /Type0 /BaseFont /Lonely >>")
+      obj_bodies[5] = "<< /Subtype /Type0 /BaseFont /Lonely >>"
       expect(indexer.raw_descriptors).to eq([])
     end
 
     it "skips CIDFonts whose CIDToGIDMap is not /Identity" do
-      obj_bodies.merge!(
-        6 => "<< /Subtype /CIDFontType2 /FontDescriptor 8 0 R /CIDToGIDMap /SomethingElse >>",
-      )
+      obj_bodies[6] = "<< /Subtype /CIDFontType2 /FontDescriptor 8 0 R /CIDToGIDMap /SomethingElse >>"
       expect(indexer.raw_descriptors).to eq([])
     end
 
     it "skips CIDFonts missing CIDToGIDMap entirely" do
-      obj_bodies.merge!(
-        6 => "<< /Subtype /CIDFontType2 /FontDescriptor 8 0 R >>",
-      )
+      obj_bodies[6] = "<< /Subtype /CIDFontType2 /FontDescriptor 8 0 R >>"
       expect(indexer.raw_descriptors).to eq([])
     end
 
     it "skips CIDFonts missing FontDescriptor" do
-      obj_bodies.merge!(6 => "<< /Subtype /CIDFontType2 /CIDToGIDMap/Identity >>")
+      obj_bodies[6] = "<< /Subtype /CIDFontType2 /CIDToGIDMap/Identity >>"
       expect(indexer.raw_descriptors).to eq([])
     end
 
     it "prefers FontFile2 (:ttf) over FontFile3 (:cff)" do
-      obj_bodies.merge!(
-        8 => "<< /Type /FontDescriptor /FontFile2 9 0 R /FontFile3 11 0 R >>",
-      )
+      obj_bodies[8] = "<< /Type /FontDescriptor /FontFile2 9 0 R /FontFile3 11 0 R >>"
       descs = indexer.raw_descriptors
       expect(descs.first.fontfile_kind).to eq(:ttf)
       expect(descs.first.fontfile_obj_id).to eq(9)
     end
 
     it "falls back to FontFile3 (:cff) when FontFile2 missing" do
-      obj_bodies.merge!(8 => "<< /Type /FontDescriptor /FontFile3 11 0 R >>")
+      obj_bodies[8] = "<< /Type /FontDescriptor /FontFile3 11 0 R >>"
       descs = indexer.raw_descriptors
       expect(descs.first.fontfile_kind).to eq(:cff)
       expect(descs.first.fontfile_obj_id).to eq(11)
@@ -155,9 +157,7 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::PdfIndexer do
     end
 
     it "carries tounicode_ref as nil when the Type0 dict has no /ToUnicode" do
-      obj_bodies.merge!(
-        5 => "<< /Subtype /Type0 /BaseFont /Notu /DescendantFonts [6 0 R] /Encoding /Identity-H >>",
-      )
+      obj_bodies[5] = "<< /Subtype /Type0 /BaseFont /Notu /DescendantFonts [6 0 R] /Encoding /Identity-H >>"
       descs = indexer.raw_descriptors
       expect(descs.first.tounicode_ref).to be_nil
     end

@@ -59,28 +59,19 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::PageTraceCache do
   end
 
   describe "#each_page_for" do
-    it "yields (page, glyphs) for every page that references the font" do
-      mutool = StubTraceMutool.new(
+    let(:three_page_mutool) do
+      StubTraceMutool.new(
         by_page: {
-          1 => <<~XML,
-            <document>
-              <span font="A"><g glyph="1" x="0" y="0"/></span>
-            </document>
-          XML
-          2 => <<~XML,
-            <document>
-              <span font="B"><g glyph="2" x="10" y="0"/></span>
-            </document>
-          XML
-          3 => <<~XML,
-            <document>
-              <span font="A"><g glyph="3" x="20" y="0"/></span>
-              <span font="B"><g glyph="4" x="30" y="0"/></span>
-            </document>
-          XML
+          1 => "<document><span font=\"A\"><g glyph=\"1\" x=\"0\" y=\"0\"/></span></document>",
+          2 => "<document><span font=\"B\"><g glyph=\"2\" x=\"10\" y=\"0\"/></span></document>",
+          3 => "<document><span font=\"A\"><g glyph=\"3\" x=\"20\" y=\"0\"/></span>" \
+               "<span font=\"B\"><g glyph=\"4\" x=\"30\" y=\"0\"/></span></document>",
         },
       )
-      cache = described_class.new(pdf: pdf, page_count: 3, mutool: mutool)
+    end
+
+    it "yields (page, glyphs) for every page that references the font" do
+      cache = described_class.new(pdf: pdf, page_count: 3, mutool: three_page_mutool)
 
       yielded = []
       cache.each_page_for("A") { |p, g| yielded << [p, g.map(&:gid)] }
@@ -93,7 +84,8 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::PageTraceCache do
       )
       cache = described_class.new(pdf: pdf, page_count: 1, mutool: mutool)
 
-      result = cache.each_page_for("Nonexistent") { |_| }
+      noop = ->(_page, _glyphs) {}
+      result = cache.each_page_for("Nonexistent", &noop)
       expect(result).to be(false)
     end
 

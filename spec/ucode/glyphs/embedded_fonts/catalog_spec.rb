@@ -38,6 +38,18 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::Catalog do
       catalog = described_class.new(source, correlator_configs: config)
       expect(catalog).to be_a(described_class)
     end
+
+    it "accepts block_range for scope-aware positional fallback" do
+      catalog = described_class.new(source, block_range: (0x1F200..0x1F2FF))
+      expect(catalog).to be_a(described_class)
+    end
+
+    it "accepts force_positional_for_font_ids override" do
+      catalog = described_class.new(
+        source, force_positional_for_font_ids: Set.new([42])
+      )
+      expect(catalog).to be_a(described_class)
+    end
   end
 
   describe "public interface" do
@@ -66,7 +78,10 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::CodepointMapper do
     Struct.new(:pdf_to_s, :pdf_path).new("fake.pdf", Pathname.new("fake.pdf"))
   end
   let(:indexer) { StubIndexer.new(0) }
-  let(:mapper) { described_class.build(source: source, correlator_configs: {}, indexer: indexer) }
+  let(:mapper) do
+    described_class.build(source: source, correlator_configs: {},
+                          indexer: indexer)
+  end
 
   describe "#map" do
     it "returns {} when cid_map_kind is not :identity" do

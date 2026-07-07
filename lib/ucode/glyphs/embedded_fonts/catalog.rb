@@ -18,11 +18,26 @@ module Ucode
       # listing, so earlier blocks' fonts win — the expected behavior.
       class Catalog
         # @param source [PdfSource]
+        # @param block_range [Range<Integer>, nil] codepoint scope the
+        #   caller is extracting. When present, drops an intrinsic
+        #   strategy's result if it has zero in-block intersection,
+        #   letting positional strategies take over (the U1F200 class
+        #   of failure where the font's CMap encoded composing
+        #   ideographs rather than the specimens). nil = legacy mode
+        #   (intrinsic result always trusted).
+        # @param force_positional_for_font_ids [Set<Integer>] Type0
+        #   font object IDs that always trigger positional attribution
+        #   regardless of intrinsic success. Escape hatch for
+        #   partial-overlap cases.
         # @param correlator_configs [Hash{Integer=>ContentStreamCorrelator::Config}]
         #   maps a Type0 font's PDF object ID to the pillar-2 config to
         #   use when the font has no /ToUnicode CMap. Empty by default.
-        def initialize(source, correlator_configs: {})
+        def initialize(source, block_range: nil,
+                       force_positional_for_font_ids: Set.new,
+                       correlator_configs: {})
           @source = source
+          @block_range = block_range
+          @force_positional_for_font_ids = force_positional_for_font_ids
           @correlator_configs = correlator_configs
           @index = nil
         end
@@ -95,6 +110,8 @@ module Ucode
         def mapper
           @mapper ||= CodepointMapper.build(
             source: @source,
+            block_range: @block_range,
+            force_positional_for_font_ids: @force_positional_for_font_ids,
             correlator_configs: @correlator_configs,
             indexer: indexer,
           )

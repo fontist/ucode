@@ -25,6 +25,7 @@ module Ucode
           #   precondition (avoids touching the cache for fonts the
           #   PDF doesn't reference at all)
           def initialize(cache:, indexer:)
+            super()
             @cache = cache
             @indexer = indexer
           end
@@ -34,6 +35,11 @@ module Ucode
             return false unless descriptor.cid_map_kind == :identity
 
             @indexer.font_appears?(descriptor.base_font)
+          end
+
+          # @see Strategy#positional?
+          def positional?
+            true
           end
 
           def map(descriptor)

@@ -22,9 +22,17 @@ require "tmpdir"
 #   end
 RSpec.shared_context "with fixture ucd database" do
   around do |example|
-    Dir.mktmpdir do |cache_root|
-      original = Ucode.configuration.cache_root
-      Ucode.configuration.cache_root = Pathname.new(cache_root)
+    # Dir.mktmpdir's block form propagates errors from its
+    # FileUtils.remove_entry cleanup — on Windows, SQLite holds a
+    # brief lock on the open .sqlite3 file even after #close, which
+    # raises Errno::EACCES and surfaces as a test failure unrelated
+    # to the example. Use the non-block form so we control cleanup
+    # and can swallow lock errors (Windows CI runners are ephemeral
+    # anyway, so leaving a temp dir behind is harmless).
+    cache_root = Dir.mktmpdir
+    original = Ucode.configuration.cache_root
+    Ucode.configuration.cache_root = Pathname.new(cache_root)
+    begin
       Ucode::Cache.ensure_version_dir!(fixture_version)
       # force_remove_dir (not safe_remove): these dirs are freshly
       # created by ensure_version_dir! and contain no files, so the
@@ -36,11 +44,10 @@ RSpec.shared_context "with fixture ucd database" do
       FileUtils.cp_r(fixture_ucd_dir, Ucode::Cache.ucd_dir(fixture_version))
       FileUtils.cp_r(fixture_unihan_dir, Ucode::Cache.unihan_dir(fixture_version))
       Ucode::DbBuilder.build(fixture_version)
-      begin
-        example.run
-      ensure
-        Ucode.configuration.cache_root = original
-      end
+      example.run
+    ensure
+      Ucode.configuration.cache_root = original
+      safe_remove(cache_root)
     end
   end
 

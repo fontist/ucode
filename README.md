@@ -149,6 +149,30 @@ Pillar 1 → Pillar 2 → Pillar 3). No new extraction logic — the
 `ucode code-chart` subcommand is a thin CLI wrapper over `Ucode::CodeChart::Writer`,
 which orchestrates `Ucode::Glyphs::Resolver` for each codepoint.
 
+### Which blocks work
+
+Most Unicode 17 blocks extract cleanly via pillar 1 (PDF-embedded font
+with a trustworthy `/ToUnicode` CMap). Three known failure shapes
+require pillar 2 (positional correlation) to take over:
+
+- **No `/ToUnicode` at all** — older subset practice (Garay, Ol Onal,
+  Kana Extended-A/B, Small Kana Extension). The CMap is missing; pillar
+  2 attributes glyphs via chart-grid geometry.
+- **`/ToUnicode` encodes the wrong codepoints** — the Enclosed
+  Ideographic Supplement class (U+1F200..U+1F2FF). The font's CMap
+  encodes the *composing* ideographs shown in chart annotations (中, 新,
+  三) rather than the specimens themselves (🈀, 🈁, 🈂). The orchestrator
+  auto-detects this via block-scope awareness: when the ToUnicode result
+  has zero in-block intersection, pillar 2 takes over.
+- **Partial overlap** — the CMap covers some in-block codepoints but
+  misses others. Caller can force positional attribution via
+  `force_positional_for_font_ids:` on `Ucode::Glyphs::EmbeddedFonts::Catalog`.
+
+For the full strategy-chain semantics (positional? predicate,
+partition, range-aware bail, positional-precedence merge) see
+[docs/architecture.md → The 4-tier glyph sourcing
+strategy](docs/architecture.md#the-4-tier-glyph-sourcing-strategy).
+
 ## Glyph extraction (4-tier pipeline)
 
 The `ucode glyphs` command and the `--include-glyphs` flag on `ucode build`
@@ -446,18 +470,33 @@ Pillar 1 handles only the fonts where correlation is unambiguous:
   skipped. These codepoints fall through to **pillar 2** (content-stream
   positional correlation), and from there to **pillar 3** (Last Resort)
   if pillar 2 cannot resolve them either.
+- **Type0 fonts whose `/ToUnicode` CMap encodes the wrong
+  codepoints** — the Enclosed Ideographic Supplement failure mode.
+  Some Code Charts PDFs embed a CID font whose CMap maps the font's
+  CIDs to the *composing* ideographs used in chart annotations (e.g.
+  U+4E2D 中, U+65B0 新) rather than to the block's actual specimens
+  (e.g. U+1F200 🈀, U+1F201 🈁). Without block-scope awareness,
+  pillar 1 "succeeds" with the wrong codepoints and the positional
+  fallback never runs. The `CodepointMapper` orchestrator now
+  auto-detects this: when the caller threads a `block_range:` and the
+  ToUnicode result has zero in-block intersection, the intrinsic
+  strategy is dropped and positional strategies take over. A
+  `force_positional_for_font_ids:` override handles the
+  partial-overlap case (some in-block, some out-of-block) where
+  auto-detection cannot tell that positional is still needed.
 - **Stream-form `/CIDToGIDMap`** — a binary lookup table. Treated as
   unsupported; the font is skipped.
 - **Bare CFF streams fontisan does not yet recognize** — a separate
   fontisan-side issue; flagged for investigation.
 
 Code Charts cells not covered by pillar 1 are exactly the cells whose
-character is not drawn from an embedded subsetted font with
-`/ToUnicode` — either a label, a glyph in a font without `/ToUnicode`,
-or a placeholder. **Pillar 2** (content-stream positional correlation)
-handles the no-`/ToUnicode` case, and **pillar 3** (Last Resort UFO)
-handles the placeholder case; the small remainder are correctly absent
-from the dataset.
+character is not drawn from an embedded subsetted font with a
+trustworthy `/ToUnicode` — either a label, a glyph in a font without
+`/ToUnicode`, a font whose CMap encodes the wrong codepoints, or a
+placeholder. **Pillar 2** (content-stream positional correlation)
+handles the no-`/ToUnicode` and wrong-`/ToUnicode` cases, and
+**Pillar 3** (Last Resort UFO) handles the placeholder case; the
+small remainder are correctly absent from the dataset.
 
 ## System dependencies
 

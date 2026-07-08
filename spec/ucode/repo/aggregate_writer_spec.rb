@@ -21,13 +21,16 @@ RSpec.describe Ucode::Repo::AggregateWriter do
   # Drive the writer with the real fixture stream so we exercise the
   # same code path the CLI uses.
   def run_writer(out_dir, glyph_count: 0)
-    Dir.mktmpdir do |cache_root|
-      cache_root = Pathname.new(cache_root)
-      original = Ucode.configuration.cache_root
-      Ucode.configuration.cache_root = cache_root
+    cache_root = Dir.mktmpdir
+    cache_root = Pathname.new(cache_root)
+    original = Ucode.configuration.cache_root
+    Ucode.configuration.cache_root = cache_root
+    begin
       Ucode::Cache.ensure_version_dir!(version)
-      safe_remove(Ucode::Cache.ucd_dir(version))
-      safe_remove(Ucode::Cache.unihan_dir(version))
+      # force_remove_dir (not safe_remove): see spec/support/fixture_database.rb
+      # for why the safe_remove no-op-on-Windows policy breaks cp_r setup.
+      force_remove_dir(Ucode::Cache.ucd_dir(version))
+      force_remove_dir(Ucode::Cache.unihan_dir(version))
       FileUtils.cp_r(ucd_dir, Ucode::Cache.ucd_dir(version))
       FileUtils.cp_r(unihan_dir, Ucode::Cache.unihan_dir(version))
 
@@ -54,8 +57,10 @@ RSpec.describe Ucode::Repo::AggregateWriter do
         named_sequences: named_sequences,
         glyph_count: glyph_count,
       )
-      Ucode.configuration.cache_root = original
       yield writer, count
+    ensure
+      Ucode.configuration.cache_root = original
+      safe_remove(cache_root)
     end
   end
 

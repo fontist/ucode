@@ -83,6 +83,16 @@ object graph: Type0 → CIDFont → FontDescriptor → FontFile2/3. For each
 font with a `/ToUnicode` CMap, it builds `{codepoint => gid}` directly
 from the CMap stream and lifts the outline by GID.
 
+Catalog threads the calling block's codepoint range through to
+`CodepointMapper`, which uses it to detect the **wrong-CMap failure
+mode**: a font whose `/ToUnicode` CMap encodes composing ideographs
+(e.g. U+4E2D 中, U+65B0 新) rather than the block's actual specimens.
+When the intrinsic (ToUnicode) result has zero in-block intersection,
+the orchestrator drops it and runs the positional strategies instead.
+A `force_positional_for_font_ids:` override covers the partial-overlap
+case where the CMap is correct for some in-block codepoints but
+positional attribution is still required for the rest.
+
 ### Pillar 2 — content-stream positional correlation
 
 `Ucode::Glyphs::EmbeddedFonts::ContentStreamCorrelator` (added in commit
@@ -93,9 +103,29 @@ partitions labels from specimens by font_obj_id, clusters by quantized
 matches positionally within Y-rows. Rightmost cluster per row = specimen
 codepoint; rightmost glyph = specimen GID.
 
+`Ucode::Glyphs::EmbeddedFonts::TraceStrategy` is the auto-detection
+fallback that runs `mutool trace` per page and feeds the resulting
+glyph spans to `TraceCorrelator` (which shares `PositionalMatcher` with
+the content-stream variant). Both strategies declare `positional? ==
+true` so the orchestrator partitions them apart from the intrinsic
+(ToUnicode) strategy.
+
+Positional strategies are expensive (one `mutool` invocation per page).
+They are gated behind three conditions — any one triggers them:
+
+1. Caller listed the font in `force_positional_for_font_ids:`.
+2. No intrinsic strategy produced a mapping.
+3. The intrinsic result fell entirely outside the caller's block scope
+   (auto-detect for the wrong-CMap failure mode).
+
+When positional runs, results merge over intrinsic with **positional
+precedence**: chart-grid geometry is authoritative for in-block
+specimens, while a font's CMap can be misleading.
+
 Proven against Tai Yo (`data/pdfs/U1E6C0.pdf`): 50/52 specimen codepoints
-matched. Generalizes to any Code Charts block produced by the same layout
-engine.
+matched via pillar 2. Proven against Enclosed Ideographic Supplement
+(`data/pdfs/U1F200.pdf`): 64/64 in-block codepoints matched via
+positional attribution after the wrong-CMap auto-bail (was 0 before).
 
 ### Pillar 3 — Last Resort UFO
 

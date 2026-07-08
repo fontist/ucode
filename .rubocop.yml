@@ -10,6 +10,15 @@ inherit_from:
 AllCops:
   NewCops: enable
 
+# Enforce LF line endings regardless of the runner's platform.
+# Without this, Windows CI fails every file with "Carriage return
+# character missing" because Git checks out files with CRLF on
+# Windows by default. The .gitattributes entry below is the actual
+# enforcement mechanism; this rubocop line just keeps the linter
+# consistent with it.
+Layout/EndOfLine:
+  EnforcedStyle: lf
+
 plugins:
   - rubocop-performance
   - rubocop-rake

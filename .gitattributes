@@ -1,0 +1,4 @@
+# Ensure LF line endings on checkout regardless of runner platform.
+# Without this, Windows CI gets CRLF checkouts and rubocop fails
+# every file with Layout/EndOfLine "Carriage return character missing".
+* text=auto eol=lf

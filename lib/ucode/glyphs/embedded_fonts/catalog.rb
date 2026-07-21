@@ -53,6 +53,38 @@ module Ucode
           index[codepoint]
         end
 
+        # Locate where in the PDF a codepoint's specimen was rendered.
+        # Returns `{page:, x:, y:}` (PDF user space, origin
+        # bottom-left) by joining `#lookup` with the trace cache's
+        # `(font, gid)` search. Nil when:
+        #   * the codepoint isn't in this PDF, OR
+        #   * the embedded font has no traced specimen (ToUnicode-only
+        #     path with no positional correlation data), OR
+        #   * the trace cache wasn't populated (lazy + never asked
+        #     for any positional strategy).
+        #
+        # Memoized per-Catalog; the second call for the same
+        # codepoint is O(1).
+        #
+        # @param codepoint [Integer]
+        # @return [Hash{Symbol=>Integer, Float}, nil]
+        def location_for(codepoint)
+          @locations ||= {}
+          return @locations[codepoint] if @locations.key?(codepoint)
+
+          entry = lookup(codepoint)
+          result = if entry.nil?
+                     nil
+                   else
+                     trace_cache.find_glyph(
+                       base_font: entry.base_font,
+                       gid: entry.gid_for(codepoint),
+                     )
+                   end
+          @locations[codepoint] = result
+          result
+        end
+
         # @return [Array<Integer>] every codepoint this PDF covers
         def codepoints
           index.keys
@@ -114,6 +146,20 @@ module Ucode
             force_positional_for_font_ids: @force_positional_for_font_ids,
             correlator_configs: @correlator_configs,
             indexer: indexer,
+            trace_cache: trace_cache,
+          )
+        end
+
+        # The PageTraceCache shared with the CodepointMapper. Lazily
+        # constructed on first reference; #location_for uses the same
+        # cache, so the per-page `mutool trace` cost is paid exactly
+        # once across the catalog + location lookups for a PDF.
+        #
+        # @return [PageTraceCache]
+        def trace_cache
+          @trace_cache ||= PageTraceCache.new(
+            pdf: @source.pdf_path,
+            page_count: indexer.page_count,
           )
         end
       end

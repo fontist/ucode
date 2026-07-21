@@ -29,11 +29,18 @@ module Ucode
         #   {Ucode::CodeChartNotFoundError} with the offending header
         #   value in `context:` on failure. nil = no validation (the
         #   default for non-PDF callers like UcdZip and UnihanZip).
+        # @param not_found_class [Class, nil] when set, HTTP 4xx
+        #   responses raise this class (instantiated with message +
+        #   context) instead of being treated as retriable transport
+        #   errors. nil = 4xx is retriable like any other non-success.
         # @return [Pathname] destination path on success.
         # @raise [Ucode::NetworkError] if all retries fail.
         # @raise [Ucode::CodeChartNotFoundError] when `validate: :pdf`
         #   and the response fails content validation.
-        def get(url, dest:, retries: nil, timeout: nil, validate: nil)
+        # @raise [<not_found_class>] when `not_found_class:` is set
+        #   and the server returns 4xx.
+        def get(url, dest:, retries: nil, timeout: nil, validate: nil,
+                not_found_class: nil)
           uri = url.is_a?(URI) ? url : URI(url)
           destination = Pathname.new(dest)
           destination.dirname.mkpath
@@ -44,7 +51,8 @@ module Ucode
 
           last_error = nil
           (attempts + 1).times do |attempt|
-            response = stream_to(uri, destination, read_timeout)
+            response = stream_to(uri, destination, read_timeout,
+                                 not_found_class: not_found_class)
             validate_response!(validate, response, destination) if validate
             return destination
           rescue ValidationFailure => e
@@ -80,13 +88,15 @@ module Ucode
           end
         end
 
-        def stream_to(uri, destination, read_timeout)
+        def stream_to(uri, destination, read_timeout, not_found_class: nil)
           response = nil
           Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https",
                                               read_timeout: read_timeout) do |http|
             request = Net::HTTP::Get.new(uri)
             http.request(request) do |r|
               unless r.is_a?(Net::HTTPSuccess)
+                raise ValidationFailure.new(not_found_error(not_found_class, uri, r)) if not_found_class && r.is_a?(Net::HTTPClientError)
+
                 raise "HTTP #{r.code} #{r.message}"
               end
 
@@ -95,6 +105,16 @@ module Ucode
             end
           end
           response or raise "no response received"
+        end
+
+        # Builds the not-found error (e.g. CodeChartNotFoundError)
+        # for a 4xx response, fed through ValidationFailure so the
+        # retry loop in `get` doesn't re-attempt a permanent miss.
+        def not_found_error(klass, uri, response)
+          klass.new(
+            "HTTP #{response.code} #{response.message}",
+            context: { url: uri.to_s, status: response.code.to_i },
+          )
         end
 
         def write_body(response, destination)

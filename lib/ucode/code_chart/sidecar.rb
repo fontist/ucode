@@ -3,8 +3,6 @@
 require "json"
 require "pathname"
 
-require "ucode/repo/atomic_writes"
-
 module Ucode
   module CodeChart
     # Writes a {Provenance} to disk as the sidecar JSON next to its
@@ -17,7 +15,8 @@ module Ucode
     # Idempotent via {Ucode::Repo::AtomicWrites#write_atomic}: a
     # re-write of byte-identical content is a no-op (no temp-file
     # rename). Provenance JSON is canonical (sorted keys via Ruby's
-    # stdlib JSON), so the byte-equality test is sound.
+    # stdlib JSON over the lutaml-model `to_hash` output), so the
+    # byte-equality test is sound.
     class Sidecar
       include Ucode::Repo::AtomicWrites
 
@@ -31,7 +30,7 @@ module Ucode
       # @return [Pathname] the written sidecar path
       def write(provenance)
         path = path_for(provenance)
-        payload = "#{JSON.pretty_generate(provenance.to_h)}\n"
+        payload = "#{JSON.pretty_generate(provenance.to_hash)}\n"
         write_atomic(path, payload)
         path
       end

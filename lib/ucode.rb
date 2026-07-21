@@ -34,7 +34,9 @@ module Ucode
   autoload :GlyphError, "ucode/error"
   autoload :LastResortMissingError, "ucode/error"
   autoload :EmbeddedFontsMissingError, "ucode/error"
+  autoload :CodeChartError, "ucode/error"
   autoload :CodeChartNotFoundError, "ucode/error"
+  autoload :CodeChartChecksumError, "ucode/error"
   autoload :UnknownUnicodeVersionError, "ucode/error"
 
   # Infrastructure

@@ -39,6 +39,24 @@ RSpec.describe Ucode::Cli do
         end
       end
     end
+
+    it "extract command exposes --verify and --missing-from flags" do
+      cc_cls = described_class.subcommand_classes["code_chart"]
+      extract_cmd = cc_cls.commands["extract"]
+      expect(extract_cmd.options.keys).to include(:verify, :missing_from)
+    end
+
+    it "list command exposes --coverage-gap-only and --coverage flags" do
+      cc_cls = described_class.subcommand_classes["code_chart"]
+      list_cmd = cc_cls.commands["list"]
+      expect(list_cmd.options.keys).to include(:coverage_gap_only, :coverage)
+    end
+
+    it "extract command rejects invocation with neither --block nor --missing-from" do
+      expect {
+        described_class.start(%w[code-chart extract --to /tmp/x])
+      }.to raise_error(SystemExit)
+    end
   end
 
   describe "fetch subcommand" do

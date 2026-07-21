@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require "ucode/glyphs/source"
-require "ucode/glyphs/embedded_fonts/renderer"
-
 module Ucode
   module Glyphs
     module Sources
@@ -54,8 +51,16 @@ module Ucode
           result = @renderer.render(codepoint)
           return nil unless result
 
-          Result.new(tier: tier, codepoint: codepoint,
-                     svg: result.svg, provenance: provenance)
+          Result.new(
+            tier: tier,
+            codepoint: codepoint,
+            svg: result.svg,
+            provenance: provenance,
+            base_font: result.base_font,
+            gid: result.gid,
+            source_page: result.source_page,
+            source_cell: result.source_cell,
+          )
         end
       end
     end

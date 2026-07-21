@@ -12,7 +12,16 @@ module Ucode
       # renderer.
       class Renderer
         # Result of rendering one codepoint.
-        Result = Struct.new(:codepoint, :base_font, :gid, :svg, keyword_init: true) do
+        #
+        # `source_page` + `source_cell` come from the Catalog's
+        # location index when available. Nil when the catalog hasn't
+        # traced the PDF (ToUnicode-only path) — downstream concerns
+        # treat that as "no positional data; skip cell-based diff".
+        Result = Struct.new(
+          :codepoint, :base_font, :gid, :svg,
+          :source_page, :source_cell,
+          keyword_init: true,
+        ) do
           def ok?
             !svg.nil?
           end
@@ -37,7 +46,15 @@ module Ucode
           return nil if outline.nil? || outline.empty?
 
           svg = Svg.new(outline, codepoint: codepoint, base_font: entry.base_font).to_s
-          Result.new(codepoint: codepoint, base_font: entry.base_font, gid: gid, svg: svg)
+          location = @catalog.location_for(codepoint)
+          Result.new(
+            codepoint: codepoint,
+            base_font: entry.base_font,
+            gid: gid,
+            svg: svg,
+            source_page: location&.fetch(:page),
+            source_cell: location && { x: location[:x], y: location[:y] },
+          )
         end
       end
     end

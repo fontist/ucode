@@ -31,9 +31,15 @@ module Ucode
   # (e.g. a future pure-Ruby PDF parser per ADR-0001) does not
   # change the public API.
   module CodeChart
+    autoload :BatchRunner, "ucode/code_chart/batch_runner"
+    autoload :BlockIndex, "ucode/code_chart/block_index"
+    autoload :CoverageGapIndex, "ucode/code_chart/coverage_gap_index"
     autoload :Extractor, "ucode/code_chart/extractor"
+    autoload :Fetcher, "ucode/code_chart/fetcher"
+    autoload :GapAnalyzer, "ucode/code_chart/gap_analyzer"
     autoload :Provenance, "ucode/code_chart/provenance"
     autoload :Sidecar, "ucode/code_chart/sidecar"
+    autoload :Verifier, "ucode/code_chart/verifier"
     autoload :Writer, "ucode/code_chart/writer"
   end
 end

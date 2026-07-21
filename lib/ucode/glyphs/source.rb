@@ -25,7 +25,17 @@ module Ucode
       # One resolved glyph. Carries the SVG payload and enough
       # provenance to debug "where did this glyph come from?" without
       # holding a reference back to the source.
-      Result = Struct.new(:tier, :codepoint, :svg, :provenance, keyword_init: true)
+      #
+      # The optional `base_font`, `gid`, `source_page`, `source_cell`
+      # fields carry the renderer's localization data so downstream
+      # concerns (Verifier pixel-diff against the source PDF cell,
+      # Provenance audit trail) don't need to re-derive it. Sources
+      # that don't know this data (e.g. LastResort) leave them nil.
+      Result = Struct.new(
+        :tier, :codepoint, :svg, :provenance,
+        :base_font, :gid, :source_page, :source_cell,
+        keyword_init: true,
+      )
 
       # @return [Symbol] one of :tier1, :pillar1, :pillar2, :pillar3
       def tier

@@ -30,8 +30,29 @@ module Ucode
     # not checked out.
     class Extractor
       # Result of extracting one codepoint.
-      Result = Struct.new(:codepoint, :svg, :tier, :provenance,
-                          keyword_init: true)
+      #
+      # Carries the SVG payload plus everything downstream concerns
+      # need without re-derivation:
+      #
+      #   * `base_font` — the PDF-embedded BaseFont name (e.g.
+      #     "GPJAHB+WolofGaraySansSerif"). Nil for non-PDF sources.
+      #   * `gid` — the GID inside that font. Nil for non-PDF sources.
+      #   * `source_page` — 1-based PDF page number where the glyph
+      #     appears. Nil when the Catalog didn't compute a location
+      #     (ToUnicode-only path) — populated by TODO 04's
+      #     `Catalog#location_for` integration.
+      #   * `source_cell` — `{x: Float, y: Float}` (PDF user space,
+      #     origin bottom-left) for the specimen. Same nil rule.
+      #   * `extractor_version` — `Ucode::VERSION` at extraction time.
+      #
+      # All optional fields default nil so existing call sites that
+      # only read `codepoint, svg, tier, provenance` keep working.
+      Result = Struct.new(
+        :codepoint, :svg, :tier, :provenance,
+        :base_font, :gid, :source_page, :source_cell,
+        :extractor_version,
+        keyword_init: true,
+      )
 
       # @param block [Ucode::Models::Block] block whose assigned
       #   codepoints will be extracted
@@ -47,13 +68,26 @@ module Ucode
       #   Pillar 3 (Last Resort) source. nil = no Pillar 3 fallback.
       #   Callers that want Last Resort placeholders inject the
       #   pre-built source here.
+      # @param assigned_only [Boolean] when true, iterate only
+      #   assigned codepoints (via {BlockIndex}). Default false:
+      #   iterate the full block range, matching the legacy
+      #   behavior (Pillar 3 fills unassigned slots when injected;
+      #   otherwise the Resolver returns nil for them and they're
+      #   silently skipped).
+      # @param codepoints [Array<Integer>, nil] explicit codepoint
+      #   list — overrides {BlockIndex} iteration. Used by
+      #   {BatchRunner} to extract only the gap set. nil = use
+      #   BlockIndex.
       def initialize(block:, pdf_path:, cache_dir: nil,
-                     tier1_sources: nil, pillar3_source: nil)
+                     tier1_sources: nil, pillar3_source: nil,
+                     assigned_only: false, codepoints: nil)
         @block = block
         @pdf_path = Pathname.new(pdf_path)
         @cache_dir = cache_dir && Pathname.new(cache_dir)
         @tier1_sources = tier1_sources || []
         @pillar3_source = pillar3_source
+        @assigned_only = assigned_only
+        @codepoints = codepoints
       end
 
       # @return [Array<Result>] one Result per codepoint that any
@@ -71,6 +105,11 @@ module Ucode
             svg: resolver_result.svg,
             tier: resolver_result.tier,
             provenance: resolver_result.provenance,
+            base_font: resolver_result.base_font,
+            gid: resolver_result.gid,
+            source_page: resolver_result.source_page,
+            source_cell: resolver_result.source_cell,
+            extractor_version: Ucode::VERSION,
           )
         end
         results
@@ -78,18 +117,27 @@ module Ucode
 
       private
 
-      # Yields every codepoint in the block's range in ascending
-      # order. We yield the whole range because the Resolver's
-      # tiers handle unassigned codepoints — Pillar 3 (when
-      # configured) maps every codepoint via its Format 13 cmap,
-      # so unassigned slots get a placeholder. With no Pillar 3
-      # injected, only assigned codepoints (those the embedded
-      # font actually covers) yield Results; the rest are silently
-      # skipped, satisfying the REQ's "skip unassigned codepoints".
+      # Yields every codepoint the {BlockIndex} exposes. With
+      # `assigned_only: false` (default), iterates the full block
+      # range so Pillar 3 (when configured) can map every codepoint
+      # via its Format 13 cmap, giving unassigned slots a placeholder.
+      # With `assigned_only: true`, iterates only assigned codepoints
+      # — useful for {GapAnalyzer}-driven extraction where unassigned
+      # slots have no chart specimen and no placeholder is desired.
       def each_codepoint(&)
         return enum_for(:each_codepoint) unless block_given?
 
-        (@block.range_first..@block.range_last).each(&)
+        if @codepoints
+          @codepoints.each(&)
+        elsif @assigned_only
+          block_index.each_assigned_codepoint(&)
+        else
+          block_index.each_codepoint_in_range(&)
+        end
+      end
+
+      def block_index
+        @block_index ||= BlockIndex.new(block: @block)
       end
 
       def build_resolver

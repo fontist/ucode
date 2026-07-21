@@ -115,12 +115,22 @@ module Ucode
   # (corrupt PDF, bad object ref, etc.). The context carries the argv.
   class MutoolError < GlyphError; end
 
+  # CodeChart feature errors — concerns under `Ucode::CodeChart::*`.
+  # Distinct from the generic {GlyphError} hierarchy so callers can
+  # scope rescue clauses to feature failures.
+  class CodeChartError < GlyphError; end
+
   # The Code Charts PDF for a requested block cannot be obtained: the
   # network returned 4xx/5xx, the response wasn't application/pdf, or
   # the body didn't start with the `%PDF` magic. Distinct from
   # {EmbeddedFontsMissingError} (which fires when the file is already
   # on disk and we just can't open it): this fires at fetch time.
-  class CodeChartNotFoundError < GlyphError; end
+  class CodeChartNotFoundError < CodeChartError; end
+
+  # A cached Code Charts PDF failed sha256 verification — the file on
+  # disk doesn't match the sidecar hash from the previous successful
+  # download. Implies external tampering or a filesystem fault.
+  class CodeChartChecksumError < CodeChartError; end
 
   # Pre-build validation failed for a universal-set build. The
   # context carries the failing checks so the CLI can render a

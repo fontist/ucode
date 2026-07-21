@@ -50,6 +50,34 @@ RSpec.describe Ucode::CodeChart::Extractor do
       expect(result.tier).to eq(:pillar1)
       expect(result.provenance).to eq("pillar-1:embedded-tounicode")
     end
+
+    it "carries optional base_font, gid, source_page, source_cell, extractor_version" do
+      result = described_class::Result.new(
+        codepoint: 0x10D40,
+        svg: "<svg/>",
+        tier: :pillar1,
+        provenance: "pillar-1:embedded-tounicode",
+        base_font: "GPJAHB+WolofGaraySansSerif",
+        gid: 224,
+        source_page: 2,
+        source_cell: { x: 237.06, y: 673.92 },
+        extractor_version: "9.9.9",
+      )
+      expect(result.base_font).to eq("GPJAHB+WolofGaraySansSerif")
+      expect(result.gid).to eq(224)
+      expect(result.source_page).to eq(2)
+      expect(result.source_cell).to eq(x: 237.06, y: 673.92)
+      expect(result.extractor_version).to eq("9.9.9")
+    end
+
+    it "defaults the new fields to nil for backwards compatibility" do
+      result = described_class::Result.new(codepoint: 0, svg: "", tier: :pillar3)
+      expect(result.base_font).to be_nil
+      expect(result.gid).to be_nil
+      expect(result.source_page).to be_nil
+      expect(result.source_cell).to be_nil
+      expect(result.extractor_version).to be_nil
+    end
   end
 
   describe "#extract" do

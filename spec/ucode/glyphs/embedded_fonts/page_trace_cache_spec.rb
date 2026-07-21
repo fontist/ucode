@@ -110,4 +110,45 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::PageTraceCache do
       expect(cache.references_font?("B")).to be(false)
     end
   end
+
+  describe "#find_glyph" do
+    let(:mutool) do
+      StubTraceMutool.new(
+        by_page: {
+          1 => '<document><span font="A"><g glyph="1" x="100" y="200"/></span></document>',
+          2 => '<document><span font="A"><g glyph="5" x="300" y="400"/>' \
+               '<g glyph="7" x="500" y="600"/></span>' \
+               '<span font="B"><g glyph="5" x="700" y="800"/></span></document>',
+        },
+      )
+    end
+    let(:cache) { described_class.new(pdf: pdf, page_count: 2, mutool: mutool) }
+
+    it "returns the first matching (page, x, y) for the (font, gid) pair" do
+      result = cache.find_glyph(base_font: "A", gid: 5)
+      expect(result).to eq({ page: 2, x: 300.0, y: 400.0 })
+    end
+
+    it "matches on page 1 when the glyph is there" do
+      result = cache.find_glyph(base_font: "A", gid: 1)
+      expect(result).to eq({ page: 1, x: 100.0, y: 200.0 })
+    end
+
+    it "returns nil when the font isn't traced at all" do
+      expect(cache.find_glyph(base_font: "Z", gid: 1)).to be_nil
+    end
+
+    it "returns nil when the gid isn't in the font's traced glyphs" do
+      expect(cache.find_glyph(base_font: "A", gid: 999)).to be_nil
+    end
+
+    it "does not match across fonts — same gid, different font" do
+      # gid 5 is in font A on page 2 AND in font B on page 2. The
+      # query for font A returns font A's location, not font B's.
+      result = cache.find_glyph(base_font: "A", gid: 5)
+      expect(result[:x]).to eq(300.0)
+      result_b = cache.find_glyph(base_font: "B", gid: 5)
+      expect(result_b[:x]).to eq(700.0)
+    end
+  end
 end

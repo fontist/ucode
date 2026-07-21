@@ -68,13 +68,18 @@ module Ucode
         # stubs for tests should construct strategies directly and pass
         # them to +#initialize+.
         #
+        # @param trace_cache [PageTraceCache, nil] when provided, the
+        #   TraceStrategy shares this cache (lets the caller reuse the
+        #   traced pages for downstream concerns like Catalog's
+        #   location lookup). nil = construct internally.
         # @return [CodepointMapper]
         def self.build(source:, correlator_configs:, indexer:,
                        block_range: nil, force_positional_for_font_ids: Set.new,
                        mutool_show: Mutool::Show.new,
                        mutool_draw: Mutool::Draw.new,
-                       mutool_trace: Mutool::Trace.new)
-          trace_cache = PageTraceCache.new(
+                       mutool_trace: Mutool::Trace.new,
+                       trace_cache: nil)
+          trace_cache ||= PageTraceCache.new(
             pdf: source.pdf_path,
             page_count: indexer.page_count,
             mutool: mutool_trace,

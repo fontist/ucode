@@ -55,13 +55,14 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::Catalog do
   describe "public interface" do
     let(:catalog) { described_class.new(source) }
 
-    it "responds to index, lookup, codepoints, size, font_count, font_entries" do
+    it "responds to index, lookup, codepoints, size, font_count, font_entries, location_for" do
       expect(catalog).to respond_to(:index)
       expect(catalog).to respond_to(:lookup)
       expect(catalog).to respond_to(:codepoints)
       expect(catalog).to respond_to(:size)
       expect(catalog).to respond_to(:font_count)
       expect(catalog).to respond_to(:font_entries)
+      expect(catalog).to respond_to(:location_for)
     end
 
     # Without a real PDF, mutool returns empty. The catalog should

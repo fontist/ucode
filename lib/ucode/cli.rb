@@ -150,49 +150,44 @@ module Ucode
 
       desc "extract --block BLOCK --to DIR [VERSION]",
            "Extract per-codepoint SVG + provenance sidecars from a Code Charts PDF"
-      option :block, type: :string, required: true,
-                     desc: "Block identifier (e.g. Sidetic)"
+      option :block, type: :string, required: false,
+                     desc: "Block identifier (required unless --missing-from is given)"
       option :to, type: :string, required: true,
                   desc: "Output directory (will contain <block_id>/<U+XXXX>.svg + .json)"
+      option :verify, type: :boolean, default: false,
+                      desc: "Run pixel-diff verification on every extracted glyph"
+      option :missing_from, type: :string, default: nil,
+                            desc: "Path to essenfont manifest; extracts only the gaps"
       def extract(version = nil)
         with_codechart_errors do
           version_str = VersionResolver.resolve(version)
-          block = resolve_block!(options[:block], version_str)
-          block_first_cp = block.range_first
 
-          # Download (idempotent — re-runs skip when the PDF is cached).
-          Commands::FetchCommand.new.fetch_charts(version_str, block_first_cps: [block_first_cp])
+          if options[:missing_from]
+            run_batch_extract(version: version_str,
+                              manifest_path: options[:missing_from],
+                              to: options[:to], verify: options[:verify])
+          else
+            raise Thor::Error, "--block is required when --missing-from is not set" unless options[:block]
 
-          pdf = Ucode::Glyphs::PdfFetcher.new(version_str)
-            .fetch(block_first_cp: block_first_cp)
-          unless pdf
-            raise Ucode::CodeChartNotFoundError.new(
-              "Code Charts PDF unavailable for block #{block.id.inspect}",
-              context: { block_id: block.id, version: version_str },
-            )
+            run_single_block_extract(version: version_str,
+                                     block_id: options[:block],
+                                     to: options[:to], verify: options[:verify])
           end
-
-          writer = Ucode::CodeChart::Writer.new(
-            output_root: Pathname.new(options[:to]),
-            pdf_path: pdf,
-            ucd_version: version_str,
-          )
-          summary = writer.write(block)
-          puts JSON.pretty_generate(summary.to_h.compact)
         end
       end
 
       desc "list", "List cached Code Charts PDFs under the version's cache"
+      option :coverage_gap_only, type: :boolean, default: false,
+                                 desc: "Only list blocks with OFL coverage gaps"
+      option :coverage, type: :string, default: nil,
+                        desc: "Path to a coverage YAML (required with --coverage-gap-only)"
       def list
-        version = VersionResolver.resolve(nil)
-        pdfs_dir = Ucode::Cache.pdfs_dir(version)
-        files = pdfs_dir.exist? ? pdfs_dir.children.sort : []
-        if files.empty?
-          puts "(no cached Code Charts PDFs)"
-          return
-        end
-        files.each do |f|
-          puts f.basename
+        with_codechart_errors do
+          if options[:coverage_gap_only]
+            run_coverage_gap_list
+          else
+            run_simple_list
+          end
         end
       end
 
@@ -207,6 +202,180 @@ module Ucode
 
       def resolve_block_first_cp!(block_id, version)
         resolve_block!(block_id, version).range_first
+      end
+
+      def run_single_block_extract(version:, block_id:, to:, verify:)
+        block = resolve_block!(block_id, version)
+        fetcher = Ucode::CodeChart::Fetcher.new(version: version)
+        pdf_path = fetcher.fetch(block: block)
+
+        writer = Ucode::CodeChart::Writer.new(
+          output_root: Pathname.new(to),
+          pdf_path: pdf_path,
+          ucd_version: version,
+        )
+        summary = writer.write(block)
+
+        result = { **summary.to_h.compact }
+        if verify
+          result[:verification] = verify_block(block: block, pdf_path: pdf_path,
+                                               output_root: Pathname.new(to))
+        end
+        puts JSON.pretty_generate(result)
+      end
+
+      def run_batch_extract(version:, manifest_path:, to:, verify:)
+        manifest = Ucode::CodeChart::GapAnalyzer::EssenfontManifest.new(manifest_path)
+        analyzer = Ucode::CodeChart::GapAnalyzer::Analyzer.new(
+          manifest: manifest,
+          blocks: load_all_blocks(version),
+        )
+        fetcher = Ucode::CodeChart::Fetcher.new(version: version)
+        runner = Ucode::CodeChart::BatchRunner.new(
+          output_root: Pathname.new(to), ucd_version: version,
+          fetcher: fetcher,
+        )
+        aggregate = runner.run(gap_analyzer: analyzer,
+                               blocks: load_all_blocks(version))
+        result = aggregate.to_h
+        result[:verification] = verify_aggregate(output_root: Pathname.new(to)) if verify
+        puts JSON.pretty_generate(result.compact)
+      end
+
+      # Load all blocks from the cached Blocks.txt as a {block_id => Block} map.
+      def load_all_blocks(version)
+        blocks_txt = Ucode::Cache.ucd_dir(version).join("Blocks.txt")
+        Ucode::Parsers::Blocks.each_record(blocks_txt).to_h do |b|
+          [b.id, b]
+        end
+      end
+
+      # Pixel-diff verification after single-block extract. Returns
+      # a tally of Pass/Fail/Skipped counts + artifact paths for Fail.
+      def verify_block(block:, pdf_path:, output_root:)
+        verifier = Ucode::CodeChart::Verifier.new(diff_dir: output_root.join(".verify"))
+        return { status: "skipped", reason: "no verifier strategy" } unless verifier.available?
+
+        block_dir = output_root.join(block.id)
+        tallies = { passed: 0, failed: 0, skipped: 0, failures: [] }
+        Dir.glob(block_dir.join("U+*.svg")).each do |svg_path|
+          cp = parse_cp_from_path(svg_path)
+          next unless cp
+
+          extractor_result = build_extractor_result_for_verification(block_dir, svg_path, cp)
+          result = verifier.verify(extractor_result, pdf_path: pdf_path)
+          update_tally(tallies, result)
+        end
+        tallies
+      end
+
+      def verify_aggregate(output_root:, **_kwargs)
+        verifier = Ucode::CodeChart::Verifier.new(diff_dir: output_root.join(".verify"))
+        return { status: "skipped", reason: "no verifier strategy" } unless verifier.available?
+
+        tallies = { passed: 0, failed: 0, skipped: 0, failures: [] }
+        Dir.glob(output_root.join("*", "U+*.svg")).each do |svg_path|
+          cp = parse_cp_from_path(svg_path)
+          next unless cp
+
+          block_id = Pathname.new(svg_path).dirname.basename.to_s
+          sidecar = Pathname.new(svg_path.sub_ext(".json").to_s)
+          next unless sidecar.exist?
+
+          data = JSON.parse(sidecar.read)
+          pdf_path = Pathname.new(Ucode::Cache.pdfs_dir(data["ucd_version"])
+                                  .join("U#{block_first_cp_hex(block_id)}.pdf"))
+          next unless pdf_path.exist?
+
+          extractor_result = build_extractor_result_for_verification(
+            Pathname.new(svg_path).dirname, svg_path, cp
+          )
+          result = verifier.verify(extractor_result, pdf_path: pdf_path)
+          update_tally(tallies, result)
+        end
+        tallies
+      end
+
+      def parse_cp_from_path(svg_path)
+        basename = File.basename(svg_path, ".svg")
+        return nil unless basename.start_with?("U+")
+
+        basename.sub("U+", "").to_i(16)
+      end
+
+      def block_first_cp_hex(block_id)
+        # Block IDs use underscored names but PDFs are keyed by first
+        # codepoint hex. Resolve via Blocks.txt on disk.
+        blocks_txt = Ucode::Cache.ucd_dir(VersionResolver.resolve(nil)).join("Blocks.txt")
+        block = Ucode::Parsers::Blocks.find_by_id!(blocks_txt, block_id)
+        block.range_first.to_s(16).upcase.rjust(4, "0")
+      end
+
+      def build_extractor_result_for_verification(_block_dir, svg_path, codepoint)
+        sidecar = Pathname.new(svg_path.sub_ext(".json").to_s)
+        data = sidecar.exist? ? JSON.parse(sidecar.read) : {}
+        Ucode::CodeChart::Extractor::Result.new(
+          codepoint: codepoint,
+          svg: File.read(svg_path),
+          tier: :pillar1,
+          provenance: data["extractor_version"] || "verify",
+          base_font: data["base_font"],
+          gid: data["gid"],
+          source_page: data["source_page"],
+          source_cell: data["source_cell"],
+        )
+      end
+
+      def update_tally(tally, result)
+        case result
+        when Ucode::CodeChart::Verifier::Result::Pass
+          tally[:passed] += 1
+        when Ucode::CodeChart::Verifier::Result::Fail
+          tally[:failed] += 1
+          tally[:failures] << { codepoint: result.codepoint,
+                                percent: result.percent,
+                                diff_path: result.diff_path.to_s }
+        when Ucode::CodeChart::Verifier::Result::Skipped
+          tally[:skipped] += 1
+        end
+      end
+
+      def run_simple_list
+        version = VersionResolver.resolve(nil)
+        pdfs_dir = Ucode::Cache.pdfs_dir(version)
+        files = pdfs_dir.exist? ? pdfs_dir.children.sort : []
+        if files.empty?
+          puts "(no cached Code Charts PDFs)"
+          return
+        end
+        files.each do |f|
+          puts f.basename
+        end
+      end
+
+      def run_coverage_gap_list
+        coverage_path = options[:coverage]
+        raise Thor::Error, "--coverage <path.yml> is required with --coverage-gap-only" unless coverage_path
+
+        version = VersionResolver.resolve(nil)
+        blocks = load_all_blocks(version)
+        index = Ucode::CodeChart::CoverageGapIndex.from_yaml(coverage_path, blocks: blocks)
+        gaps = index.gap_blocks
+        if gaps.empty?
+          puts "(no coverage gaps)"
+          return
+        end
+        printf "%<block_id>-40s %<assigned>10s %<covered>10s %<missing>10s\n",
+               block_id: "block_id", assigned: "assigned",
+               covered: "covered", missing: "missing"
+        gaps.each do |gap|
+          block = blocks[gap.block_id]
+          assigned = block.range_last - block.range_first + 1
+          covered = assigned - gap.size
+          printf "%<block_id>-40s %<assigned>10d %<covered>10d %<missing>10d\n",
+                 block_id: gap.block_id, assigned: assigned,
+                 covered: covered, missing: gap.size
+        end
       end
 
       # Convert semantic Ucode errors into Thor errors so Thor's

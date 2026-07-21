@@ -72,6 +72,28 @@ module Ucode
           end
         end
 
+        # Locate the first occurrence of a specific (font, gid) pair
+        # across all traced pages. Returns nil when no match. Used by
+        # {Catalog#location_for} to attribute a codepoint's source
+        # page + (x, y) without exposing the cache's internal layout
+        # to callers.
+        #
+        # @param base_font [String] specimen font BaseFont name
+        # @param gid [Integer] glyph id inside that font
+        # @return [Hash{Symbol=>Integer, Float}, nil]
+        #   `{ page: Integer, x: Float, y: Float }` or nil
+        def find_glyph(base_font:, gid:)
+          glyphs_by_page.each_with_index do |page_glyphs, idx|
+            next if idx.zero?
+
+            match = page_glyphs.find do |g|
+              g.font_name == base_font && g.gid == gid
+            end
+            return { page: idx, x: match.x, y: match.y } if match
+          end
+          nil
+        end
+
         private
 
         def fetch_glyphs_by_page

@@ -3,12 +3,6 @@
 require "digest"
 require "pathname"
 
-require "ucode/code_chart/extractor"
-require "ucode/code_chart/provenance"
-require "ucode/code_chart/sidecar"
-require "ucode/error"
-require "ucode/version_resolver"
-
 module Ucode
   module CodeChart
     # Orchestrates extraction + provenance sidecar writing for one
@@ -49,10 +43,12 @@ module Ucode
       # @param cache_dir [Pathname, String, nil] font-stream cache
       #   directory for the EmbeddedFonts::PdfSource.
       # @param now [Time, nil] timestamp override (for tests).
-      # @param pillar3_source, tier1_sources: forwarded to the Extractor.
+      # @param pillar3_source, tier1_sources, assigned_only, codepoints:
+      #   forwarded to the Extractor.
       def initialize(output_root:, pdf_path:, ucd_version: nil,
                      cache_dir: nil, now: nil,
-                     pillar3_source: nil, tier1_sources: nil)
+                     pillar3_source: nil, tier1_sources: nil,
+                     assigned_only: false, codepoints: nil)
         @output_root = Pathname.new(output_root)
         @pdf_path = Pathname.new(pdf_path)
         @ucd_version = ucd_version || VersionResolver.resolve(nil)
@@ -60,6 +56,8 @@ module Ucode
         @now = now
         @pillar3_source = pillar3_source
         @tier1_sources = tier1_sources
+        @assigned_only = assigned_only
+        @codepoints = codepoints
       end
 
       # Extracts every codepoint in `block` and writes `<block_id>/<cp>.svg`
@@ -72,7 +70,7 @@ module Ucode
         block_dir = @output_root.join(block.id)
         block_dir.mkpath
 
-        pdf_sha = CodeChart.sha256_of(@pdf_path)
+        pdf_sha = Provenance.sha256_of(@pdf_path)
 
         sidecar = Sidecar.new(output_root: block_dir)
         extractor = Extractor.new(
@@ -81,6 +79,8 @@ module Ucode
           cache_dir: @cache_dir,
           pillar3_source: @pillar3_source,
           tier1_sources: @tier1_sources,
+          assigned_only: @assigned_only,
+          codepoints: @codepoints,
         )
 
         results = extractor.extract
@@ -89,10 +89,12 @@ module Ucode
         results.each do |result|
           write_svg(block_dir, result)
           svgs += 1
-          provenance = CodeChart.build(
+          provenance = Provenance.build(
             block: block, codepoint: result.codepoint,
             ucd_version: @ucd_version, pdf_path: @pdf_path,
-            now: @now,
+            pdf_sha: pdf_sha, now: @now,
+            base_font: result.base_font, gid: result.gid,
+            source_page: result.source_page, source_cell: result.source_cell,
           )
           sidecar.write(provenance)
           sidecars += 1

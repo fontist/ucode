@@ -157,7 +157,9 @@ module Ucode
         def intrinsic_out_of_scope?(intrinsic_result)
           return false unless @block_range
 
-          intrinsic_result.keys.none? { |cp| @block_range.include?(cp) }
+          # block_range is a Range, not an Array; Array#intersect? would
+          # force an eager .to_a conversion on potentially huge CJK ranges.
+          intrinsic_result.keys.all? { |cp| !@block_range.include?(cp) }
         end
 
         # Positional chain: union of all positional strategies' results.

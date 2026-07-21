@@ -102,6 +102,12 @@ RSpec.describe Ucode::Cli do
     let(:block_dir) { output_dir.join("Sidetic") }
     let(:pdf_dir) { tmpdir.join("pdfs") }
     let(:pdf_path) { pdf_dir.join("U10920.pdf") }
+    let(:sidetic_block) do
+      Ucode::Models::Block.new(
+        id: "Sidetic", name: "Sidetic",
+        range_first: 0x10920, range_last: 0x1093F, plane_number: 1,
+      )
+    end
 
     before do
       pdf_dir.mkpath
@@ -124,21 +130,54 @@ RSpec.describe Ucode::Cli do
     after { safe_remove(tmpdir) if tmpdir.exist? }
 
     # Regression guard for the 0.5.0 crash (NoMethodError:
-    # String#sub_ext). Pre-fix, this raised NoMethodError on the
-    # first SVG because Dir.glob returns String, not Pathname.
-    it "does not crash with NoMethodError on --verify" do
+    # String#sub_ext). Pre-fix, build_extractor_result_for_verification
+    # called .sub_ext directly on a String returned by Dir.glob. Wrap in
+    # Pathname first.
+    it "build_extractor_result_for_verification produces a Result with symbol-keyed source_cell" do
+      cmd = described_class::CodeChartCmd.new
+      svg_path = block_dir.join("U+10920.svg").to_s
+      result = cmd.send(
+        :build_extractor_result_for_verification,
+        block_dir, svg_path, 0x10920
+      )
+
+      expect(result.codepoint).to eq(0x10920)
+      expect(result.source_page).to eq(1)
+      expect(result.source_cell).to be_a(Hash)
+      expect(result.source_cell[:x]).to eq(100.0)
+      expect(result.source_cell[:y]).to eq(200.0)
+    end
+
+    # Regression guard for the String#sub_ext crash in
+    # verify_block / verify_aggregate. With a stubbed Verifier that
+    # returns Skipped(:no_strategy), the path-computing code that
+    # crashed in 0.5.0 must now reach the verifier without raising.
+    it "verify_block does not raise on a fixture SVG/JSON pair" do
+      cmd = described_class::CodeChartCmd.new
       allow(Ucode::Cache).to receive(:pdfs_dir).and_return(pdf_dir)
+      stub_verifier = Class.new do
+        def initialize(*); @called = false; end
+        def available? = true
 
-      # Force the Verifier to Skipped(:no_strategy) so we don't need
-      # resvg/mutool installed — the bug we're guarding against fires
-      # before the Verifier is even consulted.
-      allow(Ucode::CodeChart::Verifier::Builder).to receive(:pick).and_return(nil)
+        def verify(result, pdf_path:) # rubocop:disable Lint/UnusedMethodArgument
+          @called = true
+          Ucode::CodeChart::Verifier::Result::Skipped.new(
+            codepoint: result.codepoint, reason: :no_strategy
+          )
+        end
 
-      expect {
-        described_class.start(%W[
-          code-chart extract --block Sidetic --to #{output_dir} --verify 17.0.0
-        ])
-      }.not_to raise_error
+        def called? = @called
+      end.new
+      allow(Ucode::CodeChart::Verifier).to receive(:new).and_return(stub_verifier)
+
+      tallies = cmd.send(:verify_block,
+                         block: sidetic_block, pdf_path: pdf_path,
+                         output_root: output_dir)
+
+      expect(stub_verifier.called?).to be(true)
+      expect(tallies[:skipped]).to eq(1)
+      expect(tallies[:passed]).to eq(0)
+      expect(tallies[:failed]).to eq(0)
     end
   end
 end

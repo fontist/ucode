@@ -112,6 +112,7 @@ RSpec.describe Ucode::CodeChart::Writer do
   # below covers the same code paths without that dependency.
   describe "#write" do
     before { skip "mutool not on PATH" unless system("which mutool >/dev/null 2>&1") }
+
     it "creates a per-block folder under output_root" do
       writer.write(basic_latin_block)
       expect(output_root.join("Basic_Latin").directory?).to be(true)

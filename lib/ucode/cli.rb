@@ -279,7 +279,7 @@ module Ucode
           next unless cp
 
           block_id = Pathname.new(svg_path).dirname.basename.to_s
-          sidecar = Pathname.new(svg_path.sub_ext(".json").to_s)
+          sidecar = Pathname.new(svg_path).sub_ext(".json")
           next unless sidecar.exist?
 
           data = JSON.parse(sidecar.read)
@@ -312,8 +312,11 @@ module Ucode
       end
 
       def build_extractor_result_for_verification(_block_dir, svg_path, codepoint)
-        sidecar = Pathname.new(svg_path.sub_ext(".json").to_s)
+        sidecar = Pathname.new(svg_path).sub_ext(".json")
         data = sidecar.exist? ? JSON.parse(sidecar.read) : {}
+        # sidecar JSON has string-keyed source_cell; restore symbol
+        # keys so the Verifier's [:x] / [:y] lookup works.
+        source_cell = (data["source_cell"] || {}).transform_keys(&:to_sym)
         Ucode::CodeChart::Extractor::Result.new(
           codepoint: codepoint,
           svg: File.read(svg_path),
@@ -322,7 +325,7 @@ module Ucode
           base_font: data["base_font"],
           gid: data["gid"],
           source_page: data["source_page"],
-          source_cell: data["source_cell"],
+          source_cell: source_cell,
         )
       end
 

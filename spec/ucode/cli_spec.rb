@@ -95,4 +95,50 @@ RSpec.describe Ucode::Cli do
       expect(lookup_cls.commands.keys).to include("block", "script", "char")
     end
   end
+
+  describe "code_chart extract --verify end-to-end" do
+    let(:tmpdir) { Pathname.new(Dir.mktmpdir("ucode-cli-verify-")) }
+    let(:output_dir) { tmpdir.join("out") }
+    let(:block_dir) { output_dir.join("Sidetic") }
+    let(:pdf_dir) { tmpdir.join("pdfs") }
+    let(:pdf_path) { pdf_dir.join("U10920.pdf") }
+
+    before do
+      pdf_dir.mkpath
+      pdf_path.write("%PDF-1.5\n...\n%%EOF\n")
+      block_dir.mkpath
+      block_dir.join("U+10920.svg").write("<svg/>")
+      block_dir.join("U+10920.json").write(JSON.generate({
+        "codepoint" => "U+10920", "block" => "Sidetic",
+        "source_pdf_url" => "https://www.unicode.org/charts/PDF/U10920.pdf",
+        "source_pdf_sha256" => Digest::SHA256.file(pdf_path).hexdigest,
+        "ucd_version" => "17.0.0",
+        "extracted_at" => "2026-06-30T12:00:00Z",
+        "extractor_version" => "0.5.0",
+        "base_font" => "ABC+Test", "gid" => 100,
+        "source_page" => 1,
+        "source_cell" => { "x" => 100.0, "y" => 200.0 }
+      }))
+    end
+
+    after { safe_remove(tmpdir) if tmpdir.exist? }
+
+    # Regression guard for the 0.5.0 crash (NoMethodError:
+    # String#sub_ext). Pre-fix, this raised NoMethodError on the
+    # first SVG because Dir.glob returns String, not Pathname.
+    it "does not crash with NoMethodError on --verify" do
+      allow(Ucode::Cache).to receive(:pdfs_dir).and_return(pdf_dir)
+
+      # Force the Verifier to Skipped(:no_strategy) so we don't need
+      # resvg/mutool installed — the bug we're guarding against fires
+      # before the Verifier is even consulted.
+      allow(Ucode::CodeChart::Verifier::Builder).to receive(:pick).and_return(nil)
+
+      expect {
+        described_class.start(%W[
+          code-chart extract --block Sidetic --to #{output_dir} --verify 17.0.0
+        ])
+      }.not_to raise_error
+    end
+  end
 end

@@ -45,10 +45,15 @@ module Ucode
       # @param now [Time, nil] timestamp override (for tests).
       # @param pillar3_source, tier1_sources, assigned_only, codepoints:
       #   forwarded to the Extractor.
+      # @param extractor [Ucode::CodeChart::Extractor, nil] pre-built
+      #   Extractor instance. When nil (default), the Writer constructs
+      #   one from the other parameters. Injecting lets callers (tests)
+      #   bypass the mutool-dependent default Extractor.
       def initialize(output_root:, pdf_path:, ucd_version: nil,
                      cache_dir: nil, now: nil,
                      pillar3_source: nil, tier1_sources: nil,
-                     assigned_only: false, codepoints: nil)
+                     assigned_only: false, codepoints: nil,
+                     extractor: nil)
         @output_root = Pathname.new(output_root)
         @pdf_path = Pathname.new(pdf_path)
         @ucd_version = ucd_version || VersionResolver.resolve(nil)
@@ -58,6 +63,7 @@ module Ucode
         @tier1_sources = tier1_sources
         @assigned_only = assigned_only
         @codepoints = codepoints
+        @extractor = extractor
       end
 
       # Extracts every codepoint in `block` and writes `<block_id>/<cp>.svg`
@@ -73,7 +79,7 @@ module Ucode
         pdf_sha = Provenance.sha256_of(@pdf_path)
 
         sidecar = Sidecar.new(output_root: block_dir)
-        extractor = Extractor.new(
+        extractor = @extractor || Extractor.new(
           block: block,
           pdf_path: @pdf_path,
           cache_dir: @cache_dir,
@@ -82,7 +88,6 @@ module Ucode
           assigned_only: @assigned_only,
           codepoints: @codepoints,
         )
-
         results = extractor.extract
         svgs = 0
         sidecars = 0

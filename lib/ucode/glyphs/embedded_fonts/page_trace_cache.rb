@@ -4,6 +4,7 @@ require "pathname"
 
 require "ucode/glyphs/embedded_fonts/mutool"
 require "ucode/glyphs/embedded_fonts/trace_parser"
+require "ucode/glyphs/embedded_fonts/trace_glyph"
 
 module Ucode
   module Glyphs
@@ -24,6 +25,15 @@ module Ucode
       # Lazy: glyphs are only fetched when a strategy first asks for
       # them. PDFs where every font has /ToUnicode never trigger the
       # trace at all.
+      #
+      # ## mutool font-name truncation
+      #
+      # mutool trace emits font names truncated to 31 chars (PDF
+      # base-font-name limit). The BaseFont dict may carry the full
+      # original name (e.g. `HBBJCP+Uni11660Mongoliansupplement`).
+      # All name comparisons in this class go through
+      # {TraceGlyph.name_match?} so the truncation doesn't silently
+      # break lookups for long-named fonts.
       class PageTraceCache
         # @param pdf [Pathname, String]
         # @param page_count [Integer] total pages in the PDF
@@ -55,7 +65,7 @@ module Ucode
           glyphs_by_page.each_with_index do |glyphs, idx|
             next if idx.zero?
 
-            present = glyphs.any? { |g| g.font_name == base_font }
+            present = glyphs.any? { |g| TraceGlyph.name_match?(g.font_name, base_font) }
             next unless present
 
             present_in_any = true
@@ -68,8 +78,27 @@ module Ucode
         # @return [Boolean] true if any page references this font
         def references_font?(base_font)
           glyphs_by_page.any? do |page_glyphs|
-            page_glyphs.any? { |g| g.font_name == base_font }
+            page_glyphs.any? { |g| TraceGlyph.name_match?(g.font_name, base_font) }
           end
+        end
+
+        # Returns the set of distinct GIDs rendered on any page for
+        # the given font. Used by {CodepointMapper#needs_positional?}
+        # to detect the partial-ToUnicode-coverage case (font ships
+        # more glyphs than its CMap admits).
+        #
+        # @param base_font [String]
+        # @return [Set<Integer>]
+        def distinct_gids_for(base_font)
+          gids = Set.new
+          glyphs_by_page.each do |page_glyphs|
+            page_glyphs.each do |g|
+              next unless TraceGlyph.name_match?(g.font_name, base_font)
+
+              gids << g.gid if g.gid
+            end
+          end
+          gids
         end
 
         # Locate the first occurrence of a specific (font, gid) pair
@@ -87,7 +116,7 @@ module Ucode
             next if idx.zero?
 
             match = page_glyphs.find do |g|
-              g.font_name == base_font && g.gid == gid
+              TraceGlyph.name_match?(g.font_name, base_font) && g.gid == gid
             end
             return { page: idx, x: match.x, y: match.y } if match
           end

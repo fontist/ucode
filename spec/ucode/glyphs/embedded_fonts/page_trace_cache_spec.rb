@@ -151,4 +151,43 @@ RSpec.describe Ucode::Glyphs::EmbeddedFonts::PageTraceCache do
       expect(result_b[:x]).to eq(700.0)
     end
   end
+
+  # Long font names trip mutool's 31-char trace-output truncation.
+  # The catalog sees the full BaseFont name from `mutool info`
+  # (e.g. `HBBJCP+Uni11660Mongoliansupplement`); the trace emits
+  # `HBBJCP+Uni11660Mongoliansupplem`. All PageTraceCache lookups
+  # must compare via TraceGlyph.name_match? or long-named fonts
+  # silently disappear from positional correlation.
+  describe "long font name tolerance" do
+    let(:full_name) { "HBBJCP+Uni11660Mongoliansupplement" } # 34 chars
+    let(:truncated_name) { "HBBJCP+Uni11660Mongoliansupplem" } # 31 chars
+    let(:mutool) do
+      StubTraceMutool.new(
+        by_page: {
+          1 => %(<document><span font="#{truncated_name}"><g glyph="96" x="336.3" y="694.2"/></span></document>),
+          2 => %(<document><span font="#{truncated_name}"><g glyph="108" x="335.34" y="520.32"/></span></document>),
+        },
+      )
+    end
+    let(:cache) { described_class.new(pdf: pdf, page_count: 2, mutool: mutool) }
+
+    it "#each_page_for matches the font via its full BaseFont name" do
+      yielded = []
+      cache.each_page_for(full_name) { |p, _g| yielded << p }
+      expect(yielded).to contain_exactly(1, 2)
+    end
+
+    it "#references_font? returns true for the full BaseFont name" do
+      expect(cache.references_font?(full_name)).to be(true)
+    end
+
+    it "#distinct_gids_for enumerates GIDs across pages" do
+      expect(cache.distinct_gids_for(full_name)).to eq(Set.new([96, 108]))
+    end
+
+    it "#find_glyph locates the (font, gid) pair via the full name" do
+      result = cache.find_glyph(base_font: full_name, gid: 108)
+      expect(result).to eq({ page: 2, x: 335.34, y: 520.32 })
+    end
+  end
 end

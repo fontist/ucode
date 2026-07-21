@@ -56,11 +56,17 @@ module Ucode
         #   about block scope).
         # @param force_positional_for_font_ids [Set<Integer>] Type0
         #   font object IDs that always trigger positional attribution
+        # @param trace_cache [PageTraceCache, nil] consulted by
+        #   {#needs_positional?} for the partial-ToUnicode-coverage
+        #   case (the font has glyphs the CMap doesn't list). nil =
+        #   skip that check (legacy behavior).
         def initialize(strategies:, block_range: nil,
-                       force_positional_for_font_ids: Set.new)
+                       force_positional_for_font_ids: Set.new,
+                       trace_cache: nil)
           @strategies = strategies
           @block_range = block_range
           @force_positional_for_font_ids = force_positional_for_font_ids
+          @trace_cache = trace_cache
         end
 
         # Convenience builder — wires up the default 3-strategy chain
@@ -71,7 +77,9 @@ module Ucode
         # @param trace_cache [PageTraceCache, nil] when provided, the
         #   TraceStrategy shares this cache (lets the caller reuse the
         #   traced pages for downstream concerns like Catalog's
-        #   location lookup). nil = construct internally.
+        #   location lookup) AND the orchestrator consults it for
+        #   gap detection (ToUnicode partial-coverage case). nil =
+        #   construct internally.
         # @return [CodepointMapper]
         def self.build(source:, correlator_configs:, indexer:,
                        block_range: nil, force_positional_for_font_ids: Set.new,
@@ -93,7 +101,8 @@ module Ucode
           ]
           new(strategies: strategies,
               block_range: block_range,
-              force_positional_for_font_ids: force_positional_for_font_ids)
+              force_positional_for_font_ids: force_positional_for_font_ids,
+              trace_cache: trace_cache)
         end
 
         # @param descriptor [RawFontDescriptor]
@@ -136,7 +145,7 @@ module Ucode
           {}
         end
 
-        # Positional strategies are gated behind three conditions, any
+        # Positional strategies are gated behind four conditions, any
         # of which triggers them:
         #
         #   1. Caller explicitly listed this font in
@@ -146,10 +155,17 @@ module Ucode
         #   3. The intrinsic result fell entirely outside the
         #      caller's block scope — the font's CMap encoded the
         #      wrong codepoints (Option 1 auto-detect, e.g. U1F200).
+        #   4. The intrinsic result covered fewer glyphs than the
+        #      trace cache observes on the page — the font's CMap is
+        #      partial (Unicode Consortium ships orphan glyphs whose
+        #      CIDs the ToUnicode stream forgot to map, e.g. the
+        #      last glyph of Mongolian Supplement U+1166C and Myanmar
+        #      Extended-A U+116DA in the v17.0 charts).
         def needs_positional?(descriptor, intrinsic_result)
           return true if @force_positional_for_font_ids.include?(descriptor.font_obj_id)
           return true if intrinsic_result.empty?
           return true if intrinsic_out_of_scope?(intrinsic_result)
+          return true if intrinsic_has_uncovered_gids?(descriptor, intrinsic_result)
 
           false
         end
@@ -160,6 +176,21 @@ module Ucode
           # block_range is a Range, not an Array; Array#intersect? would
           # force an eager .to_a conversion on potentially huge CJK ranges.
           intrinsic_result.keys.all? { |cp| !@block_range.include?(cp) }
+        end
+
+        # Detects the partial-ToUnicode-coverage case: the font's
+        # CMap names N codepoints, but the page actually renders >N
+        # glyphs from this font (orphan glyphs whose CIDs the CMap
+        # forgot). Positional attribution via the chart's hex labels
+        # is the only way to recover them.
+        def intrinsic_has_uncovered_gids?(descriptor, intrinsic_result)
+          return false unless @trace_cache
+          return false if intrinsic_result.empty?
+
+          covered_gids = intrinsic_result.values.to_set
+          @trace_cache.distinct_gids_for(descriptor.base_font).any? do |gid|
+            !covered_gids.include?(gid)
+          end
         end
 
         # Positional chain: union of all positional strategies' results.

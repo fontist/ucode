@@ -22,6 +22,37 @@ class AlwaysPillar3 < Ucode::Glyphs::Source
   end
 end
 
+# Test Extractor — yields a deterministic Result per codepoint in
+# the block range, no mutool required. Real class (no doubles). Used
+# by the writer_spec's mutool-free path so writer.rb stays covered
+# even where mutool isn't installed (CI on Windows/macOS without
+# pre-installed mutool).
+class StubExtractor
+  Result = Struct.new(:codepoint, :svg, :tier, :provenance,
+                      :base_font, :gid, :source_page, :source_cell,
+                      keyword_init: true)
+
+  def initialize(block:, codepoints: nil, **_rest)
+    range = codepoints || (block.range_first..block.range_last).to_a
+    @results = range.map do |cp|
+      Result.new(
+        codepoint: cp,
+        svg: "<svg>stub-#{cp.to_s(16)}</svg>",
+        tier: :pillar1,
+        provenance: "stub:extractor",
+        base_font: "STUB+Font",
+        gid: cp & 0xFF,
+        source_page: 1,
+        source_cell: { x: 100.0, y: 200.0 },
+      )
+    end
+  end
+
+  def extract
+    @results
+  end
+end
+
 RSpec.describe Ucode::CodeChart::Writer do
   let(:tmpdir) { Pathname.new(Dir.mktmpdir("ucode-writer-")) }
   let(:output_root) { tmpdir.join("output") }
@@ -55,14 +86,32 @@ RSpec.describe Ucode::CodeChart::Writer do
     )
   end
 
+  # Mutool-free writer: injects a stub Extractor so the spec doesn't
+  # depend on mutool being installed. This keeps writer.rb's line
+  # coverage above the SimpleCov per-file threshold (30%) on CI
+  # runners where mutool isn't pre-installed.
+  let(:stub_extractor) { StubExtractor.new(block: basic_latin_block) }
+  let(:mutool_free_writer) do
+    described_class.new(
+      output_root: output_root,
+      pdf_path: pdf_path,
+      ucd_version: "17.0.0",
+      now: Time.utc(2026, 6, 30, 12, 0, 0),
+      extractor: stub_extractor,
+    )
+  end
+
   before do
-    skip "mutool not on PATH" unless system("which mutool >/dev/null 2>&1")
     skip "fixture PDF missing" unless pdf_path.exist?
   end
 
   after { safe_remove(tmpdir) if tmpdir.exist? }
 
+  # Real-extractor path: needs mutool on PATH. Skipped where mutool
+  # isn't pre-installed (some CI runners). The mutool-free context
+  # below covers the same code paths without that dependency.
   describe "#write" do
+    before { skip "mutool not on PATH" unless system("which mutool >/dev/null 2>&1") }
     it "creates a per-block folder under output_root" do
       writer.write(basic_latin_block)
       expect(output_root.join("Basic_Latin").directory?).to be(true)
@@ -120,6 +169,45 @@ RSpec.describe Ucode::CodeChart::Writer do
     it "computes pdf_sha256 once for the summary" do
       summary = writer.write(basic_latin_block)
       expect(summary.pdf_sha256).to eq(pdf_sha)
+    end
+  end
+
+  # Mutool-free context: runs on every CI runner regardless of
+  # whether mutool is pre-installed. Exercises the same writer.rb
+  # code paths via a stub Extractor that doesn't shell out.
+  describe "#write with stub extractor" do
+    before do
+      skip "fixture PDF missing" unless pdf_path.exist?
+    end
+
+    it "writes one .svg + one .json per stubbed codepoint" do
+      summary = mutool_free_writer.write(basic_latin_block)
+      expect(summary.svgs_written).to eq(128)
+      expect(summary.sidecars_written).to eq(128)
+      expect(output_root.join("Basic_Latin/U+0041.svg")).to exist
+      expect(output_root.join("Basic_Latin/U+0041.json")).to exist
+    end
+
+    it "threads base_font/gid/source_page/source_cell into the sidecar" do
+      mutool_free_writer.write(basic_latin_block)
+      payload = JSON.parse(output_root.join("Basic_Latin/U+0041.json").read)
+      expect(payload["base_font"]).to eq("STUB+Font")
+      expect(payload["gid"]).to eq(0x41)
+      expect(payload["source_page"]).to eq(1)
+      expect(payload["source_cell"]).to eq("x" => 100.0, "y" => 200.0)
+    end
+
+    it "honors codepoints: subset" do
+      writer = described_class.new(
+        output_root: output_root,
+        pdf_path: pdf_path,
+        ucd_version: "17.0.0",
+        now: Time.utc(2026, 6, 30, 12, 0, 0),
+        extractor: StubExtractor.new(block: basic_latin_block,
+                                     codepoints: [0x0041, 0x0042]),
+      )
+      summary = writer.write(basic_latin_block)
+      expect(summary.svgs_written).to eq(2)
     end
   end
 end

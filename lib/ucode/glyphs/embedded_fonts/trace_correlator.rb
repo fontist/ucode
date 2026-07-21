@@ -48,7 +48,7 @@ module Ucode
         private
 
         def select_specimens(trace_glyphs)
-          trace_glyphs.select { |g| g.font_name == @specimen_font_name }
+          trace_glyphs.select { |g| TraceGlyph.name_match?(g.font_name, @specimen_font_name) }
         end
 
         def select_labels(trace_glyphs)
@@ -93,7 +93,7 @@ module Ucode
 
         def select_hex_candidates(trace_glyphs)
           trace_glyphs.select do |g|
-            g.font_name != @specimen_font_name &&
+            !TraceGlyph.name_match?(g.font_name, @specimen_font_name) &&
               g.unicode&.match?(/\A[0-9A-Fa-f]\z/)
           end
         end

@@ -58,6 +58,19 @@ module Ucode
       attribute :variants, UnihanField, collection: true, default: -> { [] }
       attribute :other_mappings, UnihanField, collection: true, default: -> { [] }
 
+      # Collection accessors per category, mirroring CATEGORIES. Explicit
+      # lambdas instead of dynamic dispatch so the buckets stay greppable.
+      BUCKETS = {
+        dictionary_indices: lambda(&:dictionary_indices),
+        dictionary_like_data: lambda(&:dictionary_like_data),
+        irg_sources: lambda(&:irg_sources),
+        numeric_values: lambda(&:numeric_values),
+        radical_stroke_counts: lambda(&:radical_stroke_counts),
+        readings: lambda(&:readings),
+        variants: lambda(&:variants),
+        other_mappings: lambda(&:other_mappings),
+      }.freeze
+
       # Pushes a field into the right category bucket. Used by the
       # Coordinator when streaming records from the parser.
       #
@@ -65,13 +78,13 @@ module Ucode
       # @param name [String] e.g. "kMandarin"
       # @param values [Array<String>] space-split values from Unihan
       def add(category, name, values)
-        attr_name = CATEGORIES.fetch(category) { return }
-        public_send(attr_name) << UnihanField.new(name: name, values: values)
+        bucket = BUCKETS.fetch(category) { return }
+        bucket.call(self) << UnihanField.new(name: name, values: values)
       end
 
       # True if any category has data.
       def any?
-        CATEGORIES.keys.any? { |sym| !public_send(sym).empty? }
+        BUCKETS.each_value.any? { |bucket| !bucket.call(self).empty? }
       end
 
       # All fields across every category, flattened to {name => values}.
@@ -80,8 +93,8 @@ module Ucode
       #
       # @return [Hash{String => Array<String>}]
       def all_fields
-        CATEGORIES.keys.each_with_object({}) do |sym, h|
-          public_send(sym).each { |f| h[f.name] = f.values }
+        BUCKETS.each_value.with_object({}) do |bucket, h|
+          bucket.call(self).each { |f| h[f.name] = f.values }
         end
       end
 

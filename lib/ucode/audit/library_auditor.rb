@@ -67,8 +67,8 @@ module Ucode
       private
 
       def discover_font_paths
-        method = @recursive ? :find : :children
-        @root_path.public_send(method).select do |entry|
+        entries = @recursive ? @root_path.find : @root_path.children
+        entries.select do |entry|
           next false unless entry.file?
           next false if entry.symlink?
 

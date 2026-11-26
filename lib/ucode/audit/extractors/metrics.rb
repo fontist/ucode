@@ -60,25 +60,25 @@ module Ucode
         end
 
         # OS/2 table fields exposed on Metrics, as
-        #   `Metrics attribute name` => `OS/2 reader method`.
+        #   `Metrics attribute name` => `OS/2 reader lambda`.
         OS2_FIELDS = {
-          typo_ascender: :s_typo_ascender,
-          typo_descender: :s_typo_descender,
-          typo_line_gap: :s_typo_line_gap,
-          win_ascent: :us_win_ascent,
-          win_descent: :us_win_descent,
-          x_height: :sx_height,
-          cap_height: :s_cap_height,
-          subscript_x_size: :y_subscript_x_size,
-          subscript_y_size: :y_subscript_y_size,
-          subscript_x_offset: :y_subscript_x_offset,
-          subscript_y_offset: :y_subscript_y_offset,
-          superscript_x_size: :y_superscript_x_size,
-          superscript_y_size: :y_superscript_y_size,
-          superscript_x_offset: :y_superscript_x_offset,
-          superscript_y_offset: :y_superscript_y_offset,
-          strikeout_size: :y_strikeout_size,
-          strikeout_position: :y_strikeout_position,
+          typo_ascender: lambda(&:s_typo_ascender),
+          typo_descender: lambda(&:s_typo_descender),
+          typo_line_gap: lambda(&:s_typo_line_gap),
+          win_ascent: lambda(&:us_win_ascent),
+          win_descent: lambda(&:us_win_descent),
+          x_height: lambda(&:sx_height),
+          cap_height: lambda(&:s_cap_height),
+          subscript_x_size: lambda(&:y_subscript_x_size),
+          subscript_y_size: lambda(&:y_subscript_y_size),
+          subscript_x_offset: lambda(&:y_subscript_x_offset),
+          subscript_y_offset: lambda(&:y_subscript_y_offset),
+          superscript_x_size: lambda(&:y_superscript_x_size),
+          superscript_y_size: lambda(&:y_superscript_y_size),
+          superscript_x_offset: lambda(&:y_superscript_x_offset),
+          superscript_y_offset: lambda(&:y_superscript_y_offset),
+          strikeout_size: lambda(&:y_strikeout_size),
+          strikeout_position: lambda(&:y_strikeout_position),
         }.freeze
         private_constant :OS2_FIELDS
 
@@ -86,7 +86,7 @@ module Ucode
           os2 = table(font, "OS/2")
           return {} unless os2
 
-          OS2_FIELDS.transform_values { |reader| os2.public_send(reader)&.to_i }
+          OS2_FIELDS.transform_values { |reader| reader.call(os2)&.to_i }
         end
 
         def post_fields(font)

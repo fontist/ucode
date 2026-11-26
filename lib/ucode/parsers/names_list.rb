@@ -240,9 +240,21 @@ module Ucode
           end
         end
 
+        # Container accessor for each annotation kind `parse_annotation`
+        # can return. Kept beside the marker dispatch so adding a marker
+        # is one case branch plus one entry here.
+        ENTRY_CONTAINERS = {
+          cross_references: lambda(&:cross_references),
+          sample_sequences: lambda(&:sample_sequences),
+          compatibility_equivalents: lambda(&:compatibility_equivalents),
+          informal_aliases: lambda(&:informal_aliases),
+          footnotes: lambda(&:footnotes),
+        }.freeze
+        private_constant :ENTRY_CONTAINERS
+
         def attach_annotation(entry, parsed)
           attr_name, instance = parsed
-          entry.public_send(attr_name) << instance
+          ENTRY_CONTAINERS.fetch(attr_name).call(entry) << instance
         end
       end
     end

@@ -99,31 +99,31 @@ module Ucode
         blocks: range_index(ucd_dir, "Blocks.txt", Parsers::Blocks),
         scripts: scripts_index(ucd_dir, property_value_aliases),
         property_value_aliases: property_value_aliases,
-        derived_age: cp_index(ucd_dir, "DerivedAge.txt", Parsers::DerivedAge, :cp),
+        derived_age: cp_index(ucd_dir, "DerivedAge.txt", Parsers::DerivedAge, &:cp),
         binary_properties: multi_cp_index(ucd_dir, "DerivedCoreProperties.txt",
                                          Parsers::DerivedCoreProperties),
         script_extensions: multi_cp_index(ucd_dir, "ScriptExtensions.txt",
-                                          Parsers::ScriptExtensions, :cp),
+                                          Parsers::ScriptExtensions, &:cp),
         bidi_mirroring: cp_index(ucd_dir, "BidiMirroring.txt",
-                                 Parsers::BidiMirroring, :codepoint),
+                                 Parsers::BidiMirroring, &:codepoint),
         bidi_brackets: cp_index(ucd_dir, "BidiBrackets.txt",
-                                Parsers::BidiBrackets, :codepoint),
+                                Parsers::BidiBrackets, &:codepoint),
         special_casing: multi_cp_index(ucd_dir, "SpecialCasing.txt",
                                        Parsers::SpecialCasing),
         # CaseFolding: one cp can carry C, F, S, and T statuses; the
         # Coordinator buckets each row into CodePoint::CaseFolding by
         # status, so the index holds an Array per cp.
         case_folding: multi_cp_index(ucd_dir, "CaseFolding.txt",
-                                     Parsers::CaseFolding, :codepoint),
+                                     Parsers::CaseFolding, &:codepoint),
         name_aliases: multi_cp_index(ucd_dir, "NameAliases.txt",
                                      Parsers::NameAliases),
         # CJKRadicals maps a canonical ideograph (e.g. U+4E00) to its
         # KangXi radical; the lookup key is the ideograph_id ("U+XXXX"),
         # not the radical_number or the cjk_radical_id.
         cjk_radicals: multi_cp_index_by_id(ucd_dir, "CJKRadicals.txt",
-                                           Parsers::CjkRadicals, :ideograph_id),
+                                           Parsers::CjkRadicals, &:ideograph_id),
         standardized_variants: multi_cp_index_by_id(ucd_dir, "StandardizedVariants.txt",
-                                                    Parsers::StandardizedVariants, :base_id),
+                                                    Parsers::StandardizedVariants, &:base_id),
         names_list: names_list_index(ucd_dir),
         unihan: unihan_index(unihan_dir),
         line_break: range_value_index(ucd_dir, "LineBreak.txt"),
@@ -180,37 +180,37 @@ module Ucode
       end.sort_by(&:range_first)
     end
 
-    # Indexes by integer codepoint for parsers whose record exposes a
-    # `codepoint` integer accessor (or any method returning Integer).
-    def cp_index(ucd_dir, filename, parser, key_method)
+    # Indexes by the codepoint the given block extracts from each record.
+    def cp_index(ucd_dir, filename, parser, &)
       path = Pathname.new(ucd_dir).join(filename)
       return {} unless path.exist?
 
       parser.each_record(path).each_with_object({}) do |record, h|
-        h[record.public_send(key_method)] = record
+        h[yield(record)] = record
       end
     end
 
     # Multi-valued index by integer codepoint. Each cp maps to an array
     # of records (e.g. one cp can have several binary properties, several
     # script extensions, several SpecialCasing rules).
-    def multi_cp_index(ucd_dir, filename, parser, key_method = :codepoint)
+    def multi_cp_index(ucd_dir, filename, parser, &key)
+      key ||= lambda(&:codepoint)
       path = Pathname.new(ucd_dir).join(filename)
       return {} unless path.exist?
 
       parser.each_record(path).each_with_object(Hash.new { |h, k| h[k] = [] }) do |record, h|
-        h[record.public_send(key_method)] << record
+        h[key.call(record)] << record
       end
     end
 
     # Multi-valued index keyed by a "U+XXXX" string id (e.g. standardized
     # variants are keyed by base_id).
-    def multi_cp_index_by_id(ucd_dir, filename, parser, key_method)
+    def multi_cp_index_by_id(ucd_dir, filename, parser, &)
       path = Pathname.new(ucd_dir).join(filename)
       return {} unless path.exist?
 
       parser.each_record(path).each_with_object(Hash.new { |h, k| h[k] = [] }) do |record, h|
-        h[record.public_send(key_method)] << record
+        h[yield(record)] << record
       end
     end
 

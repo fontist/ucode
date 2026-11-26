@@ -8,13 +8,13 @@ module Ucode
     # `Indices#each_relationship` instead of reaching into the Struct by
     # field name (see Candidate 1 of the 2026-06-29 architecture review).
     RELATIONSHIPS = [
-      ["special_casing",        :special_casing],
-      ["case_folding",          :case_folding],
-      ["bidi_mirroring",        :bidi_mirroring],
-      ["bidi_brackets",         :bidi_brackets],
-      ["cjk_radicals",          :cjk_radicals],
-      ["standardized_variants", :standardized_variants],
-      ["name_aliases",          :name_aliases],
+      ["special_casing",        lambda(&:special_casing)],
+      ["case_folding",          lambda(&:case_folding)],
+      ["bidi_mirroring",        lambda(&:bidi_mirroring)],
+      ["bidi_brackets",         lambda(&:bidi_brackets)],
+      ["cjk_radicals",          lambda(&:cjk_radicals)],
+      ["standardized_variants", lambda(&:standardized_variants)],
+      ["name_aliases",          lambda(&:name_aliases)],
     ].freeze
     private_constant :RELATIONSHIPS
 
@@ -72,8 +72,8 @@ module Ucode
       def each_relationship(&)
         return enum_for(:each_relationship) unless block_given?
 
-        RELATIONSHIPS.each do |slug, field|
-          yield(slug, public_send(field))
+        RELATIONSHIPS.each do |slug, reader|
+          yield(slug, reader.call(self))
         end
       end
     end

@@ -22,10 +22,20 @@ module Ucode
       # generated_at / source_sha256 / source_file (per-report identity),
       # codepoints / codepoint_ranges (handled via CodepointSetDiff),
       # and nested models (surfaced via structural add/remove lists).
-      COMPARED_FIELDS = %i[
-        family_name subfamily_name full_name postscript_name version
-        font_revision weight_class width_class italic bold panose
-        total_codepoints total_glyphs
+      COMPARED_FIELDS = [
+        [:family_name, lambda(&:family_name)],
+        [:subfamily_name, lambda(&:subfamily_name)],
+        [:full_name, lambda(&:full_name)],
+        [:postscript_name, lambda(&:postscript_name)],
+        [:version, lambda(&:version)],
+        [:font_revision, lambda(&:font_revision)],
+        [:weight_class, lambda(&:weight_class)],
+        [:width_class, lambda(&:width_class)],
+        [:italic, lambda(&:italic)],
+        [:bold, lambda(&:bold)],
+        [:panose, lambda(&:panose)],
+        [:total_codepoints, lambda(&:total_codepoints)],
+        [:total_glyphs, lambda(&:total_glyphs)],
       ].freeze
 
       # @param left_report [Models::Audit::AuditReport]
@@ -54,9 +64,9 @@ module Ucode
       private
 
       def field_changes
-        COMPARED_FIELDS.filter_map do |field|
-          left_val = @left.public_send(field)
-          right_val = @right.public_send(field)
+        COMPARED_FIELDS.filter_map do |field, reader|
+          left_val = reader.call(@left)
+          right_val = reader.call(@right)
           next if left_val == right_val
 
           Models::Audit::FieldChange.new(
